@@ -1,0 +1,3 @@
+include buildapi/config/deployment.ini_tmpl
+recursive-include buildapi/public *
+recursive-include buildapi/templates *
