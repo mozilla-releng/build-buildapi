@@ -55,6 +55,8 @@ $(document).ready(function() {
           <td title='${build['submitted_at']}'>${build['submitted_at_human']}</td>
         % elif key == 'start_time':
           <td title='${build['start_time']}'>${build['start_time_human']}</td>
+        % elif key == 'revision':
+          <td>${build[key][0:12]}</td>
         % else:
           <td>${build[key]}</td>
         % endif
