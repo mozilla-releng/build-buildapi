@@ -43,4 +43,9 @@ class ResultsController(BaseController):
             if self.template:
                 return render(self.template)
         else:
-            return self.jsonify({'pending': c.pending_builds})
+            results = {}
+            if self.pending:
+              results['pending'] = c.pending_builds
+            if self.running:
+              results['running'] = c.running_builds
+            return self.jsonify(results)
