@@ -21,9 +21,14 @@ def make_map(config):
     map.connect('/pending', controller='pending', action='index')
     map.connect('/pending/{branch}', controller='pending', action='index')
     map.connect('/pending/{branch}/{platform}', controller='pending', action='index')
+
     map.connect('/running', controller='running', action='index')
     map.connect('/running/{branch}', controller='running', action='index')
     map.connect('/running/{branch}/{platform}', controller='running', action='index')
+
+    map.connect('/recent', controller='recent', action='index')
+    map.connect('/recent/{slave}', controller='recent', action='index')
+    map.connect('/recent/{slave}/{count}', controller='recent', action='index')
 
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
