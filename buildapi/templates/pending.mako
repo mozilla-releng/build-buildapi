@@ -33,7 +33,7 @@ $(document).ready(function() {
 <table id="pending" cellpadding="0" cellspacing="0" border="0" class="display">
 <thead>
 <tr>
-% for key in ('Branch','Revision','Builder name','Submitted at (MV time)','Waiting for'):
+% for key in ('Branch','Revision','Builder name','Submitted at','Waiting for'):
 <th>${key}</th>
 % endfor
 </tr></thead><tbody>
