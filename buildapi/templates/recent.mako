@@ -41,7 +41,7 @@ $(document).ready(function() {
   from datetime import datetime
   pacific = timezone('US/Pacific')
   utc = timezone('UTC')
-  now = datetime.now()
+  now = datetime.now().replace(microsecond=0)
 %>
 % for build in c.recent_builds:
   <%
@@ -63,4 +63,4 @@ $(document).ready(function() {
 
 </body>
 </html>
-Generated at ${now}. All times are Pacific time (Mountain View).
+Generated at ${now}. All times are Mountain View, CA (US/Pacific).

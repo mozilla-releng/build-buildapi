@@ -39,8 +39,7 @@ $(document).ready(function() {
 </tr></thead><tbody>
 <%
   from datetime import datetime
-  now = datetime.now()
-  now = now.replace(now.year,now.month,now.day,now.hour,now.minute,now.second,0)
+  now = datetime.now().replace(microsecond=0)
 %>
 % for branch in c.pending_builds:
   % for revision in c.pending_builds[branch]:
@@ -67,4 +66,4 @@ $(document).ready(function() {
 
 </body>
 </html>
-Generated at ${now} (Pacific Time).
+Generated at ${now}. All times are Mountain View, CA (US/Pacific).

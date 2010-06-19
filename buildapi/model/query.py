@@ -76,3 +76,35 @@ def GetBuilds(branch=None, type='pending'):
         builds[real_branch][revision].append(this_result)
 
     return builds
+
+def GetHistoricBuilds(slave, count=20):
+    b  = meta.status_db_meta.tables['builds']
+    bs = meta.status_db_meta.tables['builders']
+    s  = meta.status_db_meta.tables['slaves']
+    ss = meta.scheduler_db_meta.tables['sourcestamps']
+    q = select([b.c.id,
+                bs.c.name.label('buildname'),
+                b.c.buildnumber,
+                b.c.starttime,
+                b.c.endtime,
+                b.c.result,
+                s.c.name.label('slavename'),
+            ])
+    q = q.where(and_(b.c.slave_id==s.c.id, b.c.builder_id==bs.c.id))
+    q = q.where(b.c.result != None)
+    if slave is not None:
+      q = q.where(s.c.name==slave)
+    # should order b.c.starttime but that's much slower than id
+    q = q.order_by(b.c.id.desc()).limit(count)
+
+    query_results = q.execute()
+
+    builds = []
+    for r in query_results:
+        this_result = {}
+        for key,value in r.items():
+            this_result[str(key)] = value
+        builds.append(this_result)
+        print this_result['starttime'].tzinfo
+
+    return builds
