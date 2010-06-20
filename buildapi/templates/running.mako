@@ -47,8 +47,13 @@ $(document).ready(function() {
         build['start_time_human'] = datetime.fromtimestamp(build['start_time']).strftime('%Y-%m-%d %H:%M:%S')
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
         build['master'] = build['claimed_by_name'].split('.')[0]
-        build['url'] = 'http://%s:8010/builders/%s/builds/%s' % \
+        if 'try' in build['branch']:
+          port = '8011'
+        else:
+          port = '8010'
+        build['url'] = 'http://%s:%s/builders/%s/builds/%s' % \
                          (build['claimed_by_name'].split(':')[0],
+                          port,
                           build['buildername'].replace('/','%2F'),
                           build['number'])
       %>
