@@ -49,7 +49,8 @@ $(document).ready(function() {
         build['master'] = build['claimed_by_name'].split('.')[0]
         build['url'] = 'http://%s:8010/builders/%s/builds/%s' % \
                          (build['claimed_by_name'].split(':')[0],
-                          build['buildername'], build['number'])
+                          build['buildername'].replace('/','%2F'),
+                          build['number'])
       %>
       <tr>
       % for key in ('branch','revision','buildername','submitted_at','start_time','running_for','master'):
