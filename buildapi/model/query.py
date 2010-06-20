@@ -47,6 +47,7 @@ def GetBuilds(branch=None, type='pending'):
                     br.c.claimed_at,
                     br.c.claimed_by_name,
                     b.c.start_time,
+                    b.c.number,
             ])
         q = q.where(and_(b.c.brid == br.c.id,
                          br.c.buildsetid==bs.c.id,

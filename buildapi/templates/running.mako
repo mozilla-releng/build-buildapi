@@ -47,6 +47,9 @@ $(document).ready(function() {
         build['start_time_human'] = datetime.fromtimestamp(build['start_time']).strftime('%Y-%m-%d %H:%M:%S')
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
         build['master'] = build['claimed_by_name'].split('.')[0]
+        build['url'] = 'http://%s:8010/builders/%s/builds/%s' % \
+                         (build['claimed_by_name'].split(':')[0],
+                          build['buildername'], build['number'])
       %>
       <tr>
       % for key in ('branch','revision','buildername','submitted_at','start_time','running_for','master'):
@@ -56,6 +59,8 @@ $(document).ready(function() {
           <td title='${build['start_time']}'>${build['start_time_human']}</td>
         % elif key == 'revision':
           <td>${build[key][0:12]}</td>
+        % elif key == 'master':
+          <td><a href="${build['url']}">${build['master']}</a></td>
         % else:
           <td>${build[key]}</td>
         % endif
