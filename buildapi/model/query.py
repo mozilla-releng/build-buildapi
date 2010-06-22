@@ -36,7 +36,7 @@ def GetBuilds(branch=None, type='pending'):
                     br.c.submitted_at,
             ])
         q = q.where(and_(br.c.buildsetid==bs.c.id, bs.c.sourcestampid==ss.c.id))
-        q = q.where(br.c.claimed_at == 0)
+        q = q.where(and_(br.c.claimed_at==0, br.c.complete==0))
     elif type == 'running':
         q = select([br.c.id,
                     br.c.buildsetid,
