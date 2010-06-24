@@ -1,26 +1,38 @@
 from sqlalchemy import *
 import buildapi.model.meta as meta
+from pylons.decorators.cache import beaker_cache
+
+@beaker_cache(expire=600, cache_response=False)
+def GetAllBranches():
+    ss = meta.scheduler_db_meta.tables['sourcestamps']
+    q = select([ss.c.branch]).distinct()
+    q = q.where(not_(ss.c.branch.like("%unittest")))
+    results = q.execute()
+
+    # exclude defunct branches
+    exclusions = ('releases/mozilla-1.9.3',
+                 )
+
+    branches = []
+    for r in results:
+        if r['branch'] not in exclusions:
+            # return last part of releases/mozilla-1.9.2, users/bob/foo
+            branches.append(r['branch'].split('/')[-1])
+
+    return sorted(branches)
 
 def GetBranchName(longname):
-    # nightlies don't have a branch set (FIXME)
+    # nightlies don't have a branch set (bug 570814)
     if not longname:
         return None
 
-    branch = longname
+    allBranches = GetAllBranches()
+    shortname = longname.split('/')[-1]
+    for branch in allBranches:
+       if shortname.startswith(branch):
+           return branch
 
-    # handle releases/mozilla-1.9.2, projects/foo, users/bob/foopy
-    # by taking the part after the last '/'
-    branch = branch.split('/')[-1]
-
-    # handle unit 'branches' by trimming off '-platform-buildtype-test'
-    # eg mozilla-central-win32-opt-unittest
-    #    addonsmgr-linux-debug-unittest
-    if branch.endswith('unittest'):
-        branch = '-'.join(branch.split('-')[0:-3])
-
-    # trim off any leading 'l10n-' ??
-
-    return branch
+    return 'Unknown'
 
 def GetBuilds(branch=None, type='pending'):
     b  = meta.scheduler_db_meta.tables['builds']
@@ -54,7 +66,7 @@ def GetBuilds(branch=None, type='pending'):
                          bs.c.sourcestampid==ss.c.id))
         q = q.where(and_(br.c.claimed_at > 0,br.c.complete == 0))
 
-    # ignore nightlies, FIXME ?
+    # ignore nightlies, bug 570814
     q = q.where(ss.c.revision != None)
     if branch is not None:
       q = q.where(ss.c.branch.like('%' + branch[0] + '%'))
