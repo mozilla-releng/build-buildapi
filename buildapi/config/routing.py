@@ -30,6 +30,12 @@ def make_map(config):
     map.connect('/recent/{slave}', controller='recent', action='index')
     map.connect('/recent/{slave}/{count}', controller='recent', action='index')
 
+    map.connect('/pushes', controller='pushes', action='index')
+    map.connect('/pushes/{branch}', controller='pushes', action='index')
+    map.connect('/pushes/{branch}/{fromtime}', controller='pushes', action='index')
+    map.connect('/pushes/{branch}/{fromtime}/{totime}', controller='pushes', action='index')
+    # we also support 'pushes/{branch}/?totime={totime}'
+
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
 

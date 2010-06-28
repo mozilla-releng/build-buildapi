@@ -121,3 +121,37 @@ def GetHistoricBuilds(slave, count=20):
         print this_result['starttime'].tzinfo
 
     return builds
+
+def GetPushes(branch, fromtime, totime):
+    ch    = meta.scheduler_db_meta.tables['changes']
+    ss_ch = meta.scheduler_db_meta.tables['sourcestamp_changes']
+    ss    = meta.scheduler_db_meta.tables['sourcestamps']
+
+    # this is a little complicated in order to cope with mobile
+    # adding a second sourcestamp for every revision in m-c (etc).
+    # get distinct revision/branch pairs from sourcestamps and
+    # retrieve author from changes
+    q = select([ss.c.revision, ss.c.branch, ch.c.author],
+               and_(ss_ch.c.changeid == ch.c.changeid,
+                    ss.c.id == ss_ch.c.sourcestampid))
+    q = q.distinct()
+
+    q = q.where(not_(ch.c.branch.like('%unittest')))
+    if branch is not None:
+        q = q.where(ch.c.branch.like('%' + branch + '%'))
+
+    if fromtime is not None:
+        q = q.where(ch.c.when_timestamp >= fromtime)
+    if totime is not None:
+        q = q.where(ch.c.when_timestamp <= totime)
+
+    query_results = q.execute()
+    pushes = {'TOTAL': 0}
+    for r in query_results:
+        a = r['author']
+        if a not in pushes:
+            pushes[a] = 0
+        pushes[a] += 1
+        pushes['TOTAL'] += 1
+
+    return pushes
