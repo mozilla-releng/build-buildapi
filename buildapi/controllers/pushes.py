@@ -35,7 +35,7 @@ class PushesController(BaseController):
         if fromtime:
             fromtime = int(fromtime);
         # don't mislead over the amount of history we have
-        if branch.startswith('mobile') and fromtime < db_start_mobile:
+        if branch and branch.startswith('mobile') and fromtime < db_start_mobile:
             fromtime = db_start_mobile
         elif fromtime < db_start:
             fromtime = db_start
