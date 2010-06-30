@@ -49,11 +49,10 @@ $(document).ready(function() {
         build['waiting_for'] = now - datetime.fromtimestamp(build['submitted_at'])
       %>
       <tr>
-      % for key in ('branch','revision','buildername','submitted_at','waiting_for'):
+      <td>${branch}</td><td>${revision}</td>
+      % for key in ('buildername','submitted_at','waiting_for'):
         % if key == 'submitted_at':
           <td title='${build['submitted_at']}'>${build['submitted_at_human']}</td>
-        % elif key == 'revision':
-          <td>${build[key][0:12]}</td>
         % else:
           <td>${build[key]}</td>
         % endif

@@ -47,7 +47,7 @@ $(document).ready(function() {
         build['start_time_human'] = datetime.fromtimestamp(build['start_time']).strftime('%Y-%m-%d %H:%M:%S')
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
         build['master'] = build['claimed_by_name'].split('.')[0]
-        if 'try' in build['branch']:
+        if branch in ('try',):
           port = '8011'
         else:
           port = '8010'
@@ -58,7 +58,8 @@ $(document).ready(function() {
                           build['number'])
       %>
       <tr>
-      % for key in ('branch','revision','buildername','submitted_at','start_time','running_for','master'):
+      <td>${branch}</td><td>${revision}</td>
+      % for key in ('buildername','submitted_at','start_time','running_for','master'):
         % if key == 'submitted_at':
           <td title='${build['submitted_at']}'>${build['submitted_at_human']}</td>
         % elif key == 'start_time':

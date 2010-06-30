@@ -40,9 +40,7 @@ def GetBuilds(branch=None, type='pending'):
     bs = meta.scheduler_db_meta.tables['buildsets']
     ss = meta.scheduler_db_meta.tables['sourcestamps']
     if type == 'pending':
-        q = select([br.c.id,
-                    br.c.buildsetid,
-                    ss.c.branch,
+        q = select([ss.c.branch,
                     ss.c.revision,
                     br.c.buildername,
                     br.c.submitted_at,
@@ -50,13 +48,11 @@ def GetBuilds(branch=None, type='pending'):
         q = q.where(and_(br.c.buildsetid==bs.c.id, bs.c.sourcestampid==ss.c.id))
         q = q.where(and_(br.c.claimed_at==0, br.c.complete==0))
     elif type == 'running':
-        q = select([br.c.id,
-                    br.c.buildsetid,
-                    ss.c.branch,
+        q = select([ss.c.branch,
                     ss.c.revision,
                     br.c.buildername,
                     br.c.submitted_at,
-                    br.c.claimed_at,
+                    br.c.claimed_at.label('last_heartbeat'),
                     br.c.claimed_by_name,
                     b.c.start_time,
                     b.c.number,
@@ -84,8 +80,8 @@ def GetBuilds(branch=None, type='pending'):
 
         this_result = {}
         for key,value in r.items():
-            this_result[key] = value
-        this_result['branch'] = real_branch
+            if key not in ('branch','revision'):
+                this_result[key] = value
         builds[real_branch][revision].append(this_result)
 
     return builds
