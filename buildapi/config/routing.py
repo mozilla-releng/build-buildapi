@@ -36,6 +36,9 @@ def make_map(config):
     map.connect('/pushes/{branch}/{fromtime}/{totime}', controller='pushes', action='index')
     # we also support 'pushes/{branch}/?totime={totime}'
 
+    map.connect('/waittimes', controller='waittimes', action='index')
+    map.connect('/waittimes/{pool}', controller='waittimes', action='index')
+
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
 

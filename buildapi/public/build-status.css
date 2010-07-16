@@ -17,3 +17,27 @@
 .result3 {
     background-color: #c000c0;
 }
+
+.wt-column, .wt-column-s {
+	display:inline; margin:0px 10px 0px;
+}
+
+.wt-column-s {
+	width:240px; float: left;
+}
+
+.wt-container {
+	width:234px; display:inline; float: left; margin:0px 10px 16px;
+}
+
+.wt-container-title {
+	font-weight:bold;
+}
+
+body#dt_example {
+	margin:6px;
+}
+
+table.wt-platforms, table.wt-overall {
+	width:230px;
+}
