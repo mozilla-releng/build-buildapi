@@ -7,4 +7,6 @@ buildapi/public/dataTables-1.6/extras/
 buildapi/public/dataTables-1.6/media/unit_testing/
 buildapi/public/jquery/development-bundle/
 buildapi/public/jquery/index.html
+build/
+dist/
 

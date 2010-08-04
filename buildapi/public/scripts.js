@@ -1,42 +1,44 @@
+var AnyTime_picker_format = "%a, %d %b %z %H:%i:%s %+";
+var AnyTime_conv = new AnyTime.Converter({format: AnyTime_picker_format});
 
-function initDatePickers() {
-    var starttime = $('#starttime').attr('ref');  // start time in PDT (server time) in seconds
-    var endtime = $('#endtime').attr('ref');      // end time in PDT (server time) in seconds
-    var sdate = parseDatePickerDate(starttime);
-    var edate = parseDatePickerDate(endtime);
+function initAnyTimePickers() {
+    var starttime = $('#starttime').attr('ref');  // start time in UTC in seconds
+    var endtime = $('#endtime').attr('ref');      // end time in UTC in seconds
+
+    var sdate = new Date(parseFloat(starttime)*1000);
+    var edate = new Date(parseFloat(endtime)*1000);
 
     // set initial values
-    $('#starttime').datepicker("setDate", sdate);
-    $('#endtime').datepicker("setDate", edate);
+    $("#starttime").val(AnyTime_conv.format(sdate));
+    $("#endtime").val(AnyTime_conv.format(edate));
 }
 
 function updateWindowLocation() {
-    // get unix time in seconds
+	var sdate = AnyTime_conv.parse($('#starttime').val());
+    var edate = AnyTime_conv.parse($('#endtime').val());    
+    var starttime = parseFloat(sdate.getTime()) / 1000;
+    var endtime = parseFloat(edate.getTime()) / 1000;
+
+    var new_params = {starttime: starttime, endtime: endtime};
+    window.location = updateUrlParams(new_params);
+}
+
+function updateUrlParams(new_params) {
     var url = window.location.href.split('?')[0];
     var q = window.location.search;
     q = ((q.length>=1)&&(q[0]=='?'))?q.substr(1):q;  // remove ? character
 
-    var sdate = $('#starttime').datepicker("getDate");
-    var edate = $('#endtime').datepicker("getDate");
-    var starttime = $.datepicker.formatDate('@', sdate) / 1000;
-    var endtime = $.datepicker.formatDate('@', edate) / 1000;
-
-    var new_q = ['starttime='+starttime, 'endtime='+endtime];
     var params = q.split('&');
     for (var i in params) {
-        var key = params[i].split('=')[0];
-        if (key!='starttime' && key!='endtime') {
-            new_q.push(params[i]);
-        }
+	    if (!params[i]) continue;
+        var p = params[i].split('=');
+        var key = p[0], val = p[1];
+        if (!(key in new_params)) { new_params[key] = val; }
+    }
+    var new_q = [];
+	for (key in new_params) {
+        new_q.push(key+'='+new_params[key]);
     }
 
-    window.location = url + '?' + new_q.join('&');
-}
-
-function parseDatePickerDate(unix_time_sec) {
-    if (!unix_time_sec) return null;
-    var unix_time_mili = parseInt(parseFloat(unix_time_sec) * 1000);
-    var date = $.datepicker.parseDate('@', unix_time_mili);
-
-    return date;
+    return url + '?' + new_q.join('&');
 }

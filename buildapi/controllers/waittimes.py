@@ -1,4 +1,4 @@
-import logging
+import logging, time
 
 from pylons import request, response, session, tmpl_context as c, url
 from pylons.controllers.util import abort, redirect
@@ -16,6 +16,7 @@ class WaittimesController(BaseController):
         BaseController.__init__(self, **kwargs)
 
     def index(self, pool='buildpool'):
+        log.info('Got request!')
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json'):
             abort(400, detail='Unsupported format: %s' % format)
@@ -33,16 +34,16 @@ class WaittimesController(BaseController):
                 params['endtime'] = float(request.GET.getone('endtime'))
             if 'mpb' in request.GET:
                 params['minutes_per_block'] = int(request.GET.getone('mpb'))
+    	    if 'maxb' in request.GET:
+    	        params['maxb'] = int(request.GET.getone('maxb'))
         except ValueError, e:
             abort(400, detail='Unsupported non numeric parameter value: %s' % e)
-        
+
         c.wait_times = GetWaitTimes(**params)
 
         # Return a rendered template
-        # or, return a json blob
-        if format == 'html':
-            return render('/waittimes.mako')
+        # or, json blob
+        if format == 'json':
+            return self.jsonify({'waittimes': c.wait_times})
         else:
-            results = {'waittimes': c.wait_times}
-            return self.jsonify(results)
-	
+            return render('/waittimes.mako')

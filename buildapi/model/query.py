@@ -1,20 +1,20 @@
 from sqlalchemy import *
 import buildapi.model.meta as meta
 from pylons.decorators.cache import beaker_cache
-import math
-import time
-import re
+
+import math, re, time
 
 PLATFORMS_BUILDERNAME = {
-    'linux': [re.compile('^Linux (?!x86-64).+')],
+    'linux': [re.compile('^Linux (?!x86-64).+'), 
+              re.compile('^Maemo 4 .+'), 
+              re.compile('^Maemo 5 QT .+'), 
+              re.compile('^Maemo 5 GTK .+'), 
+              re.compile('^Android R7 .+'),
+             ],
     'linux64': [re.compile('^Linux x86-64 .+')],
     'leopard': [re.compile('^OS X 10.5.2 .+')],
     'snowleopard': [re.compile('^OS X 10.6.2 .+')],
     'win2k3': [re.compile('^WINNT 5.2 .+')],
-    'maemo4': [re.compile('^Maemo 4 .+')],
-    'maemo5qt': [re.compile('^Maemo 5 QT .+')],
-    'maemo5gtk': [re.compile('^Maemo 5 GTK .+')],
-    'androidr7': [re.compile('^Android R7 .+')],
 }
 
 PLATFORMS_BUILDERNAME_EXCLUDE = [
@@ -181,16 +181,23 @@ def GetPushes(branch, fromtime, totime):
 
     return pushes
 
-def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None):
-    starttime, endtime = get_time_interval(starttime, endtime)
-
+def WaitTimesQuery(pool, starttime, endtime, masters=None):
+    """Constructs the sqlalchemy query for fetching all wait times for a buildpool 
+    in the specified time interval.
+    
+    Input: pool - name of the pool (e.g. buildpool, or trybuildpool)
+           starttime - start time, UNIX timestamp (in seconds)
+           endtime - end time, UNIX timestamp (in seconds)
+           masters - if not spefified fetches the builds only for masters in pool (BUILDPOOL_MASTERS)
+    Output: query
+    """
     b  = meta.scheduler_db_meta.tables['builds']
     br = meta.scheduler_db_meta.tables['buildrequests']
     bs = meta.scheduler_db_meta.tables['buildsets']
     s = meta.scheduler_db_meta.tables['sourcestamps']
     sch = meta.scheduler_db_meta.tables['sourcestamp_changes']
     c = meta.scheduler_db_meta.tables['changes']
-    
+
     q = join(b, br, b.c.brid==br.c.id) \
                .join(bs, bs.c.id==br.c.buildsetid) \
                .join(s, s.c.id==bs.c.sourcestampid) \
@@ -200,32 +207,52 @@ def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None):
            .with_only_columns([br.c.buildername, b.c.start_time, br.c.submitted_at, c.c.when_timestamp])
 
     q = q.where(or_(c.c.when_timestamp>=starttime, br.c.submitted_at>=starttime))
-    q = q.where(b.c.start_time<=endtime)
+    q = q.where(or_(c.c.when_timestamp<=endtime, br.c.submitted_at<=endtime))
         
-    # fetch builds only for masters in pool
-    masters = BUILDPOOL_MASTERS[pool]
+    # fetch builds only for masters in pool, or filter by masters param
+    masters = masters or BUILDPOOL_MASTERS[pool]
     mnames_matcher = [br.c.claimed_by_name.startswith(master) for master in masters]
     if len(mnames_matcher) > 0:
-        q = q.where(or_(*mnames_matcher))
-    
+        q = q.where(or_(*mnames_matcher))    
     # exclude all rebuilds and forced builds
     rmatcher = [not_(bs.c.reason.like(rpat)) for rpat in BUILDSET_REASON_SQL_EXCLUDE]
     if len(rmatcher) > 0:
 	    q = q.where(and_(*rmatcher))
+    
+    # get one change per sourcestamp and platform (ingnore multiple changes in one push)
+    q = q.group_by(b.c.brid)
 
+    return q
+
+def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None, masters=None, int_size=0, maxb=0):
+    """Get wait times and statistics for buildpool.
+
+    Input: pool - name of the pool (e.g. buildpool, or trybuildpool)
+           minutes_per_block - length of wait time block in minutes
+           starttime - start time (UNIX timestamp in seconds), if not specified, endtime minus 24 hours
+           endtime - end time (UNIX timestamp in seconds), if not specified, starttime plus 24 hours or 
+                     current time (if starttime is not specified either)
+           masters - if not spefified fetches the builds only for masters in pool (BUILDPOOL_MASTERS)
+           int_size - break down results per interval (in seconds), if specified
+           maxb - maximum block size; for wait times larger than maxb, group into the largest block
+    Output: wait times
+    """
+    starttime, endtime = get_time_interval(starttime, endtime)
+    masters = masters or BUILDPOOL_MASTERS[pool]
+    # detailed wait times per intervals?
+    int_no = int((endtime-starttime)/int_size) if int_size else 1
+    int_idx = 0
+    maxb = int(maxb/minutes_per_block)*minutes_per_block
+    
+    # build query and execute
+    q = WaitTimesQuery(pool, starttime, endtime, masters)
     query_results = q.execute()
 
-    wt = dict(pool=pool, masters=masters, total=0, wt={0:0}, starttime=starttime, endtime=endtime, 
+    # compute stats and build response
+    wt = dict(pool=pool, masters=masters, total=0, wt={}, starttime=starttime, endtime=endtime, 
         minutes_per_block=minutes_per_block, platforms={}, otherplatforms=set(), unknownbuilders=set(),
-        no_changes=0)
+        no_changes=0, detailed=bool(int_size), maxb=maxb, int_size=int_size)
     for r in query_results:
-        # start time is changes.when_timestamp, or buildrequests.submitted_at if build has no changes
-        stime = r['when_timestamp']
-        if not stime:
-            stime = r['submitted_at']
-            wt['no_changes']+=1
-        # end time is builds.start_time
-        etime = r['start_time']
         buildername = r['buildername']
         platform = get_platform(buildername)
      
@@ -236,28 +263,59 @@ def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None):
         if platform == 'other':		# other platforms (NOT excluded)
             wt['otherplatforms'].add(buildername)
      
-        duration_min = (etime - stime)/60.0
+        # start time is changes.when_timestamp, or buildrequests.submitted_at if build has no changes
+        stime = r['when_timestamp']
+        if not stime:
+            stime = r['submitted_at']
+            wt['no_changes']+=1
+        # end time is builds.start_time
+        etime = r['start_time']
+
+        # block number
+        duration_min = (etime - stime)/60.0 if stime<=etime else 0
         block_no = int(math.floor(duration_min/minutes_per_block))*minutes_per_block
-     
-        update_wait_time(wt, platform, block_no)
+        if maxb: block_no = min(block_no, maxb)
+        # interval index
+        if int_size: int_idx = int((stime-starttime)/int_size)
+
+        update_wait_time(wt, platform, block_no, int_no=int_no, int_idx=int_idx, maxb=maxb)
      	
-    wt['otherplatforms'] = list(wt['otherplatforms'])		# sets are not JSON serializable 
+    wt['otherplatforms'] = list(wt['otherplatforms'])	# sets are not JSON serializable 
     wt['unknownbuilders'] = list(wt['unknownbuilders'])	# make lists
 
     return wt
 
-def update_wait_time(wt, p, block_no):
+def update_wait_time(wt, p, block_no, int_no=1, int_idx=0, maxb=None):
+    """Update the wait time object received as parameter.
+
+    Input: wt - wait time object
+           p - platform (one in PLATFORMS_BUILDERNAME keys)
+           block_no - block number info to update
+           int_size - break down results per interval (in seconds), if specified
+           maxb - maximum block size; for wait times larger than maxb, group into the largest block
+    Output: None
+    """
 	# update overall wait times
-    wt['wt'][block_no] = wt['wt'].get(block_no, 0) + 1
-    wt['total'] += 1
+    if block_no not in wt['wt']: wt['wt'][block_no] = {'total': 0, 'interval': [0]*int_no}
+    wt['wt'][block_no]['total']+=1
+    wt['total']+=1
+
+    wt['wt'][block_no]['interval'][int_idx]+=1
 
     # update platform specific wait times
     if p not in wt['platforms']:
-        wt['platforms'][p] = dict(total=0, wt={0:0})
-    wt['platforms'][p]['wt'][block_no] = wt['platforms'][p]['wt'].get(block_no, 0) + 1
-    wt['platforms'][p]['total'] += 1
+        wt['platforms'][p] = dict(total=0, wt={})
+    if block_no not in wt['platforms'][p]['wt']: 
+        wt['platforms'][p]['wt'][block_no] = {'total': 0, 'interval': []}
+    wt['platforms'][p]['wt'][block_no]['total']+=1
+    wt['platforms'][p]['total']+=1
 
 def get_platform(buildername):
+    """Returns the platform name for a buildername.
+
+    Input: buildername - buildername field value from buildrequests schedulerdb table
+    Output: platform (one in PLATFORMS_BUILDERNAME keys: linux, linux64, ...)
+    """
     bname = buildername.lower()
     
     if any(filter(lambda p: p.match(buildername), PLATFORMS_BUILDERNAME_EXCLUDE)):
@@ -271,8 +329,19 @@ def get_platform(buildername):
     return 'other'
 
 def get_time_interval(starttime, endtime):
+    """Returns (sarttime2, endtime2) tuple, where the starttime2 is the exact 
+    value of input parameter starttime if specified, or endtime minus 24 hours
+    if not. endtime2 is the exact value of input parameter endtime if specified,
+    or starttime plus 24 hours or current time (if starttime is not specified 
+    either).
+
+    Input: stattime - start time (UNIX timestamp in seconds)
+           endtime - end time (UNIX timestamp in seconds)
+    Output: (stattime2, endtime2)
+    """
+    nowtime = time.time()
     if not endtime:
-        endtime = min(starttime+24*3600 if starttime else time.time(), time.time())
+        endtime = min(starttime+24*3600 if starttime else nowtime, nowtime)
     if not starttime:
         starttime = endtime-24*3600
 
