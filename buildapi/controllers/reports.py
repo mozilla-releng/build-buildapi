@@ -42,7 +42,7 @@ class ReportsController(BaseController):
         else:
             return render('/sourcestamps.mako')
 
-    #@beaker_cache(query_args=True)
+    @beaker_cache(query_args=True)
     def waittimes(self, pool='buildpool'):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
@@ -68,14 +68,12 @@ class ReportsController(BaseController):
                 params['minutes_per_block'] = int(request.GET.getone('mpb'))
             if 'int' in request.GET:
                 params['int_size'] = int(request.GET.getone('int'))
+            else:
+                params['int_size'] = 3600*2
             if 'maxb' in request.GET:
                 params['maxb'] = int(request.GET.getone('maxb'))
         except ValueError, e:
             abort(400, detail='Unsupported non numeric parameter value: %s' % e)
-
-        int_size = params['int_size'] if 'int_size' in params else 3600*6
-        if not int_size:
-            abort(400, detail='Time interval (int parameter) must be higher than 0: %s.' % int_size)
 
         @beaker_cache(expire=600, cache_response=False)
         def getReport(**params):
