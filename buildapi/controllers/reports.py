@@ -10,23 +10,15 @@ from buildapi.lib.base import BaseController, render
 from buildapi.lib.visualization import gviz_pushes
 from buildapi.model.pushes import GetPushes
 
-import time
-
-log = logging.getLogger(__name__)
-
-class SourcestampsController(BaseController):
-
-    def __init__(self, **kwargs):
-        BaseController.__init__(self, **kwargs)
-
+class ReportsController(BaseController):
     @beaker_cache(query_args=True)
-    def index(self):
+    def sourcestamps(self):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
             abort(400, detail='Unsupported format: %s' % format)
-        
+
         params = {}
-        try: 
+        try:
             if 'starttime' in request.GET:
                 params['starttime'] = float(request.GET.getone('starttime'))
             if 'endtime' in request.GET:
@@ -35,10 +27,10 @@ class SourcestampsController(BaseController):
                 params['int_size'] = int(request.GET.getone('int'))
         except ValueError, e:
             abort(400, detail='Unsupported non numeric parameter value: %s' % e)
-        
+
         if 'int_size' not in params or params['int_size']<=0:
             abort(400, detail='Time interval (int parameter) must be higher than 0: %s.' % int_size)
-  
+
         c.report = GetPushes(**params)
 
         if format == 'json':
