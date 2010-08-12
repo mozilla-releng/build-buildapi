@@ -24,7 +24,7 @@ class ChartsController(BaseController):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
             abort(400, detail='Unsupported format: %s' % format)
-        
+
         if pool not in BUILDPOOL_MASTERS:
             abort(400, detail='Unknown build pool name: %s. Try one of the following: %s.' % 
                 (pool, ', '.join(BUILDPOOL_MASTERS.keys())))
@@ -44,11 +44,11 @@ class ChartsController(BaseController):
                 params['int_size'] = int(request.GET.getone('int'))
             if 'mpb' in request.GET:
                 params['minutes_per_block'] = int(request.GET.getone('mpb'))
-    	    if 'maxb' in request.GET:
-    	        params['maxb'] = int(request.GET.getone('maxb'))
+            if 'maxb' in request.GET:
+                params['maxb'] = int(request.GET.getone('maxb'))
         except ValueError, e:
             abort(400, detail='Unsupported non numeric parameter value: %s' % e)
-        
+
         int_size = params['int_size'] if 'int_size' in params else 0
         if not int_size:
             abort(400, detail='Time interval (int parameter) must be higher than 0: %s.' % int_size)
@@ -58,7 +58,11 @@ class ChartsController(BaseController):
         c.starttime, c.endtime = get_time_interval(starttime, endtime)
         c.pool = params['pool']
 
-        c.report = GetWaitTimes(**params)
+        s = time.time()
+        @beaker_cache(expire=600, cache_response=False)
+        def getReport(**params):
+            return GetWaitTimes(**params)
+        c.report = getReport(**params)
 
         if format == 'json':
             return c.report.jsonify()
