@@ -42,6 +42,8 @@ def make_map(config):
     map.connect('/charts', controller='charts', action='index')
     map.connect('/charts/{pool}', controller='charts', action='index')
 
+    map.connect('/sourcestamps', controller='sourcestamps', action='index')
+
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
 

@@ -42,3 +42,14 @@ function updateUrlParams(new_params) {
 
     return url + '?' + new_q.join('&');
 }
+
+function initToggleBoxes(id1, id2, button_id1, button_id2) {
+    var button_id1 = button_id1 || id1 + " a";
+    var button_id2 = button_id2 || id2 + " a";
+    $(button_id1 + " , " + button_id2).click(function() {
+       $(id1).toggle();
+       $(id2).toggle();
+
+       return false;
+    });
+}

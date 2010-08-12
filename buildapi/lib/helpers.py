@@ -71,11 +71,11 @@ class Pacific(USTimeZone):
 pacific_tz = Pacific()
 time_format = '%a, %d %b %Y %H:%M:%S %z (%Z)'
 
-def pacific_time(timestamp):
+def pacific_time(timestamp, format=time_format):
     """Convert a time expressed in seconds since the epoch to a string representing Pacific time. 
     If secs is not provided or None, the current time as returned by time() is used.
     """
     if not timestamp: timestamp = time.time()
     dt = datetime.datetime.fromtimestamp(timestamp, pacific_tz)
 
-    return dt.strftime(time_format)
+    return dt.strftime(format)

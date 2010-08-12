@@ -8,11 +8,14 @@ import tzone
 
 SMTP_SENDER_DEFAULT='cltbld@build.mozilla.com'
 SMTP_SERVER_DEFAULT='localhost'
+SMTP_NO_TRIES_DEFAULT=1
+SMTP_SLEEP_TIME_DEFAULT=10
 
 WT_SERVICE_DEFAULT='http://localhost:5000/waittimes'
 WT_POOL_DEFAULT='buildpool'
 WT_MPB_DEFAULT=15 			# minutes_per_block
 WT_RECEIVERS_DEFAULT=[]
+WT_RECEIVERS_BCC_DEFAULT=[]
 WT_STARTTIME_DEFAULT=None
 WT_ENDTIME_DEFAULT=None
 
@@ -67,7 +70,7 @@ def format_wait_times_stats(stats, minutes_per_block, total=0):
            total - number of all build requests for this platform
     Ouput: string - formatted text
     """
-    if not total: total = sum(stats.values())
+    if not total: total = sum([w['total'] for w in stats.values()])
 
     text = []
     max_block = max(map(int, stats.keys()))+1 if stats.keys() else 0
@@ -107,9 +110,9 @@ def wtservice_fetch(url):
     text = resp.read()
     wait_times = simplejson.loads(text)
 
-    return wait_times['waittimes']
+    return wait_times
 	
-def mail_send(body, subject, sender, receivers, server):
+def mail_send(body, subject, sender, receivers, server, receivers_bcc=[]):
     """Sends an e-mail. This method will return normally if the mail is accepted 
     for at least one recipient. 
     
@@ -117,6 +120,7 @@ def mail_send(body, subject, sender, receivers, server):
            subject - subject
            sender - sender's e-mail address
            receivers - list of receiver e-mails
+           receivers_bcc - list of BCC receiver e-mails
            server - SMTP server
     Output: dictionary, with one entry for each recipient that was refused
     Raised Errors: any error raised by stmplib.STMP and stmp.sendmail. e.g. 
@@ -131,24 +135,28 @@ def mail_send(body, subject, sender, receivers, server):
     message = "\n".join(headers) + "\n" + body
     
     smtp = smtplib.SMTP(server)
-    refused_rcv = smtp.sendmail(sender, receivers, message)
+    refused_rcv = smtp.sendmail(sender, receivers + receivers_bcc, message)
     smtp.quit()
 
     return refused_rcv
 	
 def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, receivers=WT_RECEIVERS_DEFAULT, 
-        wt_service=WT_SERVICE_DEFAULT, pool=WT_POOL_DEFAULT, starttime=WT_STARTTIME_DEFAULT, 
-        endtime=WT_ENDTIME_DEFAULT, minutes_per_block=WT_MPB_DEFAULT):
+        receivers_bcc=WT_RECEIVERS_BCC_DEFAULT, wt_service=WT_SERVICE_DEFAULT, pool=WT_POOL_DEFAULT, 
+        starttime=WT_STARTTIME_DEFAULT, endtime=WT_ENDTIME_DEFAULT, minutes_per_block=WT_MPB_DEFAULT, 
+        tries=SMTP_NO_TRIES_DEFAULT, sleep=SMTP_SLEEP_TIME_DEFAULT):
     """Mails wait times. Main function to call for mailing wait times.
     
     Input: server - SMTP server
            sender - sender's e-mail address
            receivers - list of receiver e-mails
+           receivers_bcc - list of bcc receiver e-mails
            wt_service - wait times service base URL, e.g. http://domain/waittimes
            pool - pool name
            minutes_per_block - minutes per block
            starttime - start time in seconds since epoch, UTC (end time minus 24 hours, if not specified)
            endtime - end time in seconds since epoch, UTC (start time plus 24 hours, if not specified)
+           tries - number of tries for sending e-mails, in case of errors, before giving up
+           sleep - number of seconds to sleep before retrying to send e-mail, in case of failure
     Output: Dictionary containing the status of the operation: success or error, and additional information. 
            In case of success, it looks like: {status: 'success', refused: refused_rcv}
            , where refused_rcv is a dictionary, with one entry for each recipient that was refused, thus 
@@ -160,19 +168,23 @@ def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, rece
         endtime=endtime, minutes_per_block=minutes_per_block)
 
     err_msg = ''
-    try:
-        wait_times = wtservice_fetch(wt_full_url)
-        subject, body = format_wait_times(wait_times)
-        refused_rcv = mail_send(body, subject, sender, receivers, server)
-        
-        msg = 'E-mail (subject: %s) send successfully to at least one receiver from: %s \
-        (refused recipients: %s)' % (subject, ', '.join(receivers), refused_rcv)
+    while tries:
+        try:
+            wait_times = wtservice_fetch(wt_full_url)
+            subject, body = format_wait_times(wait_times)
+            refused_rcv = mail_send(body, subject, sender, receivers, server, receivers_bcc=receivers_bcc)
+            
+            msg = 'E-mail (subject: %s) send successfully to at least one receiver from: %s \
+                (refused recipients: %s)' % (subject, ', '.join(receivers + receivers_bcc), refused_rcv)
 
-        return {'status': 'success', 'refused': refused_rcv, 'msg': msg}
-    except urllib2.URLError, e:
-        err_msg = 'Error: fetching wait times from location %s: %s' % (wt_full_url, e)
-    except Exception, e:
-        err_msg = 'Error: unable to send email (Cause: %s)' % e
+            return {'status': 'success', 'refused': refused_rcv, 'msg': msg}
+        except urllib2.URLError, e:
+            err_msg = 'Error: fetching wait times from location %s: %s' % (wt_full_url, e)
+        except Exception, e:
+            err_msg = 'Error: unable to send email (Cause: %s)' % e
+        
+        time.sleep(sleep)
+        tries -= 1
     
     return {'status': 'error', 'msg': err_msg}
 
@@ -184,16 +196,20 @@ if __name__ == '__main__':
         smtp_server = SMTP_SERVER_DEFAULT,
         sender = SMTP_SENDER_DEFAULT,
         receivers = WT_RECEIVERS_DEFAULT,
+        receivers_bcc = WT_RECEIVERS_BCC_DEFAULT,
         wt_service = WT_SERVICE_DEFAULT,
         pool = WT_POOL_DEFAULT,
         minutes_per_block = WT_MPB_DEFAULT,
         starttime = WT_STARTTIME_DEFAULT,
         endtime = WT_ENDTIME_DEFAULT,
+        tries = SMTP_NO_TRIES_DEFAULT,
+        sleep = SMTP_SLEEP_TIME_DEFAULT,
     )
 
     parser.add_option("-S", "--smtp", dest="smtp_server", help="SMTP server")    
     parser.add_option("-f", "--from", dest="sender", help="Sender's e-mail address")
     parser.add_option("-a", "--address", dest="receivers", action="append", help="Receiver e-mail address")
+    parser.add_option("-b", "--BCC", dest="receivers_bcc", action="append", help="BCC receiver e-mail address")
     parser.add_option("-W", "--wt", dest="wt_service", help="Wait times service base URL, e.g. http://domain/waittimes")
     parser.add_option("-p", "--pool", dest="pool", help="Pool name")
     parser.add_option("-m", "--minutes-per-block", type="int", help="How many minutes per block", dest="minutes_per_block")
@@ -201,12 +217,16 @@ if __name__ == '__main__':
         help="Start time in seconds since epoch, UTC. If not specified, it will equal end time minus 24 hours")
     parser.add_option("-e", "--end-time", dest="endtime", type="int", 
         help="End time in seconds since epoch, UTC. If not specified, it will equal start time plus 24 hours")
+    parser.add_option("-t", "--tries", dest="tries", type="int", 
+        help="Number of tries for sending e-mails, default=%s." % SMTP_NO_TRIES_DEFAULT)
+    parser.add_option("-z", "--sleep", dest="sleep", type="int", 
+        help="Number of seconds to sleep before retrying to send e-mail, in case of failure, default=%s." % SMTP_SLEEP_TIME_DEFAULT)
 
     op, args = parser.parse_args()
 
-    resp = mail_wait_times(server=op.smtp_server, sender=op.sender, receivers=op.receivers, 
+    resp = mail_wait_times(server=op.smtp_server, sender=op.sender, receivers=op.receivers, receivers_bcc=op.receivers_bcc,
         wt_service=op.wt_service, pool=op.pool, starttime=op.starttime, endtime=op.endtime, 
-        minutes_per_block=op.minutes_per_block)
+        minutes_per_block=op.minutes_per_block, tries=op.tries, sleep=op.sleep)
 
     print resp['msg'] 
     if resp['status'] == 'error':
