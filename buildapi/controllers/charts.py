@@ -58,7 +58,6 @@ class ChartsController(BaseController):
         c.starttime, c.endtime = get_time_interval(starttime, endtime)
         c.pool = params['pool']
 
-        s = time.time()
         @beaker_cache(expire=600, cache_response=False)
         def getReport(**params):
             return GetWaitTimes(**params)
