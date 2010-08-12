@@ -9,6 +9,7 @@ ${h.tags.javascript_link(
     url('/anytime/anytime.js'),
     url('/anytime/anytimetz.js'),
     url('/scripts.js'),
+    url('/gviz.js'),
     )}
 <style type="text/css">
 @import "${url('/jquery/css/smoothness/jquery-ui-1.8.1.custom.css')}";
@@ -17,6 +18,52 @@ ${h.tags.javascript_link(
 @import "${url('/anytime/anytime.css')}";
 @import "${url('/build-status.css')}";
 </style>
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript">
+    google.load('visualization', '1', {'packages':['corechart']});
+    google.setOnLoadCallback(initialize);
+
+    function initialize() {
+        var data_url = updateUrlParams({format:'chart', num: 'ptg'});
+        var query = new google.visualization.Query(data_url);
+        query.send(handleQueryResponse_WaitTimesPercentage);
+
+        ${c.jscode_data}
+        drawColumnChart(document.getElementById('stacked_column_chart_full_div'), jscode_data, true, 'Wait Times - Column Chart Job Numbers Stacked');
+        drawColumnChart(document.getElementById('column_chart_full_div'), jscode_data, false, 'Wait Times - Column Chart Job Numbers');
+        drawAreaChart(document.getElementById('stacked_area_chart_full_div'), jscode_data, true, 'Wait Times - Area Chart Job Numbers Stacked');
+        drawAreaChart(document.getElementById('area_chart_full_div'), jscode_data, false, 'Wait Times - Area Chart Job Numbers');
+        drawLineChart(document.getElementById('line_chart_full_div'), jscode_data, false, 'Wait Times - Line Chart Job Numbers');
+    }
+
+    function handleQueryResponse_WaitTimesFull(response) {
+        if (response.isError()) {
+            console.error('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+        }
+
+        var data = response.getDataTable();
+        drawColumnChart(document.getElementById('column_chart_div'), data, true);
+    }
+
+    function handleQueryResponse_WaitTimesPercentage(response) {
+        if (response.isError()) {
+            console.error('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+        }
+
+        var data = response.getDataTable();
+        drawAreaChart(document.getElementById('stacked_area_chart_div'), data, true, 'Wait Times - Area Chart Percentage Stacked');
+        drawAreaChart(document.getElementById('area_chart_div'), data, false, 'Wait Times - Area Chart Percentage');
+    }
+
+    $(document).ready(function() {
+        $("#starttime, #endtime").AnyTime_picker({ format: AnyTime_picker_format });
+        $("#timeIntervalButton").click(updateWindowLocation);
+
+        initAnyTimePickers();	
+    });
+</script>
 </head>
 <%
   import time
@@ -77,6 +124,43 @@ and <b>${h.pacific_time(wt.endtime)}</b></div>
 
 <br/><br/>
 The number on the <b>Number</b> column is how many minutes a build waited to start, rounded down.<br/><br/>
+</span>
+</div>
+
+<div class="wt-column">
+<h4>Platform break down</h4>
+
+% for platform in sorted(wt.get_platforms()):
+    <% ptotal = wt.get_total(platform=platform) %>
+    
+    <div class="wt-container">
+    <div class="wt-container-title">${platform}: ${ptotal}</div>
+	<table class="display wt-platforms" cellpadding="0" cellspacing="0" border="0">
+	<thead><tr><th>Wait Time</th><th>Number</th><th>Percentage</th></tr></thead>
+	<tbody>
+        % for block in wt.get_blocks(platform=platform):
+            <% bval = wt.get_wait_times(block, platform=platform).total %>
+            <% bper = "%.2f%%" % (bval*100./ptotal) if ptotal else "-" %>
+            <tr class="gradeA"><td>${block}</td><td>${bval}</td><td>${bper}</td></tr>
+        % endfor
+    </tbody></table>
+    </div>
+% endfor
+</div>
+
+<h2>Area Charts</h2>
+<div id="stacked_area_chart_div"></div>
+<div id="area_chart_div"></div>
+<div id="stacked_area_chart_full_div"></div>
+<div id="area_chart_full_div"></div>
+
+<h2>Column Charts</h2>
+<div id="stacked_column_chart_full_div"></div>
+<dif id="column_chart_full_div"></div>
+
+<h2>Line Charts</h2>
+<div id="line_chart_full_div"></div>
+
 <b>Builds with no changes</b> (usually nightly builds): ${wt.no_changes}<br/><br/>
 Rebuilds and forced rebuilds were excluded from the statistics.<br/><br/><br/>
 % if wt.otherplatforms:
@@ -105,29 +189,6 @@ Rebuilds and forced rebuilds were excluded from the statistics.<br/><br/><br/>
     % endfor
 	</ul><a href="">less...</a></div>
 % endif
-</span>
-</div>
-
-<div class="wt-column">
-<h4>Platform break down</h4>
-
-% for platform in sorted(wt.get_platforms()):
-    <% ptotal = wt.get_total(platform=platform) %>
-    
-    <div class="wt-container">
-    <div class="wt-container-title">${platform}: ${ptotal}</div>
-	<table class="display wt-platforms" cellpadding="0" cellspacing="0" border="0">
-	<thead><tr><th>Wait Time</th><th>Number</th><th>Percentage</th></tr></thead>
-	<tbody>
-        % for block in wt.get_blocks(platform=platform):
-            <% bval = wt.get_wait_times(block, platform=platform).total %>
-            <% bper = "%.2f%%" % (bval*100./ptotal) if ptotal else "-" %>
-            <tr class="gradeA"><td>${block}</td><td>${bval}</td><td>${bper}</td></tr>
-        % endfor
-    </tbody></table>
-    </div>
-% endfor
-</div>
 
 </div>
 <div class="clear"></div>
