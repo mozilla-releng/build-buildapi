@@ -74,7 +74,7 @@ ${h.tags.javascript_link(
 <div>
 <p>Build pool: 
 <%
-  params = request.params.copy()
+  params = dict(request.params)
   if 'pool' in params:
       del params['pool']
 %>
