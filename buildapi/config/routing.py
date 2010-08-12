@@ -40,6 +40,7 @@ def make_map(config):
     map.connect('/charts/{pool}', controller='charts', action='index')
 
     map.connect('/reports/{action}', controller='reports')
+    map.connect('/reports/waittimes/{pool}', controller='reports', action='waittimes')
 
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')

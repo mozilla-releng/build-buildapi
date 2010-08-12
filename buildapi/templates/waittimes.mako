@@ -26,20 +26,25 @@ ${h.tags.javascript_link(
 <h1>Wait Times</h1>
 <div>
 <p>Build pool: 
+<%
+  params = request.params.copy()
+  if 'pool' in params:
+      del params['pool']
+%>
 % if wt.pool == 'buildpool':
     <b>buildpool</b> |
 % else:
-    <a href="${url.current(pool='buildpool', **dict(request.params))}">buildpool</a> |
+    <a href="${url.current(pool='buildpool', **params)}">buildpool</a> |
 % endif
 % if wt.pool == 'trybuildpool':
     <b>trybuildpool</b> |
 % else:
-    <a href="${url.current(pool='trybuildpool', **dict(request.params))}">trybuildpool</a> |
+    <a href="${url.current(pool='trybuildpool', **params)}">trybuildpool</a> |
 % endif
 % if wt.pool == 'testpool':
     <b>testpool</b>
 % else:
-    <a href="${url.current(pool='testpool', **dict(request.params))}">testpool</a>
+    <a href="${url.current(pool='testpool', **params)}">testpool</a>
 % endif
 </p><p>
 <label for="starttime">Jobs submitted between</label>
