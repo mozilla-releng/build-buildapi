@@ -1,3 +1,4 @@
+
 import logging
 
 from pylons import request, response, session, tmpl_context as c, url
@@ -12,14 +13,16 @@ log = logging.getLogger(__name__)
 class ResultsController(BaseController):
 
     def __init__(self, pending=True, running=False, complete=False,
+                 revision=False,
                  template=None, **kwargs):
         BaseController.__init__(self, **kwargs)
         self.pending  = pending
         self.running  = running
         self.complete = complete
+        self.revision = revision
         self.template = template
 
-    def index(self, branch=None, platform=None):
+    def index(self, branch=None, platform=None, rev=None):
         if 'format' in request.GET:
             format = request.GET.getone('format')
         else:
@@ -32,10 +35,17 @@ class ResultsController(BaseController):
         elif 'branch' in request.GET:
             branch = request.GET.getall('branch')
 
+        if rev is not None:
+            rev = [rev]
+        elif 'rev' in request.GET:
+            rev = request.GET.getone('rev')
+
         if self.pending:
             c.pending_builds = GetBuilds(branch=branch, type='pending')
         if self.running:
             c.running_builds = GetBuilds(branch=branch, type='running')
+        if self.revision:
+            c.all_builds = GetBuilds(branch=branch, type='revision', rev=rev)
 
         # Return a rendered template
         # or, return a json blob
@@ -48,4 +58,6 @@ class ResultsController(BaseController):
               results['pending'] = c.pending_builds
             if self.running:
               results['running'] = c.running_builds
+            if self.revision:
+              results['all'] = c.all_builds
             return self.jsonify(results)

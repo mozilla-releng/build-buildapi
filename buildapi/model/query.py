@@ -37,7 +37,7 @@ def GetBranchName(longname):
 
     return 'Unknown'
 
-def GetBuilds(branch=None, type='pending'):
+def GetBuilds(branch=None, type='pending', rev=None):
     b  = meta.scheduler_db_meta.tables['builds']
     br = meta.scheduler_db_meta.tables['buildrequests']
     bs = meta.scheduler_db_meta.tables['buildsets']
@@ -64,6 +64,26 @@ def GetBuilds(branch=None, type='pending'):
                          br.c.buildsetid==bs.c.id,
                          bs.c.sourcestampid==ss.c.id))
         q = q.where(and_(br.c.claimed_at > 0,br.c.complete == 0))
+    # use an outer join to catch pending builds
+    # can probably trim the list of columns a bunch
+    elif type == 'revision':
+        q = join(br, bs, br.c.buildsetid==bs.c.id) \
+                .join(ss, bs.c.sourcestampid==ss.c.id) \
+                .outerjoin(b, br.c.id == b.c.brid) \
+                .select(ss.c.revision.like(rev[0] + '%')) \
+                .with_only_columns([
+                    br.c.id,
+                    br.c.buildsetid,
+                    ss.c.branch,
+                    ss.c.revision,
+                    br.c.buildername,
+                    br.c.submitted_at,
+                    br.c.claimed_at,
+                    br.c.claimed_by_name,
+                    b.c.start_time,
+                    b.c.finish_time,
+                    b.c.number,
+                    br.c.results])
 
     # ignore nightlies, bug 570814
     q = q.where(ss.c.revision != None)
