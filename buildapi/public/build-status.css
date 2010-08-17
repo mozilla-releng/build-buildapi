@@ -3,18 +3,18 @@
     background-color: #72ff75 !important;
 }
 
-/* failure */
-.result1 {
-    background-color: red;
-}
-
 /* warnings */
-.result2 {
+.result1 {
     background-color: orange;
 }
 
+/* failure */
+.result2 {
+    background-color: red;
+}
+
 /* exception */
-.result3 {
+.result4 {
     background-color: #c000c0;
 }
 
