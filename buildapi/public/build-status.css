@@ -21,10 +21,12 @@
 /* running */
 .running {
     background-color: yellow;
+}
 
 /* pending */
 .pending {
     background-color: gray;
+}
 
 .wt-column, .wt-column-s {
 	display:inline; margin:0px 10px 0px;
