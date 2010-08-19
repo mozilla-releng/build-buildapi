@@ -11,7 +11,7 @@ SMTP_SERVER_DEFAULT='localhost'
 SMTP_NO_TRIES_DEFAULT=1
 SMTP_SLEEP_TIME_DEFAULT=10
 
-WT_SERVICE_DEFAULT='http://localhost:5000/waittimes'
+WT_SERVICE_DEFAULT='http://localhost:5000/reports/waittimes'
 WT_POOL_DEFAULT='buildpool'
 WT_MPB_DEFAULT=15                       # minutes_per_block
 WT_RECEIVERS_DEFAULT=[]
@@ -53,11 +53,16 @@ def format_wait_times(wait_times):
     text.append("The number on the left is how many minutes a build waited to start, rounded down.\n")
     text.append("Builds with no changes (usually nightly builds): %s.\n" % wait_times['no_changes'])
     text.append("Rebuilds and forced rebuilds were excluded from the statistics.\n\n")
+
+    if wait_times['pending']:
+        text.append("Jobs still waiting (have not started yet): %s:" % len(wait_times['pending']))
+        text.append(', '.join(wait_times['pending'][:20]) + (", ..." if len(wait_times['pending']) > 20 else "") + "\n")
     if wait_times['otherplatforms']:
         text.append("Other platforms lister under 'other' platforms: %s.\n"
             % ', '.join(wait_times['otherplatforms']))
     if wait_times['unknownbuilders']:
         text.append("Unknown builders (excluded from the stats): %s.\n\n" % ', '.join(wait_times['unknownbuilders']))
+    text.append("Current backlog: http://build.mozilla.org/builds/pending/index.html\n")
     text.append("Generated at %s. All times are Mountain View, CA (US/Pacific)." % tzone.pacific_time(None))
 
     return (title, '\n'.join(text))
@@ -85,8 +90,8 @@ def format_wait_times_stats(stats, minutes_per_block, total=0):
 def wtservice_get_full_url(wt_service=WT_SERVICE_DEFAULT,
         pool='buildpool', starttime=None, endtime=None, minutes_per_block=None):
     """Returns the full request URL to the service providing the wait times.
-
-    Input: wt_service - base URL for service, default: http://localhost:5000/waittimes
+    
+    Input: wt_service - base URL for service, default: http://localhost:5000/reports/waittimes
            pool - pool name, default: buildpool
            starttime - start time, default: None (server's default will be used)
            endtime - end time, default: None (server's default will be used)
@@ -179,7 +184,7 @@ def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, rece
 
             return {'status': 'success', 'refused': refused_rcv, 'msg': msg}
         except urllib2.URLError, e:
-            err_msg = 'Error: fetching wait times from location %s: %s' % (wt_full_url, e)
+            err_msg = 'Error: fetching wait times from location %s : %s' % (wt_full_url, e)
         except Exception, e:
             err_msg = 'Error: unable to send email (Cause: %s)' % e
 

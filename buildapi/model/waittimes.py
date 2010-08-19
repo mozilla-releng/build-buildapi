@@ -42,14 +42,14 @@ BUILDPOOL_MASTERS = {
     'testpool': ['test-master01', 'test-master02', 'talos-master02'],
 }
 
-def WaitTimesQuery(starttime, endtime, masters):
+def WaitTimesQuery(starttime, endtime, pool):
     """Constructs the sqlalchemy query for fetching all wait times for a buildpool 
     in the specified time interval.
     
     Input: pool - name of the pool (e.g. buildpool, or trybuildpool)
            starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
-           masters - if not spefified fetches the builds only for masters in pool (BUILDPOOL_MASTERS)
+           pool - fetches the builds only for masters in pool (BUILDPOOL_MASTERS)
     Output: query
     """
     b  = meta.scheduler_db_meta.tables['builds']
@@ -59,32 +59,35 @@ def WaitTimesQuery(starttime, endtime, masters):
     sch = meta.scheduler_db_meta.tables['sourcestamp_changes']
     c = meta.scheduler_db_meta.tables['changes']
 
-    q = join(b, br, b.c.brid==br.c.id) \
-               .join(bs, bs.c.id==br.c.buildsetid) \
-               .join(s, s.c.id==bs.c.sourcestampid) \
-               .outerjoin(sch, sch.c.sourcestampid==s.c.id) \
-               .outerjoin(c, c.c.changeid==sch.c.changeid) \
-           .select(br.c.complete==1) \
-           .with_only_columns([br.c.buildername, b.c.start_time, br.c.submitted_at, c.c.when_timestamp])
+    q = outerjoin(br, b, b.c.brid==br.c.id) \
+            .join(bs, bs.c.id==br.c.buildsetid) \
+            .join(s, s.c.id==bs.c.sourcestampid) \
+            .outerjoin(sch, sch.c.sourcestampid==s.c.id) \
+            .outerjoin(c, c.c.changeid==sch.c.changeid) \
+            .select() \
+            .with_only_columns([br.c.buildername, b.c.start_time, br.c.claimed_at, br.c.submitted_at, c.c.when_timestamp])
 
     q = q.where(or_(c.c.when_timestamp>=starttime, br.c.submitted_at>=starttime))
     q = q.where(or_(c.c.when_timestamp<=endtime, br.c.submitted_at<=endtime))
         
     # filter by masters
+    masters = BUILDPOOL_MASTERS[pool]
     mnames_matcher = [br.c.claimed_by_name.startswith(master) for master in masters]
     if len(mnames_matcher) > 0:
-        q = q.where(or_(*mnames_matcher))    
+        pending_matcher_clause = get_pending_buildrequests_query_clause(br, pool)
+        q = q.where(or_(pending_matcher_clause, *mnames_matcher))
+
     # exclude all rebuilds and forced builds
     rmatcher = [not_(bs.c.reason.like(rpat)) for rpat in BUILDSET_REASON_SQL_EXCLUDE]
     if len(rmatcher) > 0:
 	    q = q.where(and_(*rmatcher))
     
     # get one change per sourcestamp and platform (ingnore multiple changes in one push)
-    q = q.group_by(b.c.brid)
+    q = q.group_by(br.c.id)
 
     return q
 
-def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None, masters=None, int_size=0, maxb=0):
+def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None, int_size=0, maxb=0):
     """Get wait times and statistics for buildpool.
 
     Input: pool - name of the pool (e.g. buildpool, or trybuildpool)
@@ -98,30 +101,22 @@ def GetWaitTimes(pool, minutes_per_block=15, starttime=None, endtime=None, maste
     Output: wait times report
     """
     starttime, endtime = get_time_interval(starttime, endtime)
-    masters = masters or BUILDPOOL_MASTERS[pool]
 
-    q = WaitTimesQuery(starttime, endtime, masters)
+    q = WaitTimesQuery(starttime, endtime, pool)
     q_results = q.execute()
 
-    report = WaitTimesReport(pool, starttime, endtime, minutes_per_block, maxb, int_size, masters)
+    report = WaitTimesReport(pool, starttime, endtime, minutes_per_block, maxb, int_size, BUILDPOOL_MASTERS[pool])
     for r in q_results:
         buildername = r['buildername']
         # start time is changes.when_timestamp, or buildrequests.submitted_at if build has no changes
         stime = r['when_timestamp'] or r['submitted_at']
         etime = r['start_time']
-        
+
         platform = get_platform(buildername)
         has_no_changes = not bool(r['when_timestamp'])
 
-        if not platform:			# excluded
-            report.unknownbuilders.add(buildername)
-            continue
-
-        if platform == 'other':		# other platforms (NOT excluded)
-            report.otherplatforms.add(buildername)
-
-        wt = WaitTime(stime, etime, platform)
-        report.add(wt, has_no_changes=has_no_changes)
+        wt = WaitTime(stime, etime, platform, buildername=buildername, has_no_changes=has_no_changes)
+        report.add(wt)
 
     return report
 
@@ -148,6 +143,7 @@ class WaitTimesReport(object):
 
         self.int_no = int((self.endtime-self.starttime-1)/self.int_size)+1 if self.int_size else 1
         self.no_changes = 0  # build requests with no revision number (e.g. nightly builds)
+        self.pending = []    # jobs that have not started yet
 
         self._wait_times = {0: WaitTimeIntervals(self.int_no)}
         self._platform_wait_times = {}
@@ -161,8 +157,9 @@ class WaitTimesReport(object):
         return self.starttime + int_idx*self.int_size
 
     def get_interval_index(self, stime):
-        return int((stime-self.starttime)/self.int_size) if self.int_size else 0
-	
+        t = stime - self.starttime if stime > self.starttime else 0
+        return int(t/self.int_size) if self.int_size else 0
+
     def get_platforms(self):
         return self._platform_totals.keys()
 
@@ -174,12 +171,24 @@ class WaitTimesReport(object):
         wt = self._wait_times if not platform else self._platform_wait_times[platform]
         return wt.get(block_no, WaitTimeIntervals(self.int_no))
 
-    def add(self, wt, has_no_changes=False):
+    def add(self, wt):
+        if not wt.platform:			# excluded
+            self.unknownbuilders.add(wt.buildername)
+            return
+
+        if not wt.etime:            # job has not started yet (still waiting)
+            self.pending.append(wt.buildername)  
+            return
+
+        if wt.platform == 'other':	# other platforms (NOT excluded)
+            self.otherplatforms.add(wt.buildername)
+
+	    if wt.has_no_changes: self.no_changes += 1
+        
         block_no = self._get_block_no(wt.stime, wt.etime)
+        s = wt.stime
         int_idx = self.get_interval_index(wt.stime)
         self._update_wait_times(wt.platform, block_no, int_idx)
-
-        if has_no_changes: self.no_changes += 1
 
     def _get_block_no(self, stime, etime):
         span = (etime - stime)/60.0 if stime<=etime else 0
@@ -215,6 +224,7 @@ class WaitTimesReport(object):
             'no_changes': self.no_changes,
             'otherplatforms': list(self.otherplatforms), 
             'unknownbuilders': list(self.unknownbuilders),
+            'pending': self.pending,
             'total': self.total,
             'wt': {},
             'platforms': {}
@@ -243,10 +253,12 @@ class WaitTimeIntervals(object):
         return {'total': self.total, 'intervals': self.intervals}
 
 class WaitTime(object):
-    def __init__(self, stime, etime, platform):
+    def __init__(self, stime, etime, platform, buildername=None, has_no_changes=False):
         self.stime = stime
         self.etime = etime
         self.platform = platform
+        self.buildername = buildername
+        self.has_no_changes = has_no_changes
 
 def get_platform(buildername):
     """Returns the platform name for a buildername.
@@ -265,3 +277,24 @@ def get_platform(buildername):
                 return platform
 
     return 'other'
+
+def get_pending_buildrequests_query_clause(br_table, pool):
+    """Pending jobs don't have buildrequests.claimed_by_name specified, therefore we need to 
+    catch the pool it belongs to by looking at buildrequests.buildername fields:
+    - buildpool: br.claimed_by_name == None and br.buildername NOT LIKE Rev3% and NOT LIKE % tryserver %
+    - trybuildpool: br.claimed_by_name == None and br.buildername NOT LIKE Rev3% and LIKE % tryserver %
+    - testpool: br.claimed_by_name == None and br.buildername LIKE Rev3%
+    """
+    if pool=='buildpool':
+        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0,
+            not_(br_table.c.buildername.like('Rev3%')), 
+            not_(br_table.c.buildername.like('% tryserver %')))
+    elif pool=='trybuildpool':
+        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0, 
+             not_(br_table.c.buildername.like('Rev3%')), 
+             br_table.c.buildername.like('% tryserver %'))
+    elif pool=='testpool':
+        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0, 
+               br_table.c.buildername.like('Rev3%'))
+
+    return None

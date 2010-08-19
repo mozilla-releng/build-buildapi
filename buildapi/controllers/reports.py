@@ -14,25 +14,12 @@ from buildapi.lib.visualization import gviz_waittimes
 
 class ReportsController(BaseController):
     @beaker_cache(query_args=True)
-    def sourcestamps(self):
+    def pushes(self):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
             abort(400, detail='Unsupported format: %s' % format)
 
-        params = {}
-        try:
-            if 'starttime' in request.GET:
-                params['starttime'] = float(request.GET.getone('starttime'))
-            if 'endtime' in request.GET:
-                params['endtime'] = float(request.GET.getone('endtime'))
-            if 'int' in request.GET:
-                params['int_size'] = int(request.GET.getone('int'))
-        except ValueError, e:
-            abort(400, detail='Unsupported non numeric parameter value: %s' % e)
-
-        if 'int_size' not in params or params['int_size']<=0:
-            abort(400, detail='Time interval (int parameter) must be higher than 0: %s.' % int_size)
-
+        params = self._get_report_params()
         c.report = GetPushes(**params)
 
         if format == 'json':
@@ -40,8 +27,8 @@ class ReportsController(BaseController):
         elif format == 'chart':
             return gviz_pushes(c.report)
         else:
-            return render('/sourcestamps.mako')
-
+            return render('/reports/pushes.mako')
+		
     @beaker_cache(query_args=True)
     def waittimes(self, pool='buildpool'):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
@@ -49,27 +36,18 @@ class ReportsController(BaseController):
             abort(400, detail='Unsupported format: %s' % format)
 
         if pool not in BUILDPOOL_MASTERS:
-            abort(400,
-                  detail='Unknown build pool name: %s. Try one of the following: %s.' %
+            abort(400, detail='Unknown build pool name: %s. Try one of the following: %s.' %
                     (pool, ', '.join(BUILDPOOL_MASTERS.keys())))
 
         num = request.GET.getone('num') if 'num' in request.GET else 'full'
         if num not in ('full', 'ptg'):
             abort(400, detail='Unknown wait times number format: %s. Try one of the following: ptg, full.' % num)
 
-        params = {}
+        params = self._get_report_params()
         params['pool'] = pool
         try:
-            if 'starttime' in request.GET:
-                params['starttime'] = float(request.GET.getone('starttime'))
-            if 'endtime' in request.GET:
-                params['endtime'] = float(request.GET.getone('endtime'))
             if 'mpb' in request.GET:
                 params['minutes_per_block'] = int(request.GET.getone('mpb'))
-            if 'int' in request.GET:
-                params['int_size'] = int(request.GET.getone('int'))
-            else:
-                params['int_size'] = 3600*2
             if 'maxb' in request.GET:
                 params['maxb'] = int(request.GET.getone('maxb'))
         except ValueError, e:
@@ -90,4 +68,23 @@ class ReportsController(BaseController):
             return gviz_waittimes(c.wait_times, num)
         else:
             c.jscode_data = gviz_waittimes(c.wait_times, num, resp_type='JSCode')
-            return render('/waittimes.mako')
+            return render('/reports/waittimes.mako')
+
+    def _get_report_params(self):
+        params = {}
+        try: 
+            if 'starttime' in request.GET:
+                params['starttime'] = float(request.GET.getone('starttime'))
+            if 'endtime' in request.GET:
+                params['endtime'] = float(request.GET.getone('endtime'))
+            if 'int' in request.GET:
+                params['int_size'] = int(request.GET.getone('int'))
+            else:
+                params['int_size'] = 3600*2
+        except ValueError, e:
+            abort(400, detail='Unsupported non numeric parameter value: %s' % e)
+        
+        if params['int_size'] < 0:
+            abort(400, detail='Time interval (int parameter) must be higher than 0: %s.' % params['int_size'])
+        
+        return params

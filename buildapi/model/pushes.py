@@ -11,6 +11,15 @@ SOURCESTAMPS_BRANCH = {
     'mozilla-1.9.2': [re.compile('^mozilla-1\.9\.2.+')],
     'mozilla-2.0': [re.compile('^mozilla-2\.0.+')],
     'try': [re.compile('^try$')],
+    'birch': [re.compile('^birch.+')],
+    'tracemonkey': [re.compile('^tracemonkey.+')],
+    'electrolysis': [re.compile('^electrolysis.+')],
+    'cedar': [re.compile('^cedar.+')],
+    'maple': [re.compile('^maple.+')],
+    'places': [re.compile('^places.+')],
+    'release-mozilla-central': [re.compile('^release-mozilla-central.+')],
+    'tryserver': [re.compile('^tryserver.+')],
+    'addontester': [re.compile('^addontester.+')],
 }
 
 def PushesQuery(starttime, endtime, branches=None):
@@ -99,7 +108,8 @@ class PushesReport(object):
         return self.starttime + int_idx*self.int_size
 
     def get_interval_index(self, stime):
-        return int((stime-self.starttime)/self.int_size) if self.int_size else 0
+        t = stime - self.starttime if stime > self.starttime else 0
+        return int(t/self.int_size) if self.int_size else 0
 
     def get_intervals(self, branch=None):
         if not branch: return self.intervals

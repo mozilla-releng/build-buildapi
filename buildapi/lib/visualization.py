@@ -22,7 +22,10 @@ def gviz_waittimes(report, num='full', resp_type='JSonResponse'):
     # gviz table description (columns)
     description = {'intervals': ('string', 'Interval')}
     for block_no in blocks: 
-        description[str(block_no)] = ('number', str(block_no))
+        collabel = str(block_no) + '-' + str(block_no+report.minutes_per_block)
+        if report.maxb and block_no == report.maxb:
+            collabel = str(block_no) + '+'
+        description[str(block_no)] = ('number', collabel)
 
     # gviz table data (rows)
     data = []
