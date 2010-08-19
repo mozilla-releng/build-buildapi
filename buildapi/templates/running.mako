@@ -47,7 +47,9 @@ $(document).ready(function() {
         build['start_time_human'] = datetime.fromtimestamp(build['start_time']).strftime('%Y-%m-%d %H:%M:%S')
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
         build['master'] = build['claimed_by_name'].split('.')[0]
-        if branch in ('try',):
+        if build['master'].startswith(("test-master", "talos-master02")):
+            port = '8012'
+        elif branch in ('try',):
           port = '8011'
         else:
           port = '8010'
