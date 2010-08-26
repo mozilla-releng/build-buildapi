@@ -70,10 +70,10 @@ $(document).ready(function() {
           build['state'] = 'result%s' % build['results']
         if build['claimed_by_name']:
           build['master'] = build['claimed_by_name'].split('.')[0]
-          if 'try' in branch:
-            port = '8011'
-          elif build['claimed_by_name'].startswith(('talos-master02','test-master0')):
+          if build['master'].startswith(('talos-master02','test-master0')):
             port = '8012'
+          elif 'try' in branch:
+            port = '8011'
           else:
             port = '8010'
           build['url'] = 'http://%s:%s/builders/%s/builds/%s' % \
