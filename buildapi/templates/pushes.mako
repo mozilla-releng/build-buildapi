@@ -18,7 +18,7 @@ $(document).ready(function() {
         "bJQueryUI": true,
         "iDisplayLength": 25,
         "sPaginationType": "full_numbers",
-        "aaSorting": [[1,'desc'],[0,'desc']],
+        "aaSorting": [[1,'desc'],[0,'asc']],
       } );
 });
 
