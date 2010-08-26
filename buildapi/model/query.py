@@ -155,7 +155,8 @@ def GetPushes(branch, fromtime, totime):
                     ss.c.id == ss_ch.c.sourcestampid))
     q = q.distinct()
 
-    q = q.where(not_(ch.c.branch.like('%unittest')))
+    q = q.where(not_(or_(ch.c.branch.like('%unittest'),
+                         ch.c.branch.like('%talos'))))
     if branch is not None:
         q = q.where(ch.c.branch.like('%' + branch + '%'))
 
