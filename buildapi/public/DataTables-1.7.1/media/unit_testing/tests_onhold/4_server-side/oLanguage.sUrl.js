@@ -36,16 +36,16 @@ $(document).ready( function () {
 		function () {
 			var bReturn = 
 				oSettings.oLanguage.sProcessing == "Bitte warten..." &&
-				oSettings.oLanguage.sLengthMenu == "_MENU_ EintrÃ¤ge anzeigen" &&
-				oSettings.oLanguage.sZeroRecords == "Keine EintrÃ¤ge vorhanden." &&
-				oSettings.oLanguage.sInfo == "_START_ bis _END_ von _TOTAL_ EintrÃ¤gen" &&
-				oSettings.oLanguage.sInfoEmpty == "0 bis 0 von 0 EintrÃ¤gen" &&
-				oSettings.oLanguage.sInfoFiltered == "(gefiltert von _MAX_  EintrÃ¤gen)" &&
+				oSettings.oLanguage.sLengthMenu == "_MENU_ Einträge anzeigen" &&
+				oSettings.oLanguage.sZeroRecords == "Keine Einträge vorhanden." &&
+				oSettings.oLanguage.sInfo == "_START_ bis _END_ von _TOTAL_ Einträgen" &&
+				oSettings.oLanguage.sInfoEmpty == "0 bis 0 von 0 Einträgen" &&
+				oSettings.oLanguage.sInfoFiltered == "(gefiltert von _MAX_  Einträgen)" &&
 				oSettings.oLanguage.sInfoPostFix == "" &&
 				oSettings.oLanguage.sSearch == "Suchen" &&
 				oSettings.oLanguage.oPaginate.sFirst == "Erster" &&
-				oSettings.oLanguage.oPaginate.sPrevious == "ZurÃ¼ck" &&
-				oSettings.oLanguage.oPaginate.sNext == "NÃ¤chster" &&
+				oSettings.oLanguage.oPaginate.sPrevious == "Zurück" &&
+				oSettings.oLanguage.oPaginate.sNext == "Nächster" &&
 				oSettings.oLanguage.oPaginate.sLast == "Letzter";
 				
 			return bReturn;
@@ -56,7 +56,7 @@ $(document).ready( function () {
 	oTest.fnTest(
 		"Loaded language goes into the DOM",
 		null,
-		function () { return document.getElementById('example_info').innerHTML = "1 bis 10 von 57 EintrÃ¤gen"; }
+		function () { return document.getElementById('example_info').innerHTML = "1 bis 10 von 57 Einträgen"; }
 	);
 	
 	
