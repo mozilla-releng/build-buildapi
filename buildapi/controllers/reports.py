@@ -10,17 +10,21 @@ from buildapi.lib.base import BaseController, render
 from buildapi.lib.visualization import gviz_pushes
 from buildapi.model.pushes import GetPushes
 from buildapi.model.waittimes import GetWaitTimes, BUILDPOOL_MASTERS, get_time_interval
+from buildapi.model.endtoend import GetEndtoEndTimes, GetBuildRun
 from buildapi.lib.visualization import gviz_waittimes
 
 class ReportsController(BaseController):
-    @beaker_cache(query_args=True)
     def pushes(self):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
             abort(400, detail='Unsupported format: %s' % format)
 
         params = self._get_report_params()
-        c.report = GetPushes(**params)
+
+        @beaker_cache(expire=600, cache_response=False)
+        def getReport(**params):
+            return GetPushes(**params)
+        c.report = getReport(**params)
 
         if format == 'json':
             return c.report.jsonify()
@@ -28,8 +32,7 @@ class ReportsController(BaseController):
             return gviz_pushes(c.report)
         else:
             return render('/reports/pushes.mako')
-		
-    @beaker_cache(query_args=True)
+
     def waittimes(self, pool='buildpool'):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
@@ -56,19 +59,44 @@ class ReportsController(BaseController):
         @beaker_cache(expire=600, cache_response=False)
         def getReport(**params):
             return GetWaitTimes(**params)
-        c.wait_times = getReport(**params)
-
-        starttime = params['starttime'] if 'starttime' in params else None
-        endtime = params['endtime'] if 'endtime' in params else None
-        c.starttime, c.endtime = get_time_interval(starttime, endtime)
+        c.report = getReport(**params)
 
         if format == 'json':
-            return c.wait_times.jsonify()
+            return c.report.jsonify()
         elif format == 'chart':
-            return gviz_waittimes(c.wait_times, num)
+            return gviz_waittimes(c.report, num)
         else:
-            c.jscode_data = gviz_waittimes(c.wait_times, num, resp_type='JSCode')
+            c.jscode_data = gviz_waittimes(c.report, num, resp_type='JSCode')
             return render('/reports/waittimes.mako')
+
+    def endtoend(self, branch='mozilla-central'):
+        format = request.GET.getone('format') if 'format' in request.GET else 'html'
+        if format not in ('html', 'json', 'chart'):
+            abort(400, detail='Unsupported format: %s' % format)
+
+        params = self._get_report_params()
+        params['branch'] = branch
+        del params['int_size']
+
+        @beaker_cache(expire=600, cache_response=False)
+        def getReport(**params):
+            return GetEndtoEndTimes(**params)
+        c.report = getReport(**params)
+
+        if format == 'json':
+            return c.report.jsonify()
+        elif format == 'chart':
+            return gviz_endtoend(c.report)
+        else:
+            return render('/reports/endtoend.mako')
+
+    def endtoend_revision(self, revision=None):
+        @beaker_cache(expire=600, cache_response=False)
+        def getReport(**params):
+            return GetBuildRun(**params)
+        c.report = getReport(revision=revision)
+
+        return render('/reports/buildrun.mako')
 
     def _get_report_params(self):
         params = {}

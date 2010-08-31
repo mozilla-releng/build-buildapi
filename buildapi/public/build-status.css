@@ -52,7 +52,99 @@ table.wt-platforms, table.wt-overall {
 	width:230px;
 }
 
+table.brun-overall {
+    width: 560px;
+    float: left;
+}
+
 body#dt_example ul {
     color:#000000;
     padding-left:16px;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * DataTables row classes
+ */
+body#dt_example table.results tr.odd.success {
+ 	background-color: #C2FFC2;
+}
+
+body#dt_example table.results tr.even.success {
+	background-color: #A3FFA3;
+}
+ 
+body#dt_example table.results tr.odd.warnings {
+	background-color: #ffca91;
+}
+
+body#dt_example table.results tr.even.warnings {
+	background-color: #ffc280;
+}
+
+body#dt_example table.results tr.odd.failure {
+	background-color: #ff7373;
+}
+
+body#dt_example table.results tr.even.failure {
+	background-color: #ff8080;
+}
+
+body#dt_example table.results tr.odd {
+	background-color: #ddd;
+}
+
+body#dt_example table.results tr.even {
+	background-color: white;
+}
+
+body#dt_example table.results tr.odd.success td.sorting_1 {
+	background-color: #B8FFB8;
+}
+
+body#dt_example table.results tr.even.success td.sorting_1 {
+	background-color: #94FF94;
+}
+
+body#dt_example table.results tr.odd.warnings td.sorting_1 {
+	background-color: #ffc587;
+}
+
+body#dt_example table.results tr.even.warnings td.sorting_1 {
+	background-color: #ffb96e;
+}
+
+body#dt_example table.results tr.odd.failure td.sorting_1 {
+	background-color: #ff6b6b;
+}
+
+body#dt_example table.results tr.even.failure td.sorting_1 {
+	background-color: #ff7878;
+}
+
+body#dt_example table.results tr.odd td.sorting_1 {
+	background-color: #ccc;
+}
+
+body#dt_example table.results tr.even td.sorting_1 {
+	background-color: #eee;
+}
+
+span.success {
+    color: green;
+    font-weight: bold;
+}
+
+span.warnings {
+    color: orange;
+    font-weight: bold;
+}
+
+span.failure {
+    color: red;
+    font-weight: bold;
+}
+
+span.other {
+    color: #555;
+    font-weight: bold;
 }

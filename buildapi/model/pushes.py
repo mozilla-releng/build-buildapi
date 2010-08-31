@@ -6,24 +6,29 @@ from pylons.decorators.cache import beaker_cache
 import re, simplejson
 
 SOURCESTAMPS_BRANCH = {
-    'mozilla-central': [re.compile('^mozilla-central.+')],
-    'mozilla-1.9.1': [re.compile('^mozilla-1\.9\.1.+')],
-    'mozilla-1.9.2': [re.compile('^mozilla-1\.9\.2.+')],
-    'mozilla-2.0': [re.compile('^mozilla-2\.0.+')],
+    'l10n-central': [re.compile('^l10n-central.*')],
+    'addontester': [re.compile('^addontester.*')],
+    'birch': [re.compile('^birch.+'), re.compile('^projects/birch.*')],
+    'cedar': [re.compile('^cedar.+'), re.compile('^projects/cedar.*')],
+    'electrolysis': [re.compile('^electrolysis.*'), re.compile('^projects/electrolysis.*')],
+    'jaegermonkey': [re.compile('^projects/jaegermonkey.*')],
+    'maple': [re.compile('^maple.*'), re.compile('^projects/maple.*')],
+    'mozilla-1.9.1': [re.compile('^mozilla-1\.9\.1.*')],
+    'mozilla-1.9.2': [re.compile('^mozilla-1\.9\.2.*')],
+    'mozilla-2.0': [re.compile('^mozilla-2\.0.*')],
+    'mozilla-central': [re.compile('^mozilla-central.*')],
+    'places': [re.compile('^places.+'), re.compile('^projects/places.*')],
+    'release-mozilla-central': [re.compile('^release-mozilla-central.*')],
+    'tracemonkey': [re.compile('^tracemonkey.*')],
     'try': [re.compile('^try$')],
-    'birch': [re.compile('^birch.+')],
-    'tracemonkey': [re.compile('^tracemonkey.+')],
-    'electrolysis': [re.compile('^electrolysis.+')],
-    'cedar': [re.compile('^cedar.+')],
-    'maple': [re.compile('^maple.+')],
-    'places': [re.compile('^places.+')],
-    'release-mozilla-central': [re.compile('^release-mozilla-central.+')],
-    'tryserver': [re.compile('^tryserver.+')],
-    'addontester': [re.compile('^addontester.+')],
+    'tryserver': [re.compile('^tryserver.*')],
 }
 
 def PushesQuery(starttime, endtime, branches=None):
-    """Constructs the sqlalchemy query for fetching all pushes in the specified time interval.
+    """Constructs the sqlalchemy query for fetching all pushes in the specified time interval. 
+    One push is identified by changes.when_timestamp and branch name.
+    
+    Unittests and talos build requests are excluded.
     
     Input: starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
@@ -36,9 +41,10 @@ def PushesQuery(starttime, endtime, branches=None):
 
     q = select([s.c.revision, s.c.branch, c.c.author, c.c.when_timestamp],
                and_(sch.c.changeid == c.c.changeid, s.c.id == sch.c.sourcestampid))
-    q = q.group_by(s.c.id)
+    q = q.group_by(c.c.when_timestamp, s.c.branch)
 
     q = q.where(not_(c.c.branch.like('%unittest')))
+    q = q.where(not_(c.c.branch.like('%talos')))
     if branches is not None:
         for branch in branches:
             q = q.where(c.c.branch.like('%' + branch + '%'))
@@ -69,8 +75,9 @@ def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
     for r in q_results:
         branch = get_branch(r['branch'])
         stime = float(r['when_timestamp'])
+        revision = r['revision']
         
-        push = Push(stime, branch)
+        push = Push(stime, branch, revision)
         report.add(push)
 
     return report
@@ -149,9 +156,11 @@ class PushesReport(object):
         return simplejson.dumps(json_obj)  
 
 class Push(object):
-    def __init__(self, stime, branch):
+    
+    def __init__(self, stime, branch, revision):
         self.stime = stime
         self.branch = branch
+        self.revision = revision
 
 def get_branch(text):
     """Returns the branch name.

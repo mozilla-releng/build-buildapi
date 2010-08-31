@@ -1,21 +1,18 @@
-var AnyTime_picker_format = "%a, %d %b %z %H:%i:%s %+";
-var AnyTime_conv = new AnyTime.Converter({format: AnyTime_picker_format});
+var datepicker_format = "mm/dd/yy";
 
-function initAnyTimePickers() {
-    var starttime = $('#starttime').attr('ref');  // start time in UTC in seconds
-    var endtime = $('#endtime').attr('ref');      // end time in UTC in seconds
-
-    var sdate = new Date(parseFloat(starttime)*1000);
-    var edate = new Date(parseFloat(endtime)*1000);
-
-    // set initial values
-    $("#starttime").val(AnyTime_conv.format(sdate));
-    $("#endtime").val(AnyTime_conv.format(edate));
+function initDatePicker(elem) {
+    // create datepicker element
+    elem.datepicker();
+    // get timestamp from element's attribute
+    var timestamp = elem.attr('ref');    // start time in UTC in seconds
+    var date = new Date(parseFloat(timestamp)*1000);
+    // set initial velue
+    elem.val($.datepicker.formatDate(datepicker_format, date));
 }
 
 function updateWindowLocation() {
-	var sdate = AnyTime_conv.parse($('#starttime').val());
-    var edate = AnyTime_conv.parse($('#endtime').val());    
+	var sdate = $.datepicker.parseDate(datepicker_format, $('#starttime').val());
+	var edate = $.datepicker.parseDate(datepicker_format, $('#endtime').val());
     var starttime = parseFloat(sdate.getTime()) / 1000;
     var endtime = parseFloat(edate.getTime()) / 1000;
 

@@ -241,6 +241,7 @@ class WaitTimesReport(object):
         return simplejson.dumps(json_obj)
 	
 class WaitTimeIntervals(object):
+
     def __init__(self, int_no):
         self.total = 0
         self.intervals = [0]*int_no
@@ -253,6 +254,7 @@ class WaitTimeIntervals(object):
         return {'total': self.total, 'intervals': self.intervals}
 
 class WaitTime(object):
+
     def __init__(self, stime, etime, platform, buildername=None, has_no_changes=False):
         self.stime = stime
         self.etime = etime

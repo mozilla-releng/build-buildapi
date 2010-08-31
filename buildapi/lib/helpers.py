@@ -10,6 +10,14 @@ from pylons import url
 from webhelpers.html import tags
 import time, datetime
 
+def strf_hms(tspans):
+    h = tspans/3600
+    tspans -= h*3600
+    m = tspans/60
+    s = tspans - m*60
+    
+    return "%dh %dm %ds" % (h, m, s)
+
 ZERO = datetime.timedelta(0)
 HOUR = datetime.timedelta(hours=1)
 
