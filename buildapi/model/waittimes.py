@@ -31,6 +31,10 @@ PLATFORMS_BUILDERNAME_EXCLUDE = [
     re.compile('.+ l10n .+'),
 ]
 
+PLATFORMS_BUILDERNAME_SQL_EXCLUDE = [
+    'fuzzer-%',
+]
+
 BUILDSET_REASON_SQL_EXCLUDE = [
     "The web-page 'force build' button was pressed by %",
     "The web-page 'rebuild' button was pressed by %",
@@ -81,6 +85,11 @@ def WaitTimesQuery(starttime, endtime, pool):
     rmatcher = [not_(bs.c.reason.like(rpat)) for rpat in BUILDSET_REASON_SQL_EXCLUDE]
     if len(rmatcher) > 0:
 	    q = q.where(and_(*rmatcher))
+
+    # exclude unrelated buildrequests.buildername-s
+    bmatcher = [not_(br.c.buildername.like(rpat)) for rpat in PLATFORMS_BUILDERNAME_SQL_EXCLUDE]
+    if len(rmatcher) > 0:
+        q = q.where(and_(*bmatcher))
     
     # get one change per sourcestamp and platform (ingnore multiple changes in one push)
     q = q.group_by(br.c.id)
