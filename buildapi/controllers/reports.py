@@ -69,13 +69,13 @@ class ReportsController(BaseController):
             c.jscode_data = gviz_waittimes(c.report, num, resp_type='JSCode')
             return render('/reports/waittimes.mako')
 
-    def endtoend(self, branch='mozilla-central'):
+    def endtoend(self, branch_name='mozilla-central'):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         if format not in ('html', 'json', 'chart'):
             abort(400, detail='Unsupported format: %s' % format)
 
         params = self._get_report_params()
-        params['branch'] = branch
+        params['branch_name'] = branch_name
         del params['int_size']
 
         @beaker_cache(expire=600, cache_response=False)
@@ -90,11 +90,11 @@ class ReportsController(BaseController):
         else:
             return render('/reports/endtoend.mako')
 
-    def endtoend_revision(self, revision=None):
+    def endtoend_revision(self, branch_name=None, revision=None):
         @beaker_cache(expire=600, cache_response=False)
         def getReport(**params):
             return GetBuildRun(**params)
-        c.report = getReport(revision=revision)
+        c.report = getReport(branch_name=branch_name, revision=revision)
 
         return render('/reports/buildrun.mako')
 

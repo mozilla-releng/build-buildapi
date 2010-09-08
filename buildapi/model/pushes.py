@@ -7,7 +7,6 @@ import re, simplejson
 
 SOURCESTAMPS_BRANCH = {
     'l10n-central': [re.compile('^l10n-central.*')],
-    'addontester': [re.compile('^addontester.*')],
     'birch': [re.compile('^birch.+'), re.compile('^projects/birch.*')],
     'cedar': [re.compile('^cedar.+'), re.compile('^projects/cedar.*')],
     'electrolysis': [re.compile('^electrolysis.*'), re.compile('^projects/electrolysis.*')],
@@ -20,9 +19,14 @@ SOURCESTAMPS_BRANCH = {
     'places': [re.compile('^places.+'), re.compile('^projects/places.*')],
     'release-mozilla-central': [re.compile('^release-mozilla-central.*')],
     'tracemonkey': [re.compile('^tracemonkey.*')],
-    'try': [re.compile('^try$')],
-    'tryserver': [re.compile('^tryserver.*')],
+    'try': [re.compile('^try$'), re.compile('^tryserver.*')],
 }
+
+SOURCESTAMPS_BRANCH_PUSHES_SQL_EXCLUDE = [
+    '%unittest',
+    '%talos',
+    'addontester%',
+]
 
 def PushesQuery(starttime, endtime, branches=None):
     """Constructs the sqlalchemy query for fetching all pushes in the specified time interval. 
@@ -43,11 +47,14 @@ def PushesQuery(starttime, endtime, branches=None):
                and_(sch.c.changeid == c.c.changeid, s.c.id == sch.c.sourcestampid))
     q = q.group_by(c.c.when_timestamp, s.c.branch)
 
-    q = q.where(not_(c.c.branch.like('%unittest')))
-    q = q.where(not_(c.c.branch.like('%talos')))
+    # exclude branches that are not of interest
+    bexcl = [not_(s.c.branch.like(p)) for p in SOURCESTAMPS_BRANCH_PUSHES_SQL_EXCLUDE]
+    if len(bexcl) > 0:
+	    q = q.where(and_(*bexcl))
+	
     if branches is not None:
         for branch in branches:
-            q = q.where(c.c.branch.like('%' + branch + '%'))
+            q = q.where(s.c.branch.like('%' + branch + '%'))
 
     if starttime is not None:
         q = q.where(c.c.when_timestamp >= starttime)
@@ -73,11 +80,11 @@ def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
 
     report = PushesReport(starttime, endtime, int_size=int_size, branches=branches)
     for r in q_results:
-        branch = get_branch(r['branch'])
+        branch_name = get_branch_name(r['branch'])
         stime = float(r['when_timestamp'])
         revision = r['revision']
         
-        push = Push(stime, branch, revision)
+        push = Push(stime, branch_name, revision)
         report.add(push)
 
     return report
@@ -157,12 +164,12 @@ class PushesReport(object):
 
 class Push(object):
     
-    def __init__(self, stime, branch, revision):
+    def __init__(self, stime, branch_name, revision):
         self.stime = stime
-        self.branch = branch
+        self.branch_name = branch_name
         self.revision = revision
 
-def get_branch(text):
+def get_branch_name(text):
     """Returns the branch name.
 
     Input: text - field value from schedulerdb table

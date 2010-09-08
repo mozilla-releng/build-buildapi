@@ -13,8 +13,10 @@ function initDatePicker(elem) {
 function updateWindowLocation() {
 	var sdate = $.datepicker.parseDate(datepicker_format, $('#starttime').val());
 	var edate = $.datepicker.parseDate(datepicker_format, $('#endtime').val());
-    var starttime = parseFloat(sdate.getTime()) / 1000;
-    var endtime = parseFloat(edate.getTime()) / 1000;
+	var sdate_ms = sdate.getTime();
+	var edate_ms = edate.getTime();
+    var starttime = parseFloat(sdate_ms) / 1000;
+    var endtime = parseFloat(edate_ms) / 1000;
 
     var new_params = {starttime: starttime, endtime: endtime};
     window.location = updateUrlParams(new_params);

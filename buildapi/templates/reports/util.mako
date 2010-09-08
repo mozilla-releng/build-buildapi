@@ -37,7 +37,7 @@
     if 'branch' in params: del params['branch']
 
     branch_list = sorted(SOURCESTAMPS_BRANCH.keys())
-    branch_link_func = lambda x: url.current(branch=x, **params)
+    branch_link_func = lambda x: url.current(branch_name=x, **params)
   %>
   
   Branch: ${link_menu(branch, branch_list, branch_link_func)}

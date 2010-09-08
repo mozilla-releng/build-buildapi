@@ -1,6 +1,7 @@
 from sqlalchemy import *
 import buildapi.model.meta as meta
 from buildapi.model.util import get_time_interval
+from buildapi.model.pushes import get_branch_name
 from pylons.decorators.cache import beaker_cache
 
 import re, simplejson
@@ -51,51 +52,58 @@ def BuildRequestsQuery():
 
     return q
 
-def BuildRunQuery(revision):
+def BuildRunQuery(revision, branch_name=None):
     """Constructs the sqlalchemy query for fetching all build requests in a build run (sharing 
     the same sourcestamps.revision number).
     
     Input: revision - sourcestamps.revision (first 12 chars are enough), or None for nigthtlies
+           branch_name - branch name; if not specified, no restriction is applied on branch
     Output: query
     """
-    if not revision:
-        return BuildRequestsQuery().where(s.c.revision==None)
-    else:
-        return BuildRequestsQuery().where(s.c.revision.like(revision + '%'))
+    q = BuildRequestsQuery()
 
-def EndtoEndTimesQuery(starttime, endtime, branch):
+    if not revision:
+        q = q.where(s.c.revision==None)
+    else:
+        q = q.where(s.c.revision.like(revision + '%'))
+    if branch_name:
+        q = q.where(s.c.branch.like('%' + branch_name + '%'))
+
+    return q
+
+def EndtoEndTimesQuery(starttime, endtime, branch_name):
     """Constructs the sqlalchemy query for fetching all build requests in the specified time 
     interval for the specified branch.
 
     Input: starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
-           branch - branch name
+           branch_name - branch name
     Output: query
     """
     q = BuildRequestsQuery()
     
-    q = q.where(s.c.branch.like('%' + branch + '%'))
+    q = q.where(s.c.branch.like('%' + branch_name + '%'))
     # ??? first build job in push started, not all! --> what condition on rest??
     q = q.where(or_(c.c.when_timestamp>=starttime, br.c.submitted_at>=starttime))
     q = q.where(or_(c.c.when_timestamp<=endtime, br.c.submitted_at<=endtime))
     
     return q
 
-def GetEndtoEndTimes(starttime=None, endtime=None, branch='mozilla-central'):
+def GetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'):
     """Get end to end times report for the speficied time interval and branch.
     
     Input: starttime - start time (UNIX timestamp in seconds), if not specified, endtime minus 24 hours
            endtime - end time (UNIX timestamp in seconds), if not specified, starttime plus 24 hours or 
                      current time (if starttime is not specified either)
-           branch - branch name, default vaue is 'mozilla-central'
+           branch_name - branch name, default vaue is 'mozilla-central'
     Output: EndtoEndTimesReport
     """
     starttime, endtime = get_time_interval(starttime, endtime)
     
-    q = EndtoEndTimesQuery(starttime, endtime, branch)
+    q = EndtoEndTimesQuery(starttime, endtime, branch_name)
     q_results = q.execute()
     
-    report = EndtoEndTimesReport(starttime, endtime, branch)
+    report = EndtoEndTimesReport(starttime, endtime, branch_name)
     for r in q_results:
         params = dict((str(k), v) for (k, v) in dict(r).items())
         params['revision'] = params['revision'][:12] if params['revision'] else params['revision']
@@ -105,15 +113,15 @@ def GetEndtoEndTimes(starttime=None, endtime=None, branch='mozilla-central'):
     
     return report
    
-def GetBuildRun(revision=None):
+def GetBuildRun(branch_name=None, revision=None):
     """Get build run report. The build run report is specified by its sourcestamps.revision number.
 
     Input: revision - sourcestamps.revision (first 12 chars are enough), or None for nigthtlies
     Output: BuildRun
     """
-    q_results = BuildRunQuery(revision).execute()
+    q_results = BuildRunQuery(revision, branch_name=branch_name).execute()
 
-    report = BuildRun(revision)
+    report = BuildRun(revision, branch_name)
     for r in q_results:
         params = dict((str(k), v) for (k, v) in dict(r).items())
         params['revision'] = params['revision'][:12] if params['revision'] else params['revision']
@@ -126,37 +134,47 @@ def GetBuildRun(revision=None):
 class EndtoEndTimesReport(object):
     outdated = -1
 
-    def __init__(self, starttime, endtime, branch, int_size=0):
+    def __init__(self, starttime, endtime, branch_name):
         self.starttime = starttime
         self.endtime = endtime
-        self.branch = branch
-        self.int_size = int_size
+        self.branch_name = branch_name
 
         self._init_report() 
     
     def _init_report(self):
-        self.total_br = 0
-        self.u_total_br = 0
         self._runs = {}
+        self._total_br = 0
+        self._u_total_br = 0
+        self._avg_run_duration = 0
+
+    def get_total_build_runs(self):
+        return len(self._runs)
 
     def get_total_build_requests(self):
-        if self.total_br == EndtoEndTimesReport.outdated:
-            self.total_br = sum([self._runs[r].get_total_build_requests() for r in self._runs])
+        if self._total_br == EndtoEndTimesReport.outdated:
+            self._total_br = sum([self._runs[r].get_total_build_requests() for r in self._runs])
 
-        return self.total_br
+        return self._total_br
 
     def get_unique_total_build_requests(self):
-        if self.u_total_br == EndtoEndTimesReport.outdated:
-            self.u_total_br = sum([self._runs[r].get_unique_total_build_requests() for r in self._runs])
+        if self._u_total_br == EndtoEndTimesReport.outdated:
+            self._u_total_br = sum([self._runs[r].get_unique_total_build_requests() for r in self._runs])
 
-        return self.u_total_br
+        return self._u_total_br
+
+    def get_avg_duration(self):
+        if self._avg_run_duration == EndtoEndTimesReport.outdated:
+            self._avg_run_duration = sum([self._runs[r].get_duration() for r in self._runs]) / self.get_total_build_runs()
+
+        return self._avg_run_duration
             	
     def add_build_request(self, br):
-        if br.revision not in self._runs: self._runs[br.revision] = BuildRun(br.revision)
+        if br.revision not in self._runs: self._runs[br.revision] = BuildRun(br.revision, br.branch_name)
         self._runs[br.revision].add(br)
         
-        self.total_br = EndtoEndTimesReport.outdated
-        self.u_total_br = EndtoEndTimesReport.outdated
+        self._total_br = EndtoEndTimesReport.outdated
+        self._u_total_br = EndtoEndTimesReport.outdated
+        self._avg_run_duration = EndtoEndTimesReport.outdated
 
     def jsonify(self):
         return simplejson.dumps({})
@@ -186,6 +204,7 @@ class BuildRequest(object):
         self.number = number
         self.brid = brid
         self.branch = branch
+        self.branch_name = get_branch_name(branch)
         self.buildername = buildername
         self.ssid = ssid
         self.revision = revision    # sourcestamp revision number
@@ -244,8 +263,9 @@ class BuildRequest(object):
 class BuildRun(object):
     outdated = -1
 
-    def __init__(self, revision):
+    def __init__(self, revision, branch_name):
         self.revision = revision
+        self.branch_name = branch_name
 
         self.build_requests = []
 
@@ -253,8 +273,8 @@ class BuildRun(object):
         self.gst_finish_time = 0
         self.gst_complete_at_time = 0
 
-        self.total_br = 0     # total build requests
-        self.u_total_br = 0   # unique total build request ids
+        self._total_br = 0     # total build requests
+        self._u_total_br = 0   # unique total build request ids
 
         self.complete = 0
         self.running = 0
@@ -278,8 +298,8 @@ class BuildRun(object):
     def add(self, br):
         self.build_requests.append(br)
 
-        self.total_br += 1
-        self.u_total_br = BuildRun.outdated  # needs recalculation
+        self._total_br += 1
+        self._u_total_br = BuildRun.outdated  # needs recalculation
         if br.status == BuildRequest.st_pending:
             self.pending += 1
         elif br.status == BuildRequest.st_running:
@@ -327,10 +347,13 @@ class BuildRun(object):
         return self.gst_complete_at_time - self.lst_change_time if self.gst_complete_at_time and self.lst_change_time else 0
 
     def get_total_build_requests(self):
-        return self.total_br
+        return self._total_br
 
     def get_unique_total_build_requests(self):
-        if self.u_total_br == BuildRun.outdated:
-            self.u_total_br = len(set([br.brid for br in self.build_requests]))
+        if self._u_total_br == BuildRun.outdated:
+            self._u_total_br = len(set([br.brid for br in self.build_requests]))
 
-        return self.u_total_br
+        return self._u_total_br
+
+    def is_complete(self):
+        return not(self.running or self.pending)
