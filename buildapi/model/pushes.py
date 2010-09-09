@@ -107,7 +107,7 @@ class PushesReport(object):
         self.branch_intervals = {}
         self.branch_totals = {}
 
-        for b in self.branches: self._init_branch()
+        for b in self.branches: self._init_branch(b)
 
     def _init_branch(self, branch):
         if branch not in self.branches: self.branches.append(branch)
@@ -130,18 +130,18 @@ class PushesReport(object):
         return self.branch_intervals[branch]
 
     def add(self, push):
-        if self.filter_branches and push.branch not in self.branches: 
+        if self.filter_branches and push.branch_name not in self.branches: 
             return False
 
-        if push.branch not in self.branches:
-            self._init_branch(push.branch)                
+        if push.branch_name not in self.branches:
+            self._init_branch(push.branch_name)                
 
         int_idx = self.get_interval_index(push.stime)
 
         self.total+=1
         self.intervals[int_idx]+=1
-        self.branch_intervals[push.branch][int_idx]+=1
-        self.branch_totals[push.branch]+=1
+        self.branch_intervals[push.branch_name][int_idx]+=1
+        self.branch_totals[push.branch_name]+=1
 
         return True
 	
