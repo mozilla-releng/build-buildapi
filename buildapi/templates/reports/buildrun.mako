@@ -1,6 +1,6 @@
 <%inherit file="report.mako"/>
 <%namespace file="util.mako" import="print_datetime_short, print_datetime"/>
-<%! from buildapi.model.endtoend import BuildRequest, RESULTS_TO_STR %>
+<%! from buildapi.model.util import status_to_str, results_to_str %>
 
 <%def name="title()">Build Run Report</%def>
 
@@ -29,6 +29,7 @@
                 /* wait time */ { "iDataSort": 8, "aTargets": [ 7 ] },
                 /* wait time (seconds) */ { "bSearchable": false, "bVisible": false, "aTargets": [ 8 ] },
             ],
+            "aaSorting": [[12,'asc']],
         });
     });
 </script>
@@ -122,8 +123,8 @@ wait_time = br.get_wait_time()
 results_css = results_css_class[min(br.results, 2) + 1]
 %>
 <tr class="${results_css}">
-  <td>${BuildRequest.str_status(br.status)}</td>
-  <td><span class="${results_css}">${RESULTS_TO_STR[br.results] if br.results in RESULTS_TO_STR else '-'}</span></td>
+  <td>${status_to_str(br.status)}</td>
+  <td><span class="${results_css}">${results_to_str(br.results)}</span></td>
   <td>${br.results}</td>
   <td>${br.buildername}</td>
   <td>${br.branch}</td>

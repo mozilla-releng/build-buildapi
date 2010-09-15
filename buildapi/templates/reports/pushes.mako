@@ -43,7 +43,7 @@
 
 <%def name="main_menu()">
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
-  <p>Pushes report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
+  <p>Report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
 </%def>
 
 <div>

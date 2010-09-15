@@ -48,11 +48,19 @@ body#dt_example {
 	margin:6px;
 }
 
+body#dt_example h1 {
+    margin-top: 0.2em;
+}
+
+#dt_example div.dataTables_wrapper {
+    min-height: 100px;
+}
+
 table.wt-platforms, table.wt-overall {
 	width:230px;
 }
 
-table.brun-overall {
+table.brun-overall, table.brep-overall {
     width: 560px;
     float: left;
 }
@@ -146,5 +154,11 @@ span.failure {
 
 span.other {
     color: #555;
+    font-weight: bold;
+}
+
+div.menu-reports {
+    font-size: 0.9em;
+    float: right;
     font-weight: bold;
 }

@@ -19,28 +19,42 @@
 
 <%def name="build_pool_menu(pool)">
   <%
-    from buildapi.model.waittimes import BUILDPOOL_MASTERS
+    from buildapi.model.util import BUILDPOOL_MASTERS
     params = dict(request.params)
     if 'pool' in params: del params['pool']
 
     pool_list = sorted(BUILDPOOL_MASTERS.keys())
     pool_link_func = lambda x: url.current(pool=x, **params)
   %>
-  
+
   Build pool: ${link_menu(pool, pool_list, pool_link_func)}
 </%def>
 
 <%def name="branch_menu(branch)">
   <%
-    from buildapi.model.pushes import SOURCESTAMPS_BRANCH
+    from buildapi.model.util import SOURCESTAMPS_BRANCH
     params = dict(request.params)
     if 'branch' in params: del params['branch']
 
     branch_list = sorted(SOURCESTAMPS_BRANCH.keys())
     branch_link_func = lambda x: url.current(branch_name=x, **params)
   %>
-  
+
   Branch: ${link_menu(branch, branch_list, branch_link_func)}
+</%def>
+
+<%def name="reports_menu()">
+  <%
+  report_url_mapper = {
+     'Average Time per Builder': url.current(action='builders', branch_name=None, pool=None),
+     'End to End Times': url.current(action='endtoend', branch_name=None, pool=None),
+     'Pushes': url.current(action='pushes', branch_name=None, pool=None),
+     'Wait Times': url.current(action='waittimes', branch_name=None, pool=None),
+  }  
+  report_link_func = lambda x: report_url_mapper[x]
+  %>
+
+  Reports: ${link_menu(None, sorted(report_url_mapper.keys()), report_link_func)}
 </%def>
 
 <%def name="datepicker_menu(starttime, endtime)">

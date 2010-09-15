@@ -41,6 +41,8 @@ def make_map(config):
     # we also support 'pushes/{branch}/?totime={totime}'
 
     map.connect('/reports/{action}', controller='reports')
+    map.connect('/reports/builder/{buildername}', controller='reports', action='builder_details')
+    map.connect('/reports/builders/{branch_name}', controller='reports', action='builders')
     map.connect('/reports/pushes', controller='reports', action='pushes')
     map.connect('/reports/waittimes/{pool}', controller='reports', action='waittimes')
     map.connect('/reports/endtoend/{branch_name}', controller='reports', action='endtoend')

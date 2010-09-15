@@ -1,55 +1,14 @@
-from sqlalchemy import *
+from sqlalchemy import outerjoin, and_, not_, or_
 import buildapi.model.meta as meta
-from buildapi.model.util import get_time_interval
-from pylons.decorators.cache import beaker_cache
+from buildapi.model.util import get_time_interval, get_platform
+from buildapi.model.util import BUILDPOOL_MASTERS, PLATFORMS_BUILDERNAME_EXCLUDE, PLATFORMS_BUILDERNAME_SQL_EXCLUDE, BUILDSET_REASON_SQL_EXCLUDE
 
-import re, math, time, simplejson
-
-PLATFORMS_BUILDERNAME = {
-    'linux': [re.compile('^Linux (?!x86-64).+'),
-              re.compile('^Maemo 4 .+'),
-              re.compile('^Maemo 5 QT .+'),
-              re.compile('^Maemo 5 GTK .+'),
-              re.compile('^Android R7 .+'),
-             ],
-    'linux64': [re.compile('^Linux x86-64 .+')],
-    'fedora': [re.compile('^Rev3 Fedora 12 .+')],
-    'fedora64': [re.compile('Rev3 Fedora 12x64 .+')],
-    'leopard': [re.compile('^OS X 10\.5\.2 .+'),
-                re.compile('^Rev3 MacOSX Leopard 10\.5\.8 .+'),
-               ],
-    'snowleopard': [re.compile('^OS X 10\.6\.2 .+'),
-                    re.compile('^Rev3 MacOSX Snow Leopard 10\.6\.2 .+'),
-                   ],
-    'xp': [re.compile('^Rev3 WINNT 5\.1 .+')],
-    'win2k3': [re.compile('^WINNT 5\.2 .+')],
-    'win7': [re.compile('^Rev3 WINNT 6\.1 ')],
-    'win764': [re.compile('^Rev3 WINNT 6\.1 x64 .+')],
-}
-
-PLATFORMS_BUILDERNAME_EXCLUDE = [
-    re.compile('.+ l10n .+'),
-]
-
-PLATFORMS_BUILDERNAME_SQL_EXCLUDE = [
-    'fuzzer-%',
-]
-
-BUILDSET_REASON_SQL_EXCLUDE = [
-    "The web-page 'force build' button was pressed by %",
-    "The web-page 'rebuild' button was pressed by %",
-]
-
-BUILDPOOL_MASTERS = {
-    'buildpool': ['production-master01.build.mozilla.org', 'production-master03.build.mozilla.org'],
-    'trybuildpool': ['production-master02.build.mozilla.org'],
-    'testpool': ['test-master01', 'test-master02', 'talos-master02'],
-}
+import math, simplejson
 
 def WaitTimesQuery(starttime, endtime, pool):
     """Constructs the sqlalchemy query for fetching all wait times for a buildpool 
     in the specified time interval.
-    
+
     Input: pool - name of the pool (e.g. buildpool, or trybuildpool)
            starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
@@ -72,8 +31,8 @@ def WaitTimesQuery(starttime, endtime, pool):
             .with_only_columns([br.c.buildername, b.c.start_time, br.c.claimed_at, br.c.submitted_at, c.c.when_timestamp])
 
     q = q.where(or_(c.c.when_timestamp>=starttime, br.c.submitted_at>=starttime))
-    q = q.where(or_(c.c.when_timestamp<=endtime, br.c.submitted_at<=endtime))
-        
+    q = q.where(or_(c.c.when_timestamp<endtime, br.c.submitted_at<endtime))
+
     # filter by masters
     masters = BUILDPOOL_MASTERS[pool]
     mnames_matcher = [br.c.claimed_by_name.startswith(master) for master in masters]
@@ -84,13 +43,13 @@ def WaitTimesQuery(starttime, endtime, pool):
     # exclude all rebuilds and forced builds
     rmatcher = [not_(bs.c.reason.like(rpat)) for rpat in BUILDSET_REASON_SQL_EXCLUDE]
     if len(rmatcher) > 0:
-	    q = q.where(and_(*rmatcher))
+        q = q.where(and_(*rmatcher))
 
     # exclude unrelated buildrequests.buildername-s
     bmatcher = [not_(br.c.buildername.like(rpat)) for rpat in PLATFORMS_BUILDERNAME_SQL_EXCLUDE]
     if len(rmatcher) > 0:
         q = q.where(and_(*bmatcher))
-    
+
     # get one change per sourcestamp and platform (ingnore multiple changes in one push)
     q = q.group_by(br.c.id)
 
@@ -146,7 +105,7 @@ class WaitTimesReport(object):
         self.unknownbuilders = set()
 
         self._init_report()
-    
+
     def _init_report(self):
         self.total = 0
 
@@ -157,7 +116,7 @@ class WaitTimesReport(object):
         self._wait_times = {0: WaitTimeIntervals(self.int_no)}
         self._platform_wait_times = {}
         self._platform_totals = {}
-	
+
     def get_total(self, platform=None):
         if not platform: return self.total
         return self._platform_totals[platform]
@@ -181,7 +140,7 @@ class WaitTimesReport(object):
         return wt.get(block_no, WaitTimeIntervals(self.int_no))
 
     def add(self, wt):
-        if not wt.platform:			# excluded
+        if not wt.platform:         # excluded
             self.unknownbuilders.add(wt.buildername)
             return
 
@@ -189,11 +148,11 @@ class WaitTimesReport(object):
             self.pending.append(wt.buildername)  
             return
 
-        if wt.platform == 'other':	# other platforms (NOT excluded)
+        if wt.platform == 'other':  # other platforms (NOT excluded)
             self.otherplatforms.add(wt.buildername)
 
-	    if wt.has_no_changes: self.no_changes += 1
-        
+        if wt.has_no_changes: self.no_changes += 1
+
         block_no = self._get_block_no(wt.stime, wt.etime)
         s = wt.stime
         int_idx = self.get_interval_index(wt.stime)
@@ -207,13 +166,13 @@ class WaitTimesReport(object):
         return block_no
 
     def _update_wait_times(self, platform, block_no, int_idx):
-		# update overall wait times
+        # update overall wait times
         self.total += 1
         if block_no not in self._wait_times:
             self._wait_times[block_no] = WaitTimeIntervals(self.int_no)
         self._wait_times[block_no].update(int_idx)
 
-	    # update platform specific wait times
+        # update platform specific wait times
         self._platform_totals[platform] = self._platform_totals.get(platform, 0) + 1
         if platform not in self._platform_wait_times:
             self._platform_wait_times[platform] = {0: WaitTimeIntervals(self.int_no)}
@@ -221,7 +180,7 @@ class WaitTimesReport(object):
             self._platform_wait_times[platform][block_no] = WaitTimeIntervals(self.int_no)
         self._platform_wait_times[platform][block_no].update(int_idx)
 
-    def jsonify(self):
+    def to_dict(self, summary=False):
         json_obj = {
             'pool': self.pool,
             'masters': self.masters,
@@ -247,8 +206,11 @@ class WaitTimesReport(object):
                 json_obj['platforms'][platform]['wt'][block_no] = \
                     self.get_wait_times(block_no, platform=platform).to_dict()
 
-        return simplejson.dumps(json_obj)
-	
+        return json_obj
+
+    def jsonify(self, summary=False):
+        return simplejson.dumps(self.to_dict(summary=summary))
+
 class WaitTimeIntervals(object):
 
     def __init__(self, int_no):
@@ -271,24 +233,6 @@ class WaitTime(object):
         self.buildername = buildername
         self.has_no_changes = has_no_changes
 
-def get_platform(buildername):
-    """Returns the platform name for a buildername.
-
-    Input: buildername - buildername field value from buildrequests schedulerdb table
-    Output: platform (one in PLATFORMS_BUILDERNAME keys: linux, linux64, ...)
-    """
-    bname = buildername.lower()
-
-    if any(filter(lambda p: p.match(buildername), PLATFORMS_BUILDERNAME_EXCLUDE)):
-        return None
-
-    for platform in PLATFORMS_BUILDERNAME:
-        for pat in PLATFORMS_BUILDERNAME[platform]:
-            if pat.match(buildername):
-                return platform
-
-    return 'other'
-
 def get_pending_buildrequests_query_clause(br_table, pool):
     """Pending jobs don't have buildrequests.claimed_by_name specified, therefore we need to 
     catch the pool it belongs to by looking at buildrequests.buildername fields:
@@ -298,14 +242,14 @@ def get_pending_buildrequests_query_clause(br_table, pool):
     """
     if pool=='buildpool':
         return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0,
-            not_(br_table.c.buildername.like('Rev3%')), 
+            not_(br_table.c.buildername.like('Rev3%')),
             not_(br_table.c.buildername.like('% tryserver %')))
     elif pool=='trybuildpool':
-        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0, 
-             not_(br_table.c.buildername.like('Rev3%')), 
+        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0,
+             not_(br_table.c.buildername.like('Rev3%')),
              br_table.c.buildername.like('% tryserver %'))
     elif pool=='testpool':
-        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0, 
+        return and_(br_table.c.claimed_by_name==None, br_table.c.complete==0,
                br_table.c.buildername.like('Rev3%'))
 
     return None

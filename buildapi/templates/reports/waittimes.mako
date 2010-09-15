@@ -58,7 +58,7 @@
 <%def name="main_menu()">
   <p>${build_pool_menu(c.report.pool)}</p>
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
-  <p>Wait time report for <b>${c.report.pool}</b> for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
+  <p>Report for <b>${c.report.pool}</b> for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
 </%def>
 
 <% wt = c.report %>
@@ -69,7 +69,7 @@
     <div class="wt-container">
       <h4>Total Jobs: ${wt.total}</h4>
       <h4>Wait Times</h4>
-      
+
       <table class="display wt-overall" cellpadding="0" cellspacing="0" border="0">
         <thead><tr><th>Wait Time</th><th>Number</th><th>Percentage</th></tr></thead>
         <tbody>

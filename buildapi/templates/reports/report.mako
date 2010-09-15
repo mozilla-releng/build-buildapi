@@ -1,3 +1,4 @@
+<%namespace file="util.mako" import="reports_menu"/>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
@@ -20,6 +21,8 @@ ${self.head()}
 </head>
 
 <body id="dt_example">
+  <div class="menu-reports">${reports_menu()}</div>
+
   <h1>${self.title()}</h1>
 
   <div class="main-menu">

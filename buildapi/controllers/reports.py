@@ -7,11 +7,13 @@ from pylons.decorators.cache import beaker_cache
 
 from buildapi.lib import helpers as h
 from buildapi.lib.base import BaseController, render
-from buildapi.lib.visualization import gviz_pushes
+from buildapi.lib.visualization import gviz_pushes, gviz_waittimes
+from buildapi.model.builders import GetBuildersReport, GetBuilderTypeReport
+from buildapi.model.endtoend import GetEndtoEndTimes, GetBuildRun
 from buildapi.model.pushes import GetPushes
 from buildapi.model.waittimes import GetWaitTimes, BUILDPOOL_MASTERS, get_time_interval
-from buildapi.model.endtoend import GetEndtoEndTimes, GetBuildRun
-from buildapi.lib.visualization import gviz_waittimes
+
+import urllib
 
 class ReportsController(BaseController):
     def pushes(self):
@@ -90,13 +92,58 @@ class ReportsController(BaseController):
         else:
             return render('/reports/endtoend.mako')
 
-    def endtoend_revision(self, branch_name=None, revision=None):
+    def endtoend_revision(self, branch_name='mozilla-central', revision=None):
+        format = request.GET.getone('format') if 'format' in request.GET else 'html'
+        if format not in ('html', 'json'):
+            abort(400, detail='Unsupported format: %s' % format)
+
         @beaker_cache(expire=600, cache_response=False)
         def getReport(**params):
             return GetBuildRun(**params)
         c.report = getReport(branch_name=branch_name, revision=revision)
 
-        return render('/reports/buildrun.mako')
+        if format == 'json':
+            return c.report.jsonify()
+        else:
+            return render('/reports/buildrun.mako')
+
+    def builders(self, branch_name='mozilla-central'):
+        format = request.GET.getone('format') if 'format' in request.GET else 'html'
+        if format not in ('html', 'json'):
+            abort(400, detail='Unsupported format: %s' % format)
+
+        params = self._get_report_params()
+        params['branch_name'] = branch_name
+        del params['int_size']
+
+        @beaker_cache(expire=600, cache_response=False)
+        def getReport(**params):
+            return GetBuildersReport(**params)
+        c.report = getReport(**params)
+
+        if format == 'json':
+            return c.report.jsonify()
+        else:
+            return render('/reports/builders.mako')
+
+    def builder_details(self, buildername=None):
+        format = request.GET.getone('format') if 'format' in request.GET else 'html'
+        if format not in ('html', 'json'):
+            abort(400, detail='Unsupported format: %s' % format)
+
+        params = self._get_report_params()
+        params['buildername'] = urllib.unquote_plus(buildername)
+        del params['int_size']
+
+        @beaker_cache(expire=600, cache_response=False)
+        def getReport(**params):
+            return GetBuilderTypeReport(**params)
+        c.report = getReport(**params)
+
+        if format == 'json':
+            return c.report.jsonify()
+        else:
+            return render('/reports/builder_details.mako')
 
     def _get_report_params(self):
         params = {}
@@ -111,8 +158,8 @@ class ReportsController(BaseController):
                 params['int_size'] = 3600*2
         except ValueError, e:
             abort(400, detail='Unsupported non numeric parameter value: %s' % e)
-        
+
         if params['int_size'] < 0:
             abort(400, detail='Time interval (int parameter) must be higher than 0: %s.' % params['int_size'])
-        
+
         return params

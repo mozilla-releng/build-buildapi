@@ -1,6 +1,6 @@
 <%inherit file="report.mako"/>
 <%namespace file="util.mako" import="print_datetime_short, branch_menu, datepicker_menu"/>
-<%! from buildapi.model.endtoend import RESULTS_TO_STR %>
+<%! from buildapi.model.util import status_to_str, results_to_str %>
 
 <%def name="title()">End to End Times Report</%def>
 
@@ -20,6 +20,7 @@
                 /* Duration */ { "iDataSort": 6, "aTargets": [ 5 ] },
                 /* Duration (seconds) */ { "bSearchable": false, "bVisible": false, "aTargets": [ 6 ] },
             ],
+            "aaSorting": [[7,'desc']],
         });
     });
 </script>
@@ -28,9 +29,10 @@
 <%def name="main_menu()">
   <p>${branch_menu(c.report.branch_name)}</p>
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
-  <p>End-to-end report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
+  <p>Report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
 </%def>
 
+<div>Branch name: <b>${c.report.branch_name}</b></div>
 <div>Total build requests: <b>${c.report.get_total_build_requests()}</b></div>
 <div>Unique total build requests: <b>${c.report.get_unique_total_build_requests()}</b></div>
 <div>Build runs: <b>${c.report.get_total_build_runs()}</b></div>
@@ -66,7 +68,7 @@
 
 <%!results_css_class = ['', 'success', 'warnings', 'failure']%>
 % for brun_key in c.report._runs:
-  <% 
+  <%
   brun = c.report._runs[brun_key] 
   duration = brun.get_duration()
   brun_url = url.current(action='endtoend_revision', revision=brun.revision, branch_name=brun.branch_name)
@@ -74,23 +76,23 @@
   %>
   <tr class="${results_css}">
     <td><a href="${brun_url}">${brun.revision}</a></td>
-    <td><span class="${results_css}">${RESULTS_TO_STR[brun.results] if brun.results in RESULTS_TO_STR else '-'}</span></td>
+    <td><span class="${results_css}">${results_to_str(brun.results)}</span></td>
     <td>${brun.results}</td>
-	<td>${len(brun.build_requests)}</td>
-	<td>${'yes' if brun.is_complete() else 'no'}</td>
-	<td>${h.strf_hms(duration) if duration else '-'}</td>
-	<td>${duration}</td>
-	<td>${print_datetime_short(brun.lst_change_time)}</td>
-	<td>${print_datetime_short(brun.gst_finish_time)}</td>
-	<td>${brun.complete}</td>
-	<td>${brun.running}</td>
-	<td>${brun.pending}</td>
-	<td>${brun.cancelled}</td>
-	<td>${brun.interrupted}</td>
-	<td>${brun.misc}</td>
-	<td>${brun.rebuilds}</td>
-	<td>${brun.forcebuilds}</td>
-	<td>${len(brun.builds)} (${len(set(brun.builds))})</td>
+    <td>${'yes' if brun.is_complete() else 'no'}</td>
+    <td>${brun.get_total_build_requests()}</td>
+    <td>${h.strf_hms(duration) if duration else '-'}</td>
+    <td>${duration}</td>
+    <td>${print_datetime_short(brun.lst_change_time)}</td>
+    <td>${print_datetime_short(brun.gst_finish_time)}</td>
+    <td>${brun.complete}</td>
+    <td>${brun.running}</td>
+    <td>${brun.pending}</td>
+    <td>${brun.cancelled}</td>
+    <td>${brun.interrupted}</td>
+    <td>${brun.misc}</td>
+    <td>${brun.rebuilds}</td>
+    <td>${brun.forcebuilds}</td>
+    <td>${len(brun.builds)} (${len(set(brun.builds))})</td>
     <td>${len(brun.unittests)} (${len(set(brun.unittests))})</td>
     <td>${len(brun.talos)} (${len(set(brun.talos))})</td>
   </tr>

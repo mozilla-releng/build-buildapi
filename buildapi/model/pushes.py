@@ -1,35 +1,12 @@
-from sqlalchemy import *
+from sqlalchemy import select, and_, not_
 import buildapi.model.meta as meta
-from buildapi.model.util import get_time_interval
-from pylons.decorators.cache import beaker_cache
+from buildapi.model.util import get_time_interval, get_branch_name
+from buildapi.model.util import SOURCESTAMPS_BRANCH, SOURCESTAMPS_BRANCH_PUSHES_SQL_EXCLUDE
 
-import re, simplejson
-
-SOURCESTAMPS_BRANCH = {
-    'l10n-central': [re.compile('^l10n-central.*')],
-    'birch': [re.compile('^birch.+'), re.compile('^projects/birch.*')],
-    'cedar': [re.compile('^cedar.+'), re.compile('^projects/cedar.*')],
-    'electrolysis': [re.compile('^electrolysis.*'), re.compile('^projects/electrolysis.*')],
-    'jaegermonkey': [re.compile('^projects/jaegermonkey.*')],
-    'maple': [re.compile('^maple.*'), re.compile('^projects/maple.*')],
-    'mozilla-1.9.1': [re.compile('^mozilla-1\.9\.1.*')],
-    'mozilla-1.9.2': [re.compile('^mozilla-1\.9\.2.*')],
-    'mozilla-2.0': [re.compile('^mozilla-2\.0.*')],
-    'mozilla-central': [re.compile('^mozilla-central.*')],
-    'places': [re.compile('^places.+'), re.compile('^projects/places.*')],
-    'release-mozilla-central': [re.compile('^release-mozilla-central.*')],
-    'tracemonkey': [re.compile('^tracemonkey.*')],
-    'try': [re.compile('^try$'), re.compile('^tryserver.*')],
-}
-
-SOURCESTAMPS_BRANCH_PUSHES_SQL_EXCLUDE = [
-    '%unittest',
-    '%talos',
-    'addontester%',
-]
+import simplejson
 
 def PushesQuery(starttime, endtime, branches=None):
-    """Constructs the sqlalchemy query for fetching all pushes in the specified time interval. 
+    """Constructs the sqlalchemy query for fetching all pushes in the specified time interval.
     One push is identified by changes.when_timestamp and branch name.
     
     Unittests and talos build requests are excluded.
@@ -50,8 +27,8 @@ def PushesQuery(starttime, endtime, branches=None):
     # exclude branches that are not of interest
     bexcl = [not_(s.c.branch.like(p)) for p in SOURCESTAMPS_BRANCH_PUSHES_SQL_EXCLUDE]
     if len(bexcl) > 0:
-	    q = q.where(and_(*bexcl))
-	
+        q = q.where(and_(*bexcl))
+
     if branches is not None:
         for branch in branches:
             q = q.where(s.c.branch.like('%' + branch + '%'))
@@ -59,13 +36,13 @@ def PushesQuery(starttime, endtime, branches=None):
     if starttime is not None:
         q = q.where(c.c.when_timestamp >= starttime)
     if endtime is not None:
-        q = q.where(c.c.when_timestamp <= endtime)
+        q = q.where(c.c.when_timestamp < endtime)
 
     return q
 
 def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
     """Get pushes and statistics.
-    
+
     Input: starttime - start time (UNIX timestamp in seconds), if not specified, endtime minus 24 hours
            endtime - end time (UNIX timestamp in seconds), if not specified, starttime plus 24 hours or 
                      current time (if starttime is not specified either)
@@ -83,7 +60,7 @@ def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
         branch_name = get_branch_name(r['branch'])
         stime = float(r['when_timestamp'])
         revision = r['revision']
-        
+
         push = Push(stime, branch_name, revision)
         report.add(push)
 
@@ -134,7 +111,7 @@ class PushesReport(object):
             return False
 
         if push.branch_name not in self.branches:
-            self._init_branch(push.branch_name)                
+            self._init_branch(push.branch_name)
 
         int_idx = self.get_interval_index(push.stime)
 
@@ -144,8 +121,8 @@ class PushesReport(object):
         self.branch_totals[push.branch_name]+=1
 
         return True
-	
-    def jsonify(self):
+
+    def to_dict(self, summary=False):
         json_obj = {
             'starttime': self.starttime,
             'endtime': self.endtime,
@@ -159,26 +136,15 @@ class PushesReport(object):
                 'total': self.branch_totals[branch], 
                 'intervals': self.branch_intervals[branch]
             }
-        
-        return simplejson.dumps(json_obj)  
+
+        return json_obj
+
+    def jsonify(self, summary=False):
+        return simplejson.dumps(self.to_dict(summary=summary))
 
 class Push(object):
-    
+
     def __init__(self, stime, branch_name, revision):
         self.stime = stime
         self.branch_name = branch_name
         self.revision = revision
-
-def get_branch_name(text):
-    """Returns the branch name.
-
-    Input: text - field value from schedulerdb table
-    Output: branch (one in SOURCESTAMPS_BRANCH keys: mozilla-central, mozilla-1.9.1, or text if not found
-    """
-    text = text.lower()
-    for branch in SOURCESTAMPS_BRANCH:
-        for pat in SOURCESTAMPS_BRANCH[branch]:
-            if pat.match(text):
-                return branch
-
-    return text
