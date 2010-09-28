@@ -7,9 +7,24 @@ PENDING, RUNNING, COMPLETE, CANCELLED, INTERRUPTED, MISC = range(6)
 NO_RESULT, SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY = range(-1, 6)
 
 BUILDPOOL_MASTERS = {
-    'buildpool': ['production-master01.build.mozilla.org', 'production-master03.build.mozilla.org'],
-    'trybuildpool': ['production-master02.build.mozilla.org'],
-    'testpool': ['test-master01', 'test-master02', 'talos-master02'],
+    'buildpool': [
+        'production-master01.build.mozilla.org',
+        'production-master03.build.mozilla.org',
+        'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/build_master3',
+        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/build_master4',
+    ],
+    'trybuildpool': [
+        'production-master02.build.mozilla.org',
+    ],
+    'testpool': [
+        'test-master01',
+        'test-master02',
+        'talos-master02',
+        'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master3',
+        'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master4',
+        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master5',
+        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master6',
+    ],
 }
 
 PLATFORMS_BUILDERNAME = {
