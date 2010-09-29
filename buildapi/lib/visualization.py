@@ -1,6 +1,29 @@
 import time
 import gviz_api
 
+def gviz_testruns(report, resp_type='JSonResponse'):
+    """Transforms testrun report into a Google visualization API Data Table, and returns it
+    either as JSONResponse or JSCode objects.
+
+    Inputs: report, resp_type - type of object to return (JSONResponse/JSCODE)
+    Output: JSONResponse/JSCode Visualization API objects"""
+
+    description = {'builders': ('string', 'Builder'),
+                   'setup': ('number', 'Setup/Teardown Time'),
+                   'test':('number', 'Test Run Time')}
+
+    data = []
+    for builder in (report.builders.keys()):
+        row = { 'builders': builder, 'setup': int(report.builders[builder]['total'] - report.builders[builder]['test']), 'test': int(report.builders[builder]['test'])}
+        data.append(row)
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    if resp_type == 'JSCode':
+        return data_table.ToJSCode( "jscode_data", columns_order=tuple(['builders', 'setup', 'test']) )
+    else:
+        return data_table.ToJSonResponse( columns_order=tuple(['builders', 'setup', 'test']) )
+
 def gviz_waittimes(report, num='full', resp_type='JSonResponse', req_id='0'):
     """Transforms Wait Times Report to Google Visualization API Data Table, 
     and returns it either as JSONResponse or JSCode objects.

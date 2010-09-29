@@ -11,14 +11,39 @@ EndtoendSchema, EndtoendRevisionSchema, BuildersSchema, BuilderDetailsSchema
 from buildapi.lib import helpers as h
 from buildapi.lib.base import BaseController, render
 from buildapi.lib.visualization import gviz_pushes, gviz_waittimes, \
-gviz_builders, gviz_trychooser_authors, gviz_trychooser_runs
+gviz_builders, gviz_trychooser_authors, gviz_trychooser_runs, gviz_testruns
 from buildapi.model.builders import GetBuildersReport, GetBuilderTypeReport
 from buildapi.model.endtoend import GetEndtoEndTimes, GetBuildRun
 from buildapi.model.pushes import GetPushes
 from buildapi.model.trychooser import TryChooserGetEndtoEndTimes
 from buildapi.model.waittimes import GetWaitTimes, BUILDPOOL_MASTERS, get_time_interval
+from buildapi.model.testruns import GetTestRuns, ALL_BRANCHES
 
 class ReportsController(BaseController):
+
+    @beaker_cache(query_args=True)
+    def testruns(self):
+        format = request.GET.getone('format') if 'format' in request.GET else 'html'
+        category = request.GET.getone('category') if 'category' in request.GET else None
+        platform = request.GET.getone('platform') if 'platform' in request.GET else None
+        group = request.GET.getone('group') if 'group' in request.GET else None
+        btype = request.GET.getone('btype') if 'btype' in request.GET else None
+
+        if format not in ('html', 'json', 'chart'):
+            abort(400, detail='Unsupported format: %s' % format)
+        params = self._get_report_params()
+        params['category'] = category
+        params['platform'] = platform
+        params['group'] = group
+        params['btype'] = btype
+        c.testruns = GetTestRuns(**params)
+
+        if format == 'json':
+            return c.testruns.jsonify()
+        elif format == 'chart':
+            return gviz_testruns(c.testruns)
+        else:
+            return render('/reports/testruns.mako')
 
     def builders(self, branch_name='mozilla-central'):
         """Average Time per Builder Report Controller."""
