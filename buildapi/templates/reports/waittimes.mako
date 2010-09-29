@@ -15,11 +15,16 @@
         query.send(handleQueryResponse_WaitTimesPercentage);
 
         ${c.jscode_data}
-        drawColumnChart(document.getElementById('stacked_column_chart_full_div'), jscode_data, true, 'Wait Times - Column Chart Job Numbers Stacked');
-        drawColumnChart(document.getElementById('column_chart_full_div'), jscode_data, false, 'Wait Times - Column Chart Job Numbers');
-        drawAreaChart(document.getElementById('stacked_area_chart_full_div'), jscode_data, true, 'Wait Times - Area Chart Job Numbers Stacked');
-        drawAreaChart(document.getElementById('area_chart_full_div'), jscode_data, false, 'Wait Times - Area Chart Job Numbers');
-        drawLineChart(document.getElementById('line_chart_full_div'), jscode_data, false, 'Wait Times - Line Chart Job Numbers');
+        drawColumnChart(document.getElementById('stacked_column_chart_full_div'), jscode_data, true,
+            'Wait Times - Column Chart Job Numbers Stacked');
+        drawColumnChart(document.getElementById('column_chart_full_div'), jscode_data, false,
+            'Wait Times - Column Chart Job Numbers');
+        drawAreaChart(document.getElementById('stacked_area_chart_full_div'), jscode_data, true,
+            'Wait Times - Area Chart Job Numbers Stacked');
+        drawAreaChart(document.getElementById('area_chart_full_div'), jscode_data, false,
+            'Wait Times - Area Chart Job Numbers');
+        drawLineChart(document.getElementById('line_chart_full_div'), jscode_data, false,
+            'Wait Times - Line Chart Job Numbers');
     }
 
     function handleQueryResponse_WaitTimesFull(response) {
@@ -39,8 +44,10 @@
         }
 
         var data = response.getDataTable();
-        drawAreaChart(document.getElementById('stacked_area_chart_div'), data, true, 'Wait Times - Area Chart Percentage Stacked');
-        drawAreaChart(document.getElementById('area_chart_div'), data, false, 'Wait Times - Area Chart Percentage');
+        drawAreaChart(document.getElementById('stacked_area_chart_div'), data, true,
+            'Wait Times - Area Chart Percentage Stacked');
+        drawAreaChart(document.getElementById('area_chart_div'), data, false,
+            'Wait Times - Area Chart Percentage');
     }
 
     $(document).ready(function() {
@@ -58,7 +65,8 @@
 <%def name="main_menu()">
   <p>${build_pool_menu(c.report.pool)}</p>
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
-  <p>Report for <b>${c.report.pool}</b> for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
+  <p>Report for <b>${c.report.pool}</b> for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and 
+    <b>${h.pacific_time(c.report.endtime)}</b></p>
 </%def>
 
 <% wt = c.report %>
@@ -112,9 +120,9 @@
     
       <div class="wt-container">
         <div class="wt-container-title">${platform}: ${ptotal}</div>
-	    <table class="display wt-platforms" cellpadding="0" cellspacing="0" border="0">
-	      <thead><tr><th>Wait Time</th><th>Number</th><th>Percentage</th></tr></thead>
-	      <tbody>
+        <table class="display wt-platforms" cellpadding="0" cellspacing="0" border="0">
+          <thead><tr><th>Wait Time</th><th>Number</th><th>Percentage</th></tr></thead>
+          <tbody>
             % for block in wt.get_blocks(platform=platform):
               <% bval = wt.get_wait_times(block, platform=platform).total %>
               <% bper = "%.2f%%" % (bval*100./ptotal) if ptotal else "-" %>

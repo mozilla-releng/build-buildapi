@@ -85,7 +85,53 @@
   </ul><a href="">less...</a></div><br/>
   <script type="text/javascript">
       $(document).ready(function() {
-          initToggleBoxes('#' + id_mode, '#' + id_less);
+          initToggleBoxes('#${id_more}', '#${id_less}');
       });
   </script>
+</%def>
+
+<%def name="checkbox_menu(name, itemlist, checkedlist)">
+  <span class="check_list ${name}">
+    % for item in itemlist:
+      <% ch = 'checked' if item in checkedlist else '' %>
+      <input type="checkbox" name="${name}" value="${item}" checked="${ch}" /> ${item}
+    % endfor
+  </span>
+</%def>
+
+<%def name="radio_menu(name, itemlist, checked)">
+  <span class="check_list ${name}">
+    % for item in itemlist:
+      <% ch = 'checked' if item == checked else '' %>
+      <input type="radio" name="${name}" value="${item}" checked="${ch}" /> ${item}
+    % endfor
+  </span>
+</%def>
+
+<%def name="builders_table_filters_menu(id)">
+  <%! from buildapi.model.util import PLATFORMS_BUILDERNAME, BUILD_TYPE_BUILDERNAME, JOB_TYPE_BUILDERNAME, BUILDERS_DETAIL_LEVELS %>
+  <div id="${id}">
+    <p>
+      <b>Filters:</b>
+      <br/><i>Platform:</i>
+      <% platforms = sorted(PLATFORMS_BUILDERNAME.keys()) %>
+      ${checkbox_menu('platform', platforms, [])}
+
+      <br/><i>Build Type:</i>
+      <% build_type = sorted(BUILD_TYPE_BUILDERNAME.keys()) %>
+      ${checkbox_menu('build_type', build_type, [])}
+
+      <br/><i>Job Type:</i>
+      <% job_type = sorted(JOB_TYPE_BUILDERNAME.keys()) %>
+      ${checkbox_menu('job_type', job_type, [])}
+    <br/></p>
+    <p>
+      <b>Detail level:</b>
+      <% 
+      dl = BUILDERS_DETAIL_LEVELS 
+      checked = dl[-1] if len(dl) else 0 %>
+      ${radio_menu('detail_level', dl, checked)}
+    </p>
+    Link: <input type="text" class="link" readonly="readonly" size="120"/>
+  </div>
 </%def>

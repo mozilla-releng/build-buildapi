@@ -21,11 +21,11 @@
             "sPaginationType": "full_numbers",
             "aLengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
             "iDisplayLength": 50,
-            "aoColumnDefs": [ 
+            "aoColumnDefs": [
                 /* results */ { "iDataSort": 3, "aTargets": [ 2 ] },
                 /* results number */ { "bSearchable": false, "bVisible": false, "aTargets": [ 3 ] },
-                /* duration */ { "iDataSort": 7, "aTargets": [ 6 ] },
-                /* duration (seconds) */ { "bSearchable": false, "bVisible": false, "aTargets": [ 7 ] },
+                /* run_time */ { "iDataSort": 7, "aTargets": [ 6 ] },
+                /* run_time (seconds) */ { "bSearchable": false, "bVisible": false, "aTargets": [ 7 ] },
                 /* wait time */ { "iDataSort": 9, "aTargets": [ 8 ] },
                 /* wait time (seconds) */ { "bSearchable": false, "bVisible": false, "aTargets": [ 9 ] },
             ],
@@ -53,9 +53,9 @@
     <tr><td>Job Type</td><td>${brep.job_type}</td></tr>
     <tr><td>No. build requests</td><td>${brep.get_total_build_requests()}</td></tr>
     <tr><td>Results</td><td>${print_results_ptg_full(brep.get_ptg_results())}</td></tr>
-    <tr><td>Min Duration</td><td>${h.strf_hms(brep.get_min_duration())}</td></tr>
-    <tr><td>Max Duration</td><td>${h.strf_hms(brep.get_max_duration())}</td></tr>
-    <tr><td><b>Avg Duration</b></td><td><b>${h.strf_hms(brep.get_avg_duration())}</b></td></tr>
+    <tr><td>Min Run Time</td><td>${h.strf_hms(brep.get_min_run_time())}</td></tr>
+    <tr><td>Max Run Time</td><td>${h.strf_hms(brep.get_max_run_time())}</td></tr>
+    <tr><td><b>Avg Run Time</b></td><td><b>${h.strf_hms(brep.get_avg_run_time())}</b></td></tr>
   </tbody>
 </table>
 <div class="clear"></div>
@@ -69,8 +69,8 @@
     <th>results number</th>
     <th>buildername</th>
     <th>branch</th>
-    <th>duration</th>
-    <th>duration (seconds)</th>
+    <th>run_time</th>
+    <th>run_time (seconds)</th>
     <th>wait time</th>
     <th>wait time (seconds)</th>
     <th>when_timestamp</th>
@@ -103,8 +103,8 @@
 
 <%!results_css_class = ['', 'success', 'warnings', 'failure']%>
 <%def name="table_row_brep_details(br)">
-<% 
-duration = br.get_duration()
+<%
+run_time = br.get_run_time()
 wait_time = br.get_wait_time()
 br_url = url.current(action='endtoend_revision', revision=br.revision, branch_name=br.branch_name, buildername=None)
 results_css = results_css_class[min(br.results, 2) + 1]
@@ -116,8 +116,8 @@ results_css = results_css_class[min(br.results, 2) + 1]
   <td>${br.results}</td>
   <td>${br.buildername}</td>
   <td>${br.branch}</td>
-  <td>${h.strf_hms(duration) if duration else '-'}</td>
-  <td>${duration}</td>
+  <td>${h.strf_hms(run_time) if run_time else '-'}</td>
+  <td>${run_time}</td>
   <td>${h.strf_hms(wait_time) if wait_time else '-'}</td>
   <td>${wait_time}</td>
   <td>${print_datetime_short(br.when_timestamp)}</td>

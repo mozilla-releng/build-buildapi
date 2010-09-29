@@ -1,23 +1,26 @@
-import logging
-
-import urllib, urllib2, simplejson
-import email, smtplib
 import sys
-import time, datetime
+import logging
+import urllib
+import urllib2
+import simplejson
+import email
+import smtplib
+import datetime
+import time
 import tzone
 
-SMTP_SENDER_DEFAULT='cltbld@build.mozilla.com'
-SMTP_SERVER_DEFAULT='localhost'
-SMTP_NO_TRIES_DEFAULT=1
-SMTP_SLEEP_TIME_DEFAULT=10
+SMTP_SENDER_DEFAULT = 'cltbld@build.mozilla.com'
+SMTP_SERVER_DEFAULT = 'localhost'
+SMTP_NO_TRIES_DEFAULT = 1
+SMTP_SLEEP_TIME_DEFAULT = 10
 
-WT_SERVICE_DEFAULT='http://localhost:5000/reports/waittimes'
-WT_POOL_DEFAULT='buildpool'
-WT_MPB_DEFAULT=15                       # minutes_per_block
-WT_RECEIVERS_DEFAULT=[]
-WT_RECEIVERS_BCC_DEFAULT=[]
-WT_STARTTIME_DEFAULT=None
-WT_ENDTIME_DEFAULT=None
+WT_SERVICE_DEFAULT = 'http://localhost:5000/reports/waittimes'
+WT_POOL_DEFAULT = 'buildpool'
+WT_MPB_DEFAULT = 15                       # minutes_per_block
+WT_RECEIVERS_DEFAULT = []
+WT_RECEIVERS_BCC_DEFAULT = []
+WT_STARTTIME_DEFAULT = None
+WT_ENDTIME_DEFAULT = None
 
 log = logging.getLogger('buildapi.controllers.mailwaittimes')
 
@@ -31,9 +34,9 @@ def format_wait_times(wait_times):
     Output: (title, text) - sting formatted wait times
     """
     total = wait_times['total']
-    minutes_per_block = wait_times['minutes_per_block']
+    mpb = wait_times['mpb']
 
-    zero_wait = wait_times['wt'].get('0',{'total':0})['total']*100./total if total > 0 else 0
+    zero_wait = wait_times['wt'].get('0', {'total':0})['total'] * 100. / total if total > 0 else 0
     title = "Wait: %i/%.2f%% (%s)" % (total, zero_wait, wait_times['pool'])
 
     text = []
@@ -41,13 +44,13 @@ def format_wait_times(wait_times):
                 % (wait_times['pool'], tzone.pacific_time(wait_times['starttime']), tzone.pacific_time(wait_times['endtime'])))
     text.append("Total Jobs: %s\n" % total)
     text.append("Wait Times")
-    text.append(format_wait_times_stats(wait_times['wt'], minutes_per_block, total))
+    text.append(format_wait_times_stats(wait_times['wt'], mpb, total))
 
     text.append("\nPlatform break down\n")
     for platform in sorted(wait_times['platforms']):
         pwt = wait_times['platforms'][platform]
         text.append("%s: %s" % (platform, pwt['total']))
-        text.append(format_wait_times_stats(pwt['wt'], minutes_per_block, pwt['total']))
+        text.append(format_wait_times_stats(pwt['wt'], mpb, pwt['total']))
         text.append("\n")
 
     text.append("The number on the left is how many minutes a build waited to start, rounded down.\n")
@@ -67,38 +70,38 @@ def format_wait_times(wait_times):
 
     return (title, '\n'.join(text))
 
-def format_wait_times_stats(stats, minutes_per_block, total=0):
+def format_wait_times_stats(stats, mpb, total=0):
     """Format wait time statistics for one platform only.
 
     Input: stats - wait times for one platform, {'block_no': num,}
-           minutes_per_block - granularity of wait times blocks
+           mpb - granularity of wait times blocks
            total - number of all build requests for this platform
     Ouput: string - formatted text
     """
     if not total: total = sum([w['total'] for w in stats.values()])
 
     text = []
-    max_block = max(map(int, stats.keys()))+1 if stats.keys() else 0
-    for i in range(0, max_block, minutes_per_block):
+    max_block = max(map(int, stats.keys())) + 1 if stats.keys() else 0
+    for i in range(0, max_block, mpb):
         num = stats.get(str(i), {'total': 0})['total']
-        percentage = " %8.2f%%" % (num*100./total) if total > 0 else ''
+        percentage = " %8.2f%%" % (num*100. / total) if total > 0 else ''
 
         text.append("%3i: %8i%s" % (i, num, percentage))
 
     return "\n".join(text)
 
 def wtservice_get_full_url(wt_service=WT_SERVICE_DEFAULT,
-        pool='buildpool', starttime=None, endtime=None, minutes_per_block=None):
+        pool='buildpool', starttime=None, endtime=None, mpb=None):
     """Returns the full request URL to the service providing the wait times.
     
     Input: wt_service - base URL for service, default: http://localhost:5000/reports/waittimes
            pool - pool name, default: buildpool
            starttime - start time, default: None (server's default will be used)
            endtime - end time, default: None (server's default will be used)
-           minutes_per_block - block granularity, default: None (server's default will be used)
+           mpb - block granularity, default: None (server's default will be used)
     Output: string - full request URL
     """
-    wt_params = dict(format='json', startime=starttime, endtime=endtime, mpb=minutes_per_block)
+    wt_params = dict(format='json', startime=starttime, endtime=endtime, mpb=mpb)
     wt_params_str = urllib.urlencode([(k, v) for k, v in wt_params.items() if v])
 
     return '%s/%s?%s' % (wt_service, pool, wt_params_str)
@@ -145,9 +148,11 @@ def mail_send(body, subject, sender, receivers, server, receivers_bcc=[]):
 
     return refused_rcv
 
-def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, receivers=WT_RECEIVERS_DEFAULT,
-        receivers_bcc=WT_RECEIVERS_BCC_DEFAULT, wt_service=WT_SERVICE_DEFAULT, pool=WT_POOL_DEFAULT,
-        starttime=WT_STARTTIME_DEFAULT, endtime=WT_ENDTIME_DEFAULT, minutes_per_block=WT_MPB_DEFAULT,
+def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, 
+        receivers=WT_RECEIVERS_DEFAULT, receivers_bcc=WT_RECEIVERS_BCC_DEFAULT,
+        wt_service=WT_SERVICE_DEFAULT, pool=WT_POOL_DEFAULT,
+        starttime=WT_STARTTIME_DEFAULT, endtime=WT_ENDTIME_DEFAULT, 
+        mpb=WT_MPB_DEFAULT,
         tries=SMTP_NO_TRIES_DEFAULT, sleep=SMTP_SLEEP_TIME_DEFAULT):
     """Mails wait times. Main function to call for mailing wait times.
 
@@ -157,7 +162,7 @@ def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, rece
            receivers_bcc - list of bcc receiver e-mails
            wt_service - wait times service base URL, e.g. http://domain/waittimes
            pool - pool name
-           minutes_per_block - minutes per block
+           mpb - minutes per block
            starttime - start time in seconds since epoch, UTC (end time minus 24 hours, if not specified)
            endtime - end time in seconds since epoch, UTC (start time plus 24 hours, if not specified)
            tries - number of tries for sending e-mails, in case of errors, before giving up
@@ -170,9 +175,8 @@ def mail_wait_times(server=SMTP_SERVER_DEFAULT, sender=SMTP_SENDER_DEFAULT, rece
            the receivers were refused or an exception was raised.
     """
     wt_full_url = wtservice_get_full_url(wt_service=wt_service, pool=pool, starttime=starttime,
-        endtime=endtime, minutes_per_block=minutes_per_block)
+        endtime=endtime, mpb=mpb)
 
-    err_msg = ''
     while tries:
         try:
             wait_times = wtservice_fetch(wt_full_url)
@@ -204,7 +208,7 @@ if __name__ == '__main__':
         receivers_bcc = WT_RECEIVERS_BCC_DEFAULT,
         wt_service = WT_SERVICE_DEFAULT,
         pool = WT_POOL_DEFAULT,
-        minutes_per_block = WT_MPB_DEFAULT,
+        mpb = WT_MPB_DEFAULT,
         starttime = WT_STARTTIME_DEFAULT,
         endtime = WT_ENDTIME_DEFAULT,
         tries = SMTP_NO_TRIES_DEFAULT,
@@ -217,7 +221,7 @@ if __name__ == '__main__':
     parser.add_option("-b", "--BCC", dest="receivers_bcc", action="append", help="BCC receiver e-mail address")
     parser.add_option("-W", "--wt", dest="wt_service", help="Wait times service base URL, e.g. http://domain/waittimes")
     parser.add_option("-p", "--pool", dest="pool", help="Pool name")
-    parser.add_option("-m", "--minutes-per-block", type="int", help="How many minutes per block", dest="minutes_per_block")
+    parser.add_option("-m", "--minutes-per-block", type="int", help="How many minutes per block", dest="mpb")
     parser.add_option("-s", "--start-time", dest="starttime", type="int",
         help="Start time in seconds since epoch, UTC. If not specified, it will equal end time minus 24 hours")
     parser.add_option("-e", "--end-time", dest="endtime", type="int",
@@ -229,14 +233,15 @@ if __name__ == '__main__':
 
     op, args = parser.parse_args()
 
-    resp = mail_wait_times(server=op.smtp_server, sender=op.sender, receivers=op.receivers, receivers_bcc=op.receivers_bcc,
-        wt_service=op.wt_service, pool=op.pool, starttime=op.starttime, endtime=op.endtime,
-        minutes_per_block=op.minutes_per_block, tries=op.tries, sleep=op.sleep)
+    resp = mail_wait_times(server=op.smtp_server, sender=op.sender,
+        receivers=op.receivers, receivers_bcc=op.receivers_bcc,
+        wt_service=op.wt_service, pool=op.pool, starttime=op.starttime,
+        endtime=op.endtime, mpb=op.mpb, tries=op.tries, sleep=op.sleep)
 
     print resp['msg']
     if resp['status'] == 'error':
-        sys.exit(1)             # an exception was thrown, the mail was not sent to any of the receivers
+        sys.exit(1)         # an exception was thrown, the mail was not sent to any of the receivers
     if len(resp['refused'].keys()) > 0:
-        sys.exit(2)     # mail was not sent to all receivers (just a subset)
+        sys.exit(2)         # mail was not sent to all receivers (just a subset)
     else:
         sys.exit(0)         # success - mail sent to all receivers

@@ -1,47 +1,27 @@
-from sqlalchemy import outerjoin, or_
-import buildapi.model.meta as meta
-from buildapi.model.util import BUILDSET_REASON, PENDING, RUNNING, COMPLETE, CANCELLED, INTERRUPTED, MISC
-from buildapi.model.util import NO_RESULT, SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
-from buildapi.model.util import get_time_interval, get_branch_name, get_platform, get_build_type, get_job_type, results_to_str, status_to_str
-
 import simplejson
+from sqlalchemy import or_
 
-b = meta.scheduler_db_meta.tables['builds']
+import buildapi.model.meta as meta
+from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery
+from buildapi.model.util import BUILDSET_REASON, PENDING, RUNNING, COMPLETE, \
+CANCELLED, INTERRUPTED, MISC
+from buildapi.model.util import NO_RESULT, SUCCESS, WARNINGS, FAILURE, \
+SKIPPED, EXCEPTION, RETRY
+from buildapi.model.util import get_time_interval, get_branch_name, \
+get_platform, get_build_type, get_job_type, get_revision, results_to_str
+
 br = meta.scheduler_db_meta.tables['buildrequests']
-bs = meta.scheduler_db_meta.tables['buildsets']
 s = meta.scheduler_db_meta.tables['sourcestamps']
-sch = meta.scheduler_db_meta.tables['sourcestamp_changes']
 c = meta.scheduler_db_meta.tables['changes']
 
-def BuildRequestsQuery():
-    """Constructs the sqlalchemy query for fetching all build requests.
-
-    Input: None
-    Output: query
-    """
-    q = outerjoin(br, b, b.c.brid==br.c.id) \
-            .join(bs, bs.c.id==br.c.buildsetid) \
-            .join(s, s.c.id==bs.c.sourcestampid) \
-            .outerjoin(sch, sch.c.sourcestampid==s.c.id) \
-            .outerjoin(c, c.c.changeid==sch.c.changeid) \
-            .select() \
-            .with_only_columns([b.c.number, br.c.id.label('brid'), br.c.buildername, s.c.branch, s.c.id.label('ssid'), \
-                c.c.when_timestamp, br.c.submitted_at, br.c.claimed_at, b.c.start_time, \
-                br.c.complete_at, b.c.finish_time, br.c.claimed_by_name, \
-                s.c.revision, br.c.complete, bs.c.reason, br.c.results, \
-                c.c.author, c.c.comments, c.c.revlink, c.c.category, c.c.repository, c.c.project, \
-                br.c.buildsetid])
-
-    q = q.group_by(br.c.id, b.c.id)  # some build request might have multiple builds
-
-    return q
-
 def BuildRunQuery(revision, branch_name=None):
-    """Constructs the sqlalchemy query for fetching all build requests in a build run (sharing 
-    the same sourcestamps.revision number).
+    """Constructs the sqlalchemy query for fetching all build requests in a 
+    build run (sharing the same sourcestamps.revision number).
 
-    Input: revision - sourcestamps.revision (first 12 chars are enough), or None for nigthtlies
-           branch_name - branch name; if not specified, no restriction is applied on branch
+    Input: revision - sourcestamps.revision (first 12 chars are enough), or 
+                None for nigthtlies
+           branch_name - branch name; if not specified, no restriction is 
+                applied on branch
     Output: query
     """
     q = BuildRequestsQuery()
@@ -56,8 +36,8 @@ def BuildRunQuery(revision, branch_name=None):
     return q
 
 def EndtoEndTimesQuery(starttime, endtime, branch_name):
-    """Constructs the sqlalchemy query for fetching all build requests in the specified time 
-    interval for the specified branch.
+    """Constructs the sqlalchemy query for fetching all build requests in the 
+    specified time interval for the specified branch.
 
     Input: starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
@@ -68,17 +48,19 @@ def EndtoEndTimesQuery(starttime, endtime, branch_name):
 
     q = q.where(s.c.branch.like('%' + branch_name + '%'))
     # ??? first build job in push started, not all! --> what condition on rest??
-    q = q.where(or_(c.c.when_timestamp>=starttime, br.c.submitted_at>=starttime))
-    q = q.where(or_(c.c.when_timestamp<endtime, br.c.submitted_at<endtime))
+    q = q.where(or_(c.c.when_timestamp >= starttime, br.c.submitted_at >= starttime))
+    q = q.where(or_(c.c.when_timestamp < endtime, br.c.submitted_at < endtime))
 
     return q
 
 def GetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'):
     """Get end to end times report for the speficied time interval and branch.
 
-    Input: starttime - start time (UNIX timestamp in seconds), if not specified, endtime minus 24 hours
-           endtime - end time (UNIX timestamp in seconds), if not specified, starttime plus 24 hours or 
-                     current time (if starttime is not specified either)
+    Input: starttime - start time (UNIX timestamp in seconds), if not 
+                specified, endtime minus 24 hours
+           endtime - end time (UNIX timestamp in seconds), if not specified, 
+                starttime plus 24 hours or current time (if starttime is not 
+                specified either)
            branch_name - branch name, default vaue is 'mozilla-central'
     Output: EndtoEndTimesReport
     """
@@ -90,17 +72,17 @@ def GetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'
     report = EndtoEndTimesReport(starttime, endtime, branch_name)
     for r in q_results:
         params = dict((str(k), v) for (k, v) in dict(r).items())
-        params['revision'] = params['revision'][:12] if params['revision'] else params['revision']
-
         br = BuildRequest(**params)
         report.add_build_request(br)
 
     return report
 
 def GetBuildRun(branch_name=None, revision=None):
-    """Get build run report. The build run report is specified by its sourcestamps.revision number.
+    """Get build run report. The build run report is specified by its 
+    sourcestamps.revision number.
 
-    Input: revision - sourcestamps.revision (first 12 chars are enough), or None for nigthtlies
+    Input: revision - sourcestamps.revision (first 12 chars are enough), or 
+                None for nigthtlies
     Output: BuildRun
     """
     q_results = BuildRunQuery(revision, branch_name=branch_name).execute()
@@ -108,8 +90,6 @@ def GetBuildRun(branch_name=None, revision=None):
     report = BuildRun(revision, branch_name)
     for r in q_results:
         params = dict((str(k), v) for (k, v) in dict(r).items())
-        params['revision'] = params['revision'][:12] if params['revision'] else params['revision']
-
         br = BuildRequest(**params)
         report.add(br)
 
@@ -142,7 +122,8 @@ class EndtoEndTimesReport(object):
 
     def get_unique_total_build_requests(self):
         if self._u_total_br == EndtoEndTimesReport.outdated:
-            self._u_total_br = sum([self._runs[r].get_unique_total_build_requests() for r in self._runs])
+            self._u_total_br = \
+                sum([self._runs[r].get_unique_total_build_requests() for r in self._runs])
 
         return self._u_total_br
 
@@ -156,7 +137,8 @@ class EndtoEndTimesReport(object):
         return self._avg_run_duration
 
     def add_build_request(self, br):
-        if br.revision not in self._runs: self._runs[br.revision] = BuildRun(br.revision, br.branch_name)
+        if br.revision not in self._runs: 
+            self._runs[br.revision] = BuildRun(br.revision, br.branch_name)
         self._runs[br.revision].add(br)
 
         self._total_br = EndtoEndTimesReport.outdated
@@ -178,109 +160,6 @@ class EndtoEndTimesReport(object):
             for brun_key in self._runs:
                 json_obj['build_runs'][brun_key] = self._runs[brun_key].to_dict(summary=True)
 
-        return json_obj
-
-    def jsonify(self, summary=False):
-        return simplejson.dumps(self.to_dict(summary=summary))
-
-class BuildRequest(object):
-
-    def __init__(self, number=None, brid=None, branch=None, buildername=None, revision=None, ssid=None, \
-        when_timestamp=None, submitted_at=None, claimed_at=None, start_time=None, complete_at=None, finish_time=None, \
-        claimed_by_name=None, complete=0, reason=None, results=None, \
-        author=None, comments=None, revlink=None, category=None, repository=None, project=None, \
-        buildsetid=None):
-        self.number = number
-        self.brid = brid
-        self.branch = branch
-        self.branch_name = get_branch_name(branch)
-        self.buildername = buildername
-        self.ssid = ssid
-        self.revision = revision    # sourcestamp revision number
-
-        self.when_timestamp = when_timestamp
-        self.submitted_at = submitted_at
-        self.claimed_at = claimed_at
-        self.start_time = start_time
-        self.complete_at = complete_at
-        self.finish_time = finish_time
-
-        self.claimed_by_name = claimed_by_name
-        self.complete = complete
-        self.reason = reason
-        self.results = results if results!=None else NO_RESULT
-
-        self.author = author
-        self.comments = comments
-        self.revlink = revlink
-        self.category = category
-        self.repository = repository 
-        self.project = project
-        self.buildsetid = buildsetid
-
-        self.status = self._compute_status()
-
-        self.platform = get_platform(buildername)
-        self.build_type = get_build_type(buildername) # opt / debug
-        self.job_type = get_job_type(buildername)     # build / unittest / talos
-
-    def _compute_status(self):
-        # when_timestamp & submitted_at ?
-        if not self.complete and not self.complete_at and not self.finish_time:  # not complete
-            if self.start_time and self.claimed_at:         # running
-                return RUNNING
-            if not self.start_time and not self.claimed_at: # pending
-                return PENDING
-        if self.complete and self.complete_at and self.finish_time and \
-            self.start_time and self.claimed_at:            # complete
-            return COMPLETE
-        if not self.start_time and not self.claimed_at and \
-            self.complete and self.complete_at and not self.finish_time:  # cancelled
-            return CANCELLED
-        if self.complete and self.complete_at and not self.finish_time and \
-            self.start_time and self.claimed_at:            # build interrupted (eg slave disconnected) and buildbot retriggered the build
-            return INTERRUPTED
-
-        return MISC                       # what's going on?
-
-    def get_duration(self):
-        change_time = self.when_timestamp or self.submitted_at
-        return self.complete_at - change_time if self.complete_at and change_time else 0
-
-    def get_wait_time(self):
-        change_time = self.when_timestamp or self.submitted_at
-        return self.start_time - change_time if self.start_time and change_time else 0
-
-    def to_dict(self, summary=False):
-        json_obj = {
-            'number': self.number,
-            'brid': self.brid,
-            'branch': self.branch,
-            'branch_name': self.branch_name,
-            'buildername': self.buildername,
-            'ssid': self.ssid,
-            'revision': self.revision,
-            'when_timestamp': self.when_timestamp, 
-            'submitted_at': self.submitted_at,
-            'claimed_at': self.claimed_at,
-            'start_time': self.start_time,
-            'complete_at': self.complete_at,
-            'finish_time': self.finish_time,
-            'claimed_by_name': self.claimed_by_name,
-            'complete': self.complete,
-            'reason': self.reason,
-            'results': self.results,
-            'results_str': results_to_str(self.results),
-            'status': self.status,
-            'status_str': status_to_str(self.status),
-            'author': self.author,
-            'comments': self.comments,
-            'revlink': self.revlink,
-            'category': self.category,
-            'repository': self.repository,
-            'project': self.project,
-            'buildsetid': self.buildsetid,
-        }
         return json_obj
 
     def jsonify(self, summary=False):
@@ -388,7 +267,7 @@ class BuildRun(object):
         json_obj = {
             'revision': self.revision,
             'results': self.results,
-            'results_str': BuildRequest.str_results(self.results),
+            'results_str': results_to_str(self.results),
             'is_complete': 'yes' if self.is_complete() else 'no',
             'total_build_requests': self.get_total_build_requests(),
             'duration': self.get_duration(),

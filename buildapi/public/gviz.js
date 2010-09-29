@@ -38,3 +38,12 @@ function drawBarChart(elem, data, isStacked, title, width, height) {
         height: height || 800
     });
 }
+
+function drawPieChart(elem, data, title, width, height) {
+    var cc = new google.visualization.PieChart(elem);
+    cc.draw(data, {
+        title : title || '',
+        width: width || 450,
+        height: height || 300
+    });
+}

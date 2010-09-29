@@ -43,10 +43,12 @@ def make_map(config):
     map.connect('/reports/{action}', controller='reports')
     map.connect('/reports/builder/{buildername}', controller='reports', action='builder_details')
     map.connect('/reports/builders/{branch_name}', controller='reports', action='builders')
-    map.connect('/reports/pushes', controller='reports', action='pushes')
-    map.connect('/reports/waittimes/{pool}', controller='reports', action='waittimes')
     map.connect('/reports/endtoend/{branch_name}', controller='reports', action='endtoend')
+    map.connect('/reports/pushes', controller='reports', action='pushes')
     map.connect('/reports/revision/{branch_name}/{revision}', controller='reports', action='endtoend_revision')
+    map.connect('/reports/waittimes/{pool}', controller='reports', action='waittimes')
+
+    map.connect('/reports/trychooser/{branch_name}', controller='reports', action='trychooser')
 
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
