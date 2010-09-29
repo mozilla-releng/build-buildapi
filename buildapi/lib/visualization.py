@@ -1,6 +1,32 @@
 import time
 import gviz_api
 
+def gviz_idlejobs(report, resp_type='JSonResponse'):
+    """Transforms idlejobs report into a google visualization data table, and returns it as
+    either JSON or JSCode
+    Input: report, resp_type
+    Output: JSON/JSCode of resulting data table
+    """
+    intervals = [time.strftime('%m/%d %H:%M', time.localtime(report.get_interval_timestamp(t))) \
+        for t in range(report.int_no)]
+
+    description = {'intervals': ('string', 'Interval'),}
+    for builder in report.builders:
+       description[builder] = ('number', builder)
+
+    data = []
+    for i in range(report.int_no):
+        row = { 'intervals': intervals[i], }
+        for builder in report.builders:
+            row[builder] = int(report.builder_intervals[builder][i])
+        data.append(row)
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    if resp_type == 'JSCode':
+        return data_table.ToJSCode( "jscode_data", columns_order=tuple(['intervals'] + sorted(report.builders)) )
+    else:
+        return data_table.ToJSonResponse( columns_order=tuple(['intervals'] + sorted(report.builders)) )
+ 
 def gviz_testruns(report, resp_type='JSonResponse'):
     """Transforms testrun report into a Google visualization API Data Table, and returns it
     either as JSONResponse or JSCode objects.

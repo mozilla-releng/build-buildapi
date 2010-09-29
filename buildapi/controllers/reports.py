@@ -11,7 +11,7 @@ EndtoendSchema, EndtoendRevisionSchema, BuildersSchema, BuilderDetailsSchema
 from buildapi.lib import helpers as h
 from buildapi.lib.base import BaseController, render
 from buildapi.lib.visualization import gviz_pushes, gviz_waittimes, \
-gviz_builders, gviz_trychooser_authors, gviz_trychooser_runs, gviz_testruns
+gviz_builders, gviz_trychooser_authors, gviz_trychooser_runs, gviz_testruns, gviz_idlejobs
 from buildapi.model.builders import GetBuildersReport, GetBuilderTypeReport
 from buildapi.model.endtoend import GetEndtoEndTimes, GetBuildRun
 from buildapi.model.pushes import GetPushes
@@ -22,6 +22,21 @@ from buildapi.model.testruns import GetTestRuns, ALL_BRANCHES
 class ReportsController(BaseController):
 
     @beaker_cache(query_args=True)
+    def idlejobs(self):
+        format = request.GET.getone('format') if 'format' in request.GET else 'html'
+        if format not in ('html', 'json', 'chart'):
+            abort(400, detail='Unsupported format: %s' % format)
+        params = self._get_report_params()
+        c.idlejobs = GetIdleJobsReport(**params)
+
+        if format == 'json':
+            return c.idlejobs.jsonify()
+        elif format == 'chart':
+            return gviz_idlejobs(c.idlejobs)
+        else:
+            return render('/reports/idlejobs.mako')
+
+   @beaker_cache(query_args=True)
     def testruns(self):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         category = request.GET.getone('category') if 'category' in request.GET else None
