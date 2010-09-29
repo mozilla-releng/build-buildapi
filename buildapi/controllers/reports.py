@@ -27,7 +27,6 @@ class ReportsController(BaseController):
         params = self._validate(BuildersSchema(), req_params)
 
         format = params['format']
-        req_id = params['reqid']
         if format == 'html':
             # if html, fetch all results by ignoring all filters
             # (by ignoring the fiter parameters, the defaults will be used)
@@ -39,13 +38,14 @@ class ReportsController(BaseController):
                     'platform', 'build_type', 'job_type', 'detail_level')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def builders_getReport(**params):
             return GetBuildersReport(**params)
-        c.report = getReport(**report_params)
+        c.report = builders_getReport(**report_params)
 
         if format == 'json':
             return c.report.jsonify()
         elif format == 'chart':
+            req_id = params['reqid']
             return gviz_builders(c.report, req_id=req_id)
         else:
             return render('/reports/builders.mako')
@@ -61,9 +61,9 @@ class ReportsController(BaseController):
                 ('starttime', 'endtime', 'buildername')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def builder_details_geReport(**params):
             return GetBuilderTypeReport(**params)
-        c.report = getReport(**report_params)
+        c.report = builder_details_geReport(**report_params)
 
         if format == 'json':
             return c.report.jsonify()
@@ -77,18 +77,18 @@ class ReportsController(BaseController):
         params = self._validate(EndtoendSchema(), req_params)
 
         format = params['format']
-        req_id = params['reqid']
         report_params = dict([(k, params[k]) for k in 
                 ('starttime', 'endtime', 'branch_name')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def endtoend_getReport(**params):
             return GetEndtoEndTimes(**params)
-        c.report = getReport(**report_params)
+        c.report = endtoend_getReport(**report_params)
 
         if format == 'json':
             return c.report.jsonify()
         elif format == 'chart':
+            req_id = params['reqid']
             return gviz_endtoend(c.report, req_id=req_id)
         else:
             return render('/reports/endtoend.mako')
@@ -103,9 +103,9 @@ class ReportsController(BaseController):
         report_params = dict([(k, params[k]) for k in ('branch_name', 'revision')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def endtoend_revision_getReport(**params):
             return GetBuildRun(**params)
-        c.report = getReport(**report_params)
+        c.report = endtoend_revision_getReport(**report_params)
 
         if format == 'json':
             return c.report.jsonify()
@@ -117,18 +117,18 @@ class ReportsController(BaseController):
         params = self._validate(PushesSchema(), request.params)
 
         format = params['format']
-        req_id = params['reqid']
         report_params = dict([(k, params[k]) for k in 
                 ('starttime', 'endtime', 'int_size', 'branch')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def pushes_getReport(**params):
             return GetPushes(**params)
-        c.report = getReport(**report_params)
+        c.report = pushes_getReport(**report_params)
 
         if format == 'json':
             return c.report.jsonify()
         elif format == 'chart':
+            req_id = params['reqid']
             return gviz_pushes(c.report, req_id=req_id)
         else:
             return render('/reports/pushes.mako')
@@ -144,14 +144,14 @@ class ReportsController(BaseController):
                 ('pool', 'mpb', 'starttime', 'endtime', 'int_size', 'maxb')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def waittimes_getReport(**params):
             return GetWaitTimes(**params)
-        c.report = getReport(**report_params)
+        c.report = waittimes_getReport(**report_params)
 
+        num = params['num']
         if format == 'json':
             return c.report.jsonify()
         elif format == 'chart':
-            num = params['num']
             req_id = params['reqid']
             return gviz_waittimes(c.report, num=num, req_id=req_id)
         else:
@@ -169,9 +169,9 @@ class ReportsController(BaseController):
                 ('starttime', 'endtime', 'branch_name')])
 
         @beaker_cache(expire=600, cache_response=False)
-        def getReport(**params):
+        def trychooser_getReport(**params):
             return TryChooserGetEndtoEndTimes(**params)
-        c.report = getReport(**report_params)
+        c.report = trychooser_getReport(**report_params)
 
         if format == 'json':
             return c.report.jsonify()

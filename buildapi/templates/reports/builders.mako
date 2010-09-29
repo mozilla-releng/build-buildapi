@@ -48,24 +48,22 @@ ${h.tags.javascript_link(
 
         var oTableFilterWrapper = e2eTable.fnCreateFilterWrapper({
             tableFilterCols: {platform: 1, build_type: 2, job_type: 3, detail_level: 0},
-            platformCol: 1,
-            buildTypeCol: 2,
-            jobTypeCol: 3,
-            buildernameCol: 21,
+            tableBuildernameCols: [1, 2, 3, 21],
             ptgRunTimeCol: 7,
             sumRunTimeCol: 6,
         });
-        oTableFilterWrapper.applyFilters(filters);
-
         var oFilters = $("#builders-overall-filters").filters(filters, {
             onChangeCallback: function(filterName, checkedList) {
-                oTableFilterWrapper.applyFilter(filterName, checkedList);
+                oTableFilterWrapper.applyFilter(filterName);
                 oTableFilterWrapper.updatePtgColumn();
+
                 // update pie chart
                 var chartData = oTableFilterWrapper.parsePtgRunTimeChartData();
                 updatePieChart(document.getElementById('piechart'), chartData);
             }
         });
+        oTableFilterWrapper.setFilters(oFilters);
+        oTableFilterWrapper.applyFilters();
     });
 </script>
 </%def>

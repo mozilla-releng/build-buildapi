@@ -27,6 +27,7 @@
 
         this.attachOnChangeEvents();
         this.domUpdate();
+        this.filters = this.domParseFilters();
     };
 
     Filters.prototype.getFilter = function(filterName) {
@@ -71,6 +72,14 @@
         $(this.options.linkSelector, $(this.elem)).val(this.getLink());
     };
 
+    Filters.prototype.domParseFilters = function() {
+        var f = {};
+        for (var fn in this.filters) {
+            f[fn] = this.domParseCheckedValues(fn);
+        }
+        return f;
+    };
+
     Filters.prototype.domParseCheckedValues = function(filterName) {
         var f = [];
         var selector = this.getFilterSelector(filterName);
@@ -106,7 +115,10 @@
     };
 
     $.fn.filters = function(filters, options) {
-        new Filters(filters, $(this), options);
+        var oFilters = new Filters(filters, $(this), options);
+        $.fn.getFilters = function() {
+            return oFilters;
+        }
         return $(this);
     };
 
@@ -115,13 +127,19 @@
         this.oTable = oTable;
     };
 
+    BuildersTableFiltersWrapper.prototype.setFilters = function(oFilters) {
+        this.oFilters = oFilters;
+        this._filters = oFilters.getFilters();
+    }
+
     BuildersTableFiltersWrapper.prototype.updatePtgColumn = function() {
         var sumCol = this.options.sumRunTimeCol;
         var ptgCol = this.options.ptgRunTimeCol;
         this.oTable.fnUpdatePtgColumn(sumCol, ptgCol);
     };
 
-    BuildersTableFiltersWrapper.prototype.applyFilters = function(filters) {
+    BuildersTableFiltersWrapper.prototype.applyFilters = function() {
+        var filters = this._filters.filters;
         for (var fn in filters) {
             this.applyFilter(fn, filters[fn]);
         }
@@ -130,21 +148,21 @@
         updatePieChart(document.getElementById('piechart'), chartData);
     };
 
-    BuildersTableFiltersWrapper.prototype.applyFilter = function(filterName, checkedList) {
+    BuildersTableFiltersWrapper.prototype.applyFilter = function(filterName) {
         var iCol = this.options.tableFilterCols[filterName];
+        var checkedList = this._filters.filters[filterName];
         var rgex_filter = '^(' + checkedList.join('|') + '|)$';
         this.oTable.fnFilter(rgex_filter, iCol, true, false);
     };
 
     BuildersTableFiltersWrapper.prototype._fnGetRowBuilderName = function(rowData) {
-        var p = this.options.platformCol;
-        var bt = this.options.buildTypeCol;
-        var jt = this.options.jobTypeCol;
-        var b = this.options.buildernameCol;
-
         // get buildername from platform, buildType, jobType and buildername columns
-        var sname = [rowData[p], rowData[bt], rowData[jt], rowData[b]];
-        return sname.join(' ');
+        var bname = [];
+        var bname_cols = this.options.tableBuildernameCols;
+        for (var i=0; i < bname_cols.length; i++) {
+            bname.push(rowData[bname_cols[i]]);
+        }
+        return bname.join(' ');
     };
 
     BuildersTableFiltersWrapper.prototype.parsePtgRunTimeChartData = function() {
@@ -165,10 +183,7 @@
 
     BuildersTableFiltersWrapper.defaults = {
         tableFilterCols: {platform: 1, build_type: 2, job_type: 3, detail_level: 0},
-        platformCol: 1,
-        buildTypeCol: 2,
-        jobTypeCol: 3,
-        buildernameCol: 4,
+        tableBuildernameCols: [ 1 ],
         ptgRunTimeCol: 5,
         sumRunTimeCol: 6,
     };
