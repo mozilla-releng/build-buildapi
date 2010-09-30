@@ -36,7 +36,7 @@ class ReportsController(BaseController):
         else:
             return render('/reports/idlejobs.mako')
 
-   @beaker_cache(query_args=True)
+    @beaker_cache(query_args=True)
     def testruns(self):
         format = request.GET.getone('format') if 'format' in request.GET else 'html'
         category = request.GET.getone('category') if 'category' in request.GET else None
