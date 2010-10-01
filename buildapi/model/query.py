@@ -43,7 +43,8 @@ def GetBuilds(branch=None, type='pending', rev=None):
     bs = meta.scheduler_db_meta.tables['buildsets']
     ss = meta.scheduler_db_meta.tables['sourcestamps']
     if type == 'pending':
-        q = select([ss.c.branch,
+        q = select([br.c.id,
+                    ss.c.branch,
                     ss.c.revision,
                     br.c.buildername,
                     br.c.submitted_at,
@@ -51,7 +52,8 @@ def GetBuilds(branch=None, type='pending', rev=None):
         q = q.where(and_(br.c.buildsetid==bs.c.id, bs.c.sourcestampid==ss.c.id))
         q = q.where(and_(br.c.claimed_at==0, br.c.complete==0))
     elif type == 'running':
-        q = select([ss.c.branch,
+        q = select([b.c.id,
+                    ss.c.branch,
                     ss.c.revision,
                     br.c.buildername,
                     br.c.submitted_at,
