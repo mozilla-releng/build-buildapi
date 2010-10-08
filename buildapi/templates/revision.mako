@@ -70,8 +70,7 @@ $(document).ready(function() {
           build['state'] = 'result%s' % build['results']
 
         if build['claimed_by_name']:
-          build['master'] = build['claimed_by_name'].split('.')[0]
-          if build['master'].startswith(('talos-master02','test-master0')) or \
+          if build['claimed_by_name'].startswith(('talos-master02','test-master0')) or \
                build['claimed_by_name'] == 'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master4/master' or \
                build['claimed_by_name'] == 'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master6/master':
             port = '8012'
@@ -81,6 +80,7 @@ $(document).ready(function() {
             port = '8011'
           else:
             port = '8010'
+          build['master'] = '%s:%s' % (build['claimed_by_name'].split('.')[0],port)
           build['url'] = 'http://%s:%s/builders/%s/builds/%s' % \
                          (build['claimed_by_name'].split(':')[0],
                           port,
