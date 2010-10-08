@@ -68,11 +68,16 @@ $(document).ready(function() {
         else:
           build['time'] = datetime.fromtimestamp(build['finish_time']) - datetime.fromtimestamp(build['start_time'])
           build['state'] = 'result%s' % build['results']
+
         if build['claimed_by_name']:
           build['master'] = build['claimed_by_name'].split('.')[0]
-          if build['master'].startswith(('talos-master02','test-master0')):
+          if build['master'].startswith(('talos-master02','test-master0')) or \
+               build['claimed_by_name'] == 'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master4/master' or \
+               build['claimed_by_name'] == 'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master6/master':
             port = '8012'
-          elif 'try' in branch:
+          elif 'try' in build['claimed_by_name'] or \
+               build['claimed_by_name'] == 'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master3/master' or \
+               build['claimed_by_name'] == 'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master5/master':
             port = '8011'
           else:
             port = '8010'
