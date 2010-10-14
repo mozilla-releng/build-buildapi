@@ -46,16 +46,10 @@ $(document).ready(function() {
         build['submitted_at_human'] = datetime.fromtimestamp(build['submitted_at']).strftime('%Y-%m-%d %H:%M:%S')
         build['start_time_human'] = datetime.fromtimestamp(build['start_time']).strftime('%Y-%m-%d %H:%M:%S')
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
-        build['master'] = build['claimed_by_name'].split('.')[0]
-        if build['master'].startswith(("test-master", "talos-master02")):
-            port = '8012'
-        elif branch in ('try',):
-          port = '8011'
-        else:
-          port = '8010'
-        build['url'] = 'http://%s:%s/builders/%s/builds/%s' % \
-                         (build['claimed_by_name'].split(':')[0],
-                          port,
+        m = h.convert_master(build['claimed_by_name'])
+        build['master'] = m['pretty_name']
+        build['url'] = '%s/builders/%s/builds/%s' % \
+                         (m['master_url'],
                           build['buildername'].replace('/','%2F'),
                           build['number'])
       %>

@@ -87,3 +87,26 @@ def pacific_time(timestamp, format=time_format):
     dt = datetime.datetime.fromtimestamp(timestamp, pacific_tz)
 
     return dt.strftime(format)
+
+def convert_master(m):
+    """ Given a claimed_by_name from schedulerdb return
+         * pretty_name, eg 'buildbot-master1:8011'
+         * master_url, eg 'http://buildbot-master1.build.mozilla.org:8011'
+    """
+    if m in ('talos-master02.build.mozilla.org:/builds/buildbot/tests-master',
+             'test-master01.build.mozilla.org:/builds/buildbot/tests-master',
+             'test-master02.build.mozilla.org:/builds/buildbot/tests-master',
+             'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master4/master',
+             'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master6/master'):
+        port = '8012'
+    elif m in ('production-master02.build.mozilla.org:/builds/buildbot/try-trunk-master',
+               'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master3/master',
+               'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master5/master'):
+        port = '8011'
+    else:
+        port = '8010'
+
+    pretty_name = '%s:%s' % (m.split('.')[0], port)
+    master_url = 'http://%s' % pretty_name.replace(':','.build.mozilla.org:')
+
+    return {'pretty_name': pretty_name, 'master_url': master_url}
