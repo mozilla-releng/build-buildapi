@@ -7,29 +7,29 @@ from pylons.decorators.cache import beaker_cache
 import re, simplejson, datetime
 
 PLATFORMS_BUILDERNAME = {
-    'linux': [re.compile('.+\-linux-.*'),
+    'linux': [re.compile('.+linux-.*'),
               re.compile('.+\-linux$'),
              ],
-    'linux64': [re.compile('.+\-linux64.*')],
-    'fedora': [re.compile('.+\-fedora-.+'),
+    'linux64': [re.compile('.+linux64.*')],
+    'fedora': [re.compile('.+fedora-.+'),
                re.compile('.+\-fedora$'),
                re.compile('.+_fedora_test.*')
               ],
-    'fedora64': [re.compile('.+\-fedora64.*'),
+    'fedora64': [re.compile('.+fedora64.*'),
                  re.compile('.+_fedora64_test.*')
                 ],
-    'leopard': [re.compile('.+\-leopard.*'),
+    'leopard': [re.compile('.+leopard.*'),
                 re.compile('.+_leopard_test.*')
                ],
-    'snowleopard': [re.compile('.+-snowleopard.*'),
+    'snowleopard': [re.compile('.+snowleopard.*'),
                     re.compile('.+_snowleopard.*')
                    ],
     'xp': [re.compile('.+_xp_test.*'),
-           re.compile('.+-xp.*')],
+           re.compile('.+xp.*')],
     'win7': [re.compile('.+_win7_test.*'),
-             re.compile('.+\-win7.*')],
+             re.compile('.+\win7.*')],
     'win764': [re.compile('.+_w764_test.*'),
-               re.compile('.+\-w764.*')],
+               re.compile('.+w764.*')],
 }
 
 ALL_BRANCHES = (
@@ -154,13 +154,13 @@ def GetTestRuns(starttime=None, endtime=None, int_size=0, category=None, platfor
     filtered_results = []
     #filter by platform, build type
     if platform and btype:
-      filtered_results = filter(lambda x: platform == get_platform(x['name']) and btype == get_build_type(x['name']), q_results)
+        filtered_results = filter(lambda x: platform == get_platform(x['name']) and btype == get_build_type(x['name']), q_results)
     elif platform and not btype:
-      filtered_results = filter(lambda x: platform == get_platform(x['name']), q_results)
+        filtered_results = filter(lambda x: platform == get_platform(x['name']), q_results)
     elif btype and not platform:
-      filtered_results = filter(lambda x: btype == get_build_type(x['name']), q_results)
+        filtered_results = filter(lambda x: btype == get_build_type(x['name']), q_results)
     else:
-      filtered_results = list(q_results)
+        filtered_results = list(q_results)
 
     if group:
         for test in test_suites:
@@ -208,34 +208,32 @@ class TestRunsReport(object):
         return True
 
     def get_total_time(self, builder):
-        return self.builders[builder]['total']
+        return int(self.builders[builder]['total'])
 
     def get_test_time(self, builder):
-        return self.builders[builder]['test']
+        return int(self.builders[builder]['test'])
 
     def get_ratio(self, builder):
-        return self.builders[builder]['ratio']
+        return "%.3f" % (self.builders[builder]['ratio'])
 
     def get_platform(self, builder):
         return self.builders[builder]['platform']
-
-    def get_platform(self, builder):
-        return self.builders[builder]['btype']
-
 
     def jsonify(self):
         json_obj = {
             'starttime': self.starttime,
             'endtime': self.endtime,
-            'total': self.total,
-	    'category': self.category,
+            'total': int(self.total),
+            'category': self.category,
+            'btype': self.btype,
+            'group': self.group,
             'builders': { }
         }
         for builder in self.builders:
             json_obj['builders'][builder] = {
                 'total': self.get_total_time(builder),
                 'test': self.get_test_time(builder),
-                'ratio': self.get_ratio(builder),
+                'ratio': str(self.get_ratio(builder)),
                 'platform': self.get_platform(builder),
             }
 

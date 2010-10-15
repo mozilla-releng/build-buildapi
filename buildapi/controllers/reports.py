@@ -7,7 +7,8 @@ from pylons.decorators import jsonify
 from pylons.decorators.cache import beaker_cache
 
 from buildapi.controllers.validators import PushesSchema, WaittimesSchema, \
-EndtoendSchema, EndtoendRevisionSchema, BuildersSchema, BuilderDetailsSchema
+EndtoendSchema, EndtoendRevisionSchema, BuildersSchema, BuilderDetailsSchema, \
+IdleJobsSchema, TestRunSchema
 from buildapi.lib import helpers as h
 from buildapi.lib.base import BaseController, render
 from buildapi.lib.visualization import gviz_pushes, gviz_waittimes, \
@@ -18,16 +19,17 @@ from buildapi.model.pushes import GetPushes
 from buildapi.model.trychooser import TryChooserGetEndtoEndTimes
 from buildapi.model.waittimes import GetWaitTimes, BUILDPOOL_MASTERS, get_time_interval
 from buildapi.model.testruns import GetTestRuns, ALL_BRANCHES
+from buildapi.model.idlejobs import GetIdleJobsReport
 
 class ReportsController(BaseController):
 
     @beaker_cache(query_args=True)
     def idlejobs(self):
-        format = request.GET.getone('format') if 'format' in request.GET else 'html'
-        if format not in ('html', 'json', 'chart'):
-            abort(400, detail='Unsupported format: %s' % format)
-        params = self._get_report_params()
-        c.idlejobs = GetIdleJobsReport(**params)
+        req_params = dict(request.params)
+        params = self._validate(IdleJobsSchema(), req_params)
+        format = params['format']
+        report_params = dict([(v, params[v]) for v in ('starttime', 'endtime', 'int_size')])
+        c.idlejobs = GetIdleJobsReport(**report_params)
 
         if format == 'json':
             return c.idlejobs.jsonify()
@@ -38,20 +40,12 @@ class ReportsController(BaseController):
 
     @beaker_cache(query_args=True)
     def testruns(self):
-        format = request.GET.getone('format') if 'format' in request.GET else 'html'
-        category = request.GET.getone('category') if 'category' in request.GET else None
-        platform = request.GET.getone('platform') if 'platform' in request.GET else None
-        group = request.GET.getone('group') if 'group' in request.GET else None
-        btype = request.GET.getone('btype') if 'btype' in request.GET else None
-
-        if format not in ('html', 'json', 'chart'):
-            abort(400, detail='Unsupported format: %s' % format)
-        params = self._get_report_params()
-        params['category'] = category
-        params['platform'] = platform
-        params['group'] = group
-        params['btype'] = btype
-        c.testruns = GetTestRuns(**params)
+        req_params = dict(request.params)
+        params = self._validate(TestRunSchema(), req_params)
+        format = params['format']
+        report_params = dict([(v, params[v]) for v in 
+                ('starttime', 'endtime', 'category', 'platform', 'group', 'btype')])
+        c.testruns = GetTestRuns(**report_params)
 
         if format == 'json':
             return c.testruns.jsonify()

@@ -78,19 +78,20 @@ ${h.tags.javascript_link(
        del params['btype']
    platform = c.testruns.platform if c.testruns.platform != 'ALL' else None
    category = c.testruns.category if c.testruns.category != 'ALL' else None
+   btype = c.testruns.btype if c.testruns.btype != 'ALL' else None
    group = c.testruns.group or None
 %>
 % if c.testruns.category == 'ALL':
     <b>Overall</b> |
 % else:
-    <a href="${url.current(category=None, platform=platform, group=group, **params)}">Overall</a> |
+    <a href="${url.current(category=None, platform=platform, group=group, btype=btype, **params)}">Overall</a> |
 % endif
 
 % for i in c.testruns.categories:
 %     if c.testruns.category == i:
           <b>${i}</b> |
 %     else:
-          <a href="${url.current(category=i, platform=platform, group=group, **params)}">${i}</a> |
+          <a href="${url.current(category=i, platform=platform, group=group, btype=btype, **params)}">${i}</a> |
 %     endif
 % endfor
 </p>
@@ -98,36 +99,36 @@ ${h.tags.javascript_link(
 % if c.testruns.platform == 'ALL':
     <b>Overall</b> |
 % else:
-    <a href="${url.current(platform=None, category=category, group=group, **params)}">Overall</a> |
+    <a href="${url.current(platform=None, category=category, group=group, btype=btype, **params)}">Overall</a> |
 % endif
 
 % for i in c.testruns.platforms:
 %     if c.testruns.platform == i:
           <b>${i}</b> |
 %     else:
-          <a href="${url.current(platform=i, category=category, group=group, **params)}">${i}</a> |
+          <a href="${url.current(platform=i, category=category, group=group, btype=btype, **params)}">${i}</a> |
 %     endif
 % endfor
 </p><p>Build Type:
 % if c.testruns.btype == 'ALL':
     <b>All</b> |
 % else:
-    <a href="${url.current(platform=None, category=category, btype=None, group=group, **params)}">All</a> |
+    <a href="${url.current(platform=platform, category=category, btype=None, group=group, **params)}">All</a> |
 % endif
 
 % for i in c.testruns.build_types:
 %     if c.testruns.btype == i:
           <b>${i}</b> |
 %     else:
-          <a href="${url.current(platform=None, category=category, btype=i, group=group, **params)}">${i}</a> |
+          <a href="${url.current(platform=platform, category=category, btype=i, group=group, **params)}">${i}</a> |
 %     endif
 % endfor
 
 </p><p>Group by Test:
 % if c.testruns.group:
-      <b>Yes</b> | <a href="${url.current(platform=platform, category=category, **params)}">No</a>
+      <b>Yes</b> | <a href="${url.current(platform=platform, category=category, btype=btype, **params)}">No</a>
 %else:
-      <a href="${url.current(platform=platform, category=category, group=True, **params)}">Yes</a> | <b>No</b>
+      <a href="${url.current(platform=platform, category=category, group=True, btype=btype, **params)}">Yes</a> | <b>No</b>
 % endif
 </p>
 <%namespace file="util.mako" import="datepicker_menu"/>

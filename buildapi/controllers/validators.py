@@ -1,6 +1,6 @@
 from formencode import Schema
 from formencode.validators import FancyValidator, Int, Number, String, \
-Invalid, OneOf
+Invalid, OneOf, Bool
 
 from buildapi.model.util import BUILDPOOL_MASTERS, SOURCESTAMPS_BRANCH, \
 PLATFORMS_BUILDERNAME, BUILD_TYPE_BUILDERNAME, JOB_TYPE_BUILDERNAME, \
@@ -184,3 +184,14 @@ class BuilderDetailsSchema(ReportSchema):
     """Builder Report Schema."""
     format = FormatValidator(list=('html', 'json'))
     buildername = String(not_empty=True)
+
+class IdleJobsSchema(ReportSchema):
+    """IdleJobs Report Schema"""
+    int_size = IntervalValidator()
+
+class TestRunSchema(ReportSchema):
+    """Test Run Report Schema"""
+    btype    = String(if_missing=None, if_empty=None)
+    platform = String(if_missing=None, if_empty=None)
+    category = String(if_missing=None, if_empty=None)
+    group    = Bool(if_missing=None)

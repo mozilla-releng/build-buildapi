@@ -59,7 +59,7 @@ class IdleJobsReport(object):
         self.starttime = starttime
         self.endtime = endtime
         self.total = 0
-	self.builders = builders or []
+        self.builders = builders or []
         self.int_size = int_size
         self.int_no = int((self.endtime - self.starttime-1)/self.int_size) +1 if self.int_size else 1
         self.builder_intervals = {}
@@ -93,7 +93,7 @@ class IdleJobsReport(object):
             'total': self.total,
             'builders': { }
         }
-        for builder in builders:
+        for builder in self.builders:
            json_obj['builders'][builder] = self.builder_intervals[builder]
 
         return simplejson.dumps(json_obj)
