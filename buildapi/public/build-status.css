@@ -5,27 +5,27 @@
 
 /* warnings */
 .result1 {
-    background-color: orange;
+    background-color: orange !important;
 }
 
 /* failure */
 .result2 {
-    background-color: red;
+    background-color: red !important;
 }
 
 /* exception */
 .result4 {
-    background-color: #c000c0;
+    background-color: #c000c0 !important;
 }
 
 /* running */
 .running {
-    background-color: yellow;
+    background-color: yellow !important;
 }
 
 /* pending */
 .pending {
-    background-color: gray;
+    background-color: gray !important;
 }
 
 .wt-column, .wt-column-s {

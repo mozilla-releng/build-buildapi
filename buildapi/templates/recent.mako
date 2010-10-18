@@ -19,7 +19,7 @@ $(document).ready(function() {
         "bJQueryUI": true,
         "iDisplayLength": 25,
         "sPaginationType": "full_numbers",
-        "aaSorting": [[4,'desc']],
+        "aaSorting": [[5,'desc']],
       } );
 
 });
@@ -32,7 +32,7 @@ $(document).ready(function() {
 <table id="pending" cellpadding="0" cellspacing="0" border="0" class="display">
 <thead>
 <tr>
-% for key in ('Slave name','Builder name', 'Build number', 'Result', 'Start time', 'End time', 'Running time'):
+% for key in ('Slave name','Builder name', 'Build number', 'Master', 'Result', 'Start time', 'End time', 'Running time'):
 <th>${key}</th>
 % endfor
 </tr></thead><tbody>
@@ -48,10 +48,10 @@ $(document).ready(function() {
     build['running_for'] = build['endtime'] - build['starttime']
   %>
   <tr>
-  % for key in ('slavename','buildname','buildnumber','result','starttime','endtime','running_for'):
+  % for key in ('slavename','buildname','buildnumber','master','result','starttime','endtime','running_for'):
     % if 'time' in key:
       <td>${build[key].replace(tzinfo=utc).astimezone(pacific).replace(tzinfo=None)}</td>
-    % elif key =='buildnumber':
+    % elif key =='result':
       <td class="result${build['result']}">${build[key]}</td>
     % else:
       <td>${build[key]}</td>

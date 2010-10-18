@@ -115,6 +115,7 @@ def GetHistoricBuilds(slave, count=20):
     b  = meta.status_db_meta.tables['builds']
     bs = meta.status_db_meta.tables['builders']
     s  = meta.status_db_meta.tables['slaves']
+    m  = meta.status_db_meta.tables['masters']
     ss = meta.scheduler_db_meta.tables['sourcestamps']
     q = select([b.c.id,
                 bs.c.name.label('buildname'),
@@ -123,11 +124,14 @@ def GetHistoricBuilds(slave, count=20):
                 b.c.endtime,
                 b.c.result,
                 s.c.name.label('slavename'),
+                m.c.name.label('master'),
             ])
-    q = q.where(and_(b.c.slave_id==s.c.id, b.c.builder_id==bs.c.id))
+    q = q.where(and_(b.c.slave_id==s.c.id,
+                     b.c.builder_id==bs.c.id,
+                     b.c.master_id==m.c.id))
     q = q.where(b.c.result != None)
     if slave is not None:
-      q = q.where(s.c.name==slave)
+      q = q.where(s.c.name.like(slave+'%'))
     # should order b.c.starttime but that's much slower than id
     q = q.order_by(b.c.id.desc()).limit(count)
 
@@ -139,7 +143,6 @@ def GetHistoricBuilds(slave, count=20):
         for key,value in r.items():
             this_result[str(key)] = value
         builds.append(this_result)
-        print this_result['starttime'].tzinfo
 
     return builds
 
