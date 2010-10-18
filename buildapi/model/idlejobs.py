@@ -50,7 +50,6 @@ def GetIdleJobsReport(starttime=None, endtime=None, int_size=0):
                          'endtime'  : GetTimeStamp(r['endtime']),
                        }
             report.add(r['name'], this_row)
-
     return report
 
 
@@ -63,6 +62,9 @@ class IdleJobsReport(object):
         self.int_size = int_size
         self.int_no = int((self.endtime - self.starttime-1)/self.int_size) +1 if self.int_size else 1
         self.builder_intervals = {}
+        self.builder_intervals['Total'] = [0]*self.int_no
+        self.totals = {}
+        self.totals['Total'] = 0
 
     def get_interval_timestamp(self, int_idx):
         return self.starttime + int_idx*self.int_size
@@ -79,9 +81,13 @@ class IdleJobsReport(object):
         if builder not in self.builders:
             self.builders.append(builder)
             self.builder_intervals[builder] = [0]*self.int_no
+            self.totals[builder] = 0
 
+        self.totals[builder] += row['endtime']-row['starttime']
+        self.totals['Total'] += row['endtime']-row['starttime']
         for i in int_idxs:
             self.builder_intervals[builder][i] += 1
+            self.builder_intervals['Total'][i] += 1
         self.total+=1
         return True
 
@@ -94,7 +100,10 @@ class IdleJobsReport(object):
             'builders': { }
         }
         for builder in self.builders:
-           json_obj['builders'][builder] = self.builder_intervals[builder]
+           json_obj['builders'][builder] = {
+               'intervals': self.builder_intervals[builder],
+               'total compute time': int(self.totals[builder]),
+           }
 
         return simplejson.dumps(json_obj)
 

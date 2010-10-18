@@ -77,6 +77,7 @@ ${datepicker_menu(c.idlejobs.starttime, c.idlejobs.endtime)}
 <table class="display idlejobs-overall" cellpadding="0" cellspacing="0" border="0">
 <thead><tr>
   <th>Builder</th>
+  <th>Total Compute Time spent(over time period)</th>
 % for i in range(c.idlejobs.int_no):
       <th>${time.strftime('%m/%d %H:%M', time.localtime(c.idlejobs.get_interval_timestamp(i)))}</th>
 % endfor
@@ -85,11 +86,19 @@ ${datepicker_menu(c.idlejobs.starttime, c.idlejobs.endtime)}
 % for builder in c.idlejobs.builders:
   <tr>
     <td>${builder}</td>
+        <td>${h.strf_YmdhMs(c.idlejobs.totals[builder])}</td>
 %   for i in range(c.idlejobs.int_no):
         <td>${c.idlejobs.builder_intervals[builder][i]}</td>
 %   endfor
   </tr>
 % endfor
+  <tr>
+    <td>Total</td>
+    <td>${h.strf_YmdhMs(c.idlejobs.totals['Total'])}</td>
+%   for i in range(c.idlejobs.int_no):
+        <td>${c.idlejobs.builder_intervals['Total'][i]}</td>
+%   endfor
+  </tr>
 </tbody></table>
 </div>
 <div class="clear"></div>

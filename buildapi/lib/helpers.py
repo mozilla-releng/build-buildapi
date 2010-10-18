@@ -10,6 +10,15 @@ from pylons import url
 from webhelpers.html import tags
 import time, datetime
 
+def strf_YmdhMs(secs):
+    y = secs/31536000
+    secs -= y*31536000
+    m = secs/2592000
+    secs -= m * 2592000
+    d = secs/86400
+    secs -= d * 86400
+    return ("%dy, %dm, %dd " % (y,m,d)) + strf_hms(secs)
+
 def strf_hms(tspans):
     h = tspans/3600
     tspans -= h*3600
