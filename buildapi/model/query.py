@@ -97,6 +97,9 @@ def GetBuilds(branch=None, type='pending', rev=None):
     builds = {}
     for r in query_results:
         real_branch = GetBranchName(r['branch'])
+        # details of shadow central builds should remain hidden
+        if real_branch == 'shadow-central':
+            continue
         revision = r['revision'][:12]
         if real_branch not in builds:
             builds[real_branch] = {}
