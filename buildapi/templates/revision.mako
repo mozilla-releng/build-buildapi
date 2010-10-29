@@ -87,7 +87,7 @@ $(document).ready(function() {
            % else:
              <td>Pending</td>
            % endif
-        % elif key == 'rebuild'
+        % elif key == 'rebuild':
             % if build.has_key('url'):
               <td><form method="post" action="${build['url']}/rebuild" class="command rebuild"><input type="submit" value="rebuild"></form></td>
             % else:
