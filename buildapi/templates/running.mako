@@ -31,7 +31,7 @@ $(document).ready(function() {
 <table id="pending" cellpadding="0" cellspacing="0" border="0" class="display">
 <thead>
 <tr>
-% for key in ('Branch','Revision','Builder name','Submitted at', 'Running since','Running for','Master','Rebuild'):
+% for key in ('Branch','Revision','Builder name','Submitted at', 'Running since','Running for','Master'):
 <th>${key}</th>
 % endfor
 </tr></thead><tbody>
@@ -55,7 +55,7 @@ $(document).ready(function() {
       %>
       <tr>
       <td>${branch}</td><td>${revision}</td>
-      % for key in ('buildername','submitted_at','start_time','running_for','master','rebuild'):
+      % for key in ('buildername','submitted_at','start_time','running_for','master'):
         % if key == 'submitted_at':
           <td title='${build['submitted_at']}'>${build['submitted_at_human']}</td>
         % elif key == 'start_time':
@@ -64,8 +64,6 @@ $(document).ready(function() {
           <td>${build[key][0:12]}</td>
         % elif key == 'master':
           <td><a href="${build['url']}">${build['master']}</a></td>
-        % elif key == 'rebuild':
-          <td><form method="post" action="${build['url']}/rebuild" class="command rebuild"><input type="submit" value="rebuild"></form></td>
         % else:
           <td>${build[key]}</td>
         % endif
