@@ -138,6 +138,7 @@ Wait Times Report Configs
 """
 WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
     'fuzzer-%',
+    'Android Tegra 250 %',
 ]
 
 WAITTIMES_BUILDSET_REASON_SQL_EXCLUDE = [
