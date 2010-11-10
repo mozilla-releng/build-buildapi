@@ -53,6 +53,7 @@ def GetBuilds(branch=None, type='pending', rev=None):
         q = q.where(and_(br.c.claimed_at==0, br.c.complete==0))
     elif type == 'running':
         q = select([b.c.id,
+                    br.c.id.label('brid'),
                     ss.c.branch,
                     ss.c.revision,
                     br.c.buildername,
@@ -95,22 +96,77 @@ def GetBuilds(branch=None, type='pending', rev=None):
     query_results = q.execute()
 
     builds = {}
-    for r in query_results:
-        real_branch = GetBranchName(r['branch'])
-        # details of shadow central builds should remain hidden
-        if real_branch == 'shadow-central':
-            continue
-        revision = r['revision'][:12]
-        if real_branch not in builds:
-            builds[real_branch] = {}
-        if revision not in builds[real_branch]:
-            builds[real_branch][revision] = []
+    if type == "running":
+        # Mapping of (claimed_by_name, buildername, start_time, number) to list of results
+        real_builds = {}
+        for r in query_results:
+            build_key = (r.claimed_by_name, r.buildername, r.start_time, r.number)
+            if build_key not in real_builds:
+                real_builds[build_key] = [r]
+            else:
+                real_builds[build_key].append(r)
 
-        this_result = {}
-        for key,value in r.items():
-            if key not in ('branch','revision'):
-                this_result[key] = value
-        builds[real_branch][revision].append(this_result)
+        for build_key, requests in real_builds.items():
+            real_branch = GetBranchName(requests[0]['branch'])
+            if real_branch not in builds:
+                builds[real_branch] = {}
+
+            this_result = dict(
+                # These things shouldn't change between requests
+                buildername=requests[0].buildername,
+                last_heartbeat=requests[0].last_heartbeat,
+                claimed_by_name=requests[0].claimed_by_name,
+                start_time=requests[0].start_time,
+                number=requests[0].number,
+
+                # These do change between requests
+                id=None,
+                revision=None,
+                request_ids=[],
+                submitted_at=None,
+                )
+
+            for r in requests:
+                if not this_result['request_ids']:
+                    this_result['request_ids'].append(r.brid)
+                    this_result['id'] = r.id
+                    this_result['submitted_at'] = r.submitted_at
+                    this_result['revision'] = r.revision
+                else:
+                    # Use the latest information for the id and revision
+                    if r.brid > max(this_result['request_ids']):
+                        this_result['id'] = r.id
+                        this_result['revision'] = r.revision
+
+                    # Use earliest information for submitted_at
+                    if r.brid < min(this_result['request_ids']):
+                        this_result['submitted_at'] = r.submitted_at
+
+                    this_result['request_ids'].append(r.brid)
+
+            revision = this_result['revision'][:12]
+            if revision not in builds[real_branch]:
+                builds[real_branch][revision] = []
+            builds[real_branch][revision].append(this_result)
+
+    else:
+        for r in query_results:
+            real_branch = GetBranchName(r['branch'])
+            revision = r['revision'][:12]
+            if real_branch not in builds:
+                builds[real_branch] = {}
+            if revision not in builds[real_branch]:
+                builds[real_branch][revision] = []
+
+            this_result = {}
+            for key,value in r.items():
+                if key not in ('branch','revision'):
+                    this_result[key] = value
+            builds[real_branch][revision].append(this_result)
+
+    # Hide secret stuff
+    if 'shadow-central' in builds:
+        del builds['shadow-central']
 
     return builds
 
