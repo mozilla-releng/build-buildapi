@@ -51,6 +51,8 @@ def GetBuilds(branch=None, type='pending', rev=None):
             ])
         q = q.where(and_(br.c.buildsetid==bs.c.id, bs.c.sourcestampid==ss.c.id))
         q = q.where(and_(br.c.claimed_at==0, br.c.complete==0))
+        # hide Tegras until they're actually processing requests
+        q = q.where(not_(br.c.buildername.startswith('Android Tegra')))
     elif type == 'running':
         q = select([b.c.id,
                     br.c.id.label('brid'),
