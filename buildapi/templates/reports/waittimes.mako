@@ -67,6 +67,7 @@
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
   <p>Report for <b>${c.report.pool}</b> for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and 
     <b>${h.pacific_time(c.report.endtime)}</b></p>
+   <p>int_size = ${c.report.int_size}s (${h.strf_hms(c.report.int_size)})</p>
 </%def>
 
 <% wt = c.report %>
@@ -145,7 +146,7 @@
 
 <h2>Column Charts</h2>
 <div id="stacked_column_chart_full_div"></div>
-<dif id="column_chart_full_div"></div>
+<div id="column_chart_full_div"></div>
 
 <h2>Line Charts</h2>
 <div id="line_chart_full_div"></div>

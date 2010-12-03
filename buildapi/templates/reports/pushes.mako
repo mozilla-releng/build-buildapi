@@ -44,6 +44,7 @@
 <%def name="main_menu()">
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
   <p>Report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
+  <p>int_size = ${c.report.int_size}s (${h.strf_hms(c.report.int_size)})</p>
 </%def>
 
 <div>

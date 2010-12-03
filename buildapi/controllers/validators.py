@@ -5,6 +5,7 @@ Invalid, OneOf, Bool
 from buildapi.model.util import BUILDPOOL_MASTERS, SOURCESTAMPS_BRANCH, \
 PLATFORMS_BUILDERNAME, BUILD_TYPE_BUILDERNAME, JOB_TYPE_BUILDERNAME, \
 BUILDERS_DETAIL_LEVELS
+from buildapi.model.util import get_time_interval
 
 class FormatValidator(OneOf, String):
     """format parameter validator."""
@@ -22,8 +23,8 @@ class IntervalValidator(Int):
 
     The interval is speficied in seconds, with the default at 2 hours (7200s).
     """
-    if_empty = 7200    # 2 hours
-    if_missing = 7200  # 2 hours
+    if_empty = 0
+    if_missing = 0
     min=0
 
 class PoolValidator(OneOf, String):
@@ -136,6 +137,34 @@ class DateCompare(FancyValidator):
             raise Invalid(msg, value_dict, state,
                 error_dict=dict(starttime=msg))
 
+class DateInit(FancyValidator):
+    """Initializes starttime and entime if not specified."""
+
+    def to_python(self, value_dict, state):
+        starttime, endtime = value_dict['starttime'], value_dict['endtime']
+        starttime, endtime = get_time_interval(starttime, endtime)
+
+        value_dict['starttime'] = starttime
+        value_dict['endtime'] = endtime
+
+        return value_dict
+
+class IntSizeInit(FancyValidator):
+    """Initializes int_size proportionally to selected time interval 
+    (starttime, endtime) into specified number of divisions."""
+    divisions = 12
+
+    def to_python(self, value_dict, state):
+        starttime = value_dict['starttime']
+        endtime = value_dict['endtime']
+        int_size = value_dict['int_size']
+
+        if not int_size:
+            value_dict['int_size'] = int(
+                (endtime - starttime) // self.divisions)
+
+        return value_dict
+
 class ReportSchema(Schema):
     """Base report schema."""
     allow_extra_fields = True
@@ -145,20 +174,24 @@ class ReportSchema(Schema):
     starttime = UnixtimestampValidator()
     endtime = UnixtimestampValidator()
 
-    chained_validators = [DateCompare(), RequestIdValidator()]
+    chained_validators = [DateCompare(), DateInit(), RequestIdValidator()]
 
 class PushesSchema(ReportSchema):
     """Pushes Report Schema."""
     int_size = IntervalValidator()
     branch = BranchListValidator()
 
+    chained_validators = ReportSchema.chained_validators + [ IntSizeInit() ]
+
 class WaittimesSchema(ReportSchema):
     """Wait Times Report Schema."""
     int_size = IntervalValidator()
     pool = PoolValidator()
     num = NumberTypeValidator()
-    mpb = Int(min=0, if_missing=15, if_empty=15)  # minutes per block
-    maxb = Int(min=0, if_missing=0, if_empty=0)   # max block
+    mpb = Int(min=0, if_missing=15, if_empty=15)    # minutes per block
+    maxb = Int(min=0, if_missing=1000, if_empty=1000) # max block
+
+    chained_validators = ReportSchema.chained_validators + [ IntSizeInit() ]
 
 class EndtoendSchema(ReportSchema):
     """End to End Times Report Schema."""
@@ -171,6 +204,8 @@ class EndtoendRevisionSchema(ReportSchema):
     endtime = None
     branch_name = BranchNameValidator()
     revision = String(min=12)
+
+    chained_validators = [RequestIdValidator()]
 
 class BuildersSchema(ReportSchema):
     """Average Time per Builder Report Schema."""
