@@ -1,5 +1,5 @@
 <%inherit file="report.mako"/>
-<%namespace file="util.mako" import="print_datetime_short, print_datetime"/>
+<%namespace file="util.mako" import="print_datetime_short, print_datetime, buildrun_search_menu"/>
 <%! from buildapi.model.util import status_to_str, results_to_str %>
 
 <%def name="title()">Build Run Report</%def>
@@ -36,7 +36,7 @@
 </%def>
 
 <%def name="main_menu()">
-  <p>Build Run Report for revision <b>${c.report.revision}</b>.</p>
+  ${buildrun_search_menu("buildrun_jump", c.report.revision, c.report.branch_name)}
 </%def>
 
 <% brun = c.report %>
@@ -46,7 +46,8 @@
   <thead><tr><th></th><th></th></tr></thead>
   <tbody>
     <% span = brun.get_duration() %>
-    <tr><td>Revision</td><td>${brun.revision}</td></tr>
+    <tr><td>Revision</td><td><b>${brun.revision}</b></td></tr>
+    <tr><td>Branch</td><td><b>${brun.branch_name}</b></td></tr>
     <tr><td>No. build requests</td><td>${brun.get_total_build_requests()}</td></tr>
     <tr><td>Unique no. build requests</td><td>${brun.get_unique_total_build_requests()}</td></tr>
     <tr><td>Duration</td><td>${h.strf_hms(span) if span else '-'}</td></tr>

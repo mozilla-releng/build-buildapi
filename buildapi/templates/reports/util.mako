@@ -17,6 +17,18 @@
   % endfor
 </%def>
 
+<%def name="select_menu(id, selitem, itemlist)"> 
+  <select name="${id}">
+    % for item in itemlist:
+      % if item == selitem:
+        <option value="${item}" selected="selected">${item}</option>
+      % else:
+        <option value="${item}">${item}</option>
+      % endif
+    % endfor
+  </select>
+</%def>
+
 <%def name="build_pool_menu(pool)">
   <%
     from buildapi.model.util import BUILDPOOL_MASTERS
@@ -41,6 +53,30 @@
   %>
 
   Branch: ${link_menu(branch, branch_list, branch_link_func)}
+</%def>
+
+<%def name="branch_select_menu(id, branch)">
+  <% from buildapi.model.util import SOURCESTAMPS_BRANCH %>
+  ${select_menu(id, branch, sorted(SOURCESTAMPS_BRANCH.keys()))}
+</%def>
+
+<%def name="buildrun_search_menu(id, revision, branch)">
+  <div id="${id}">Jump to Build Run Report for revision 
+    <input name="revision" type="text" value="${revision}" />, branch
+    ${branch_select_menu("branch", branch)}
+    <input type="button" value="Go!" onclick="goToBuildRun();" />
+  </div>
+
+  <script type="text/javascript">
+      function goToBuildRun() {
+          var rev = $("#${id} input[name=revision]")[0].value;
+          rev.replace(/\s/g, "");
+          rev = rev.substring(0, 12);
+          var branch = $("#${id} select[name=branch]")[0].value;
+
+          window.location = "/reports/revision/" + branch + "/" + rev;
+      }
+  </script>
 </%def>
 
 <%def name="reports_menu()">

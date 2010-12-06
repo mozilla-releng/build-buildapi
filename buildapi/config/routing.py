@@ -45,6 +45,7 @@ def make_map(config):
     map.connect('/reports/builders/{branch_name}', controller='reports', action='builders')
     map.connect('/reports/endtoend/{branch_name}', controller='reports', action='endtoend')
     map.connect('/reports/pushes', controller='reports', action='pushes')
+    map.connect('/reports/revision', controller='reports', action='revision')
     map.connect('/reports/revision/{branch_name}/{revision}', controller='reports', action='endtoend_revision')
     map.connect('/reports/waittimes/{pool}', controller='reports', action='waittimes')
 

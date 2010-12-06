@@ -146,6 +146,10 @@ class ReportsController(BaseController):
         else:
             return render('/reports/buildrun.mako')
 
+    def revision(self):
+        """Revision Report Homepage."""
+        return render('/reports/buildrun_home.mako')
+
     def pushes(self):
         """Pushes Report Controller."""
         params = self._validate(PushesSchema(), request.params)
