@@ -15,7 +15,7 @@
             "bInfo": false,
         });
         $(".brun-details").dataTable({
-            "bAutoWidth": false,
+            "bAutoWidth": true,
             "bProcessing": true,
             "bPaginate": true,
             "sPaginationType": "full_numbers",
@@ -48,6 +48,21 @@
     <% span = brun.get_duration() %>
     <tr><td>Revision</td><td><b>${brun.revision}</b></td></tr>
     <tr><td>Branch</td><td><b>${brun.branch_name}</b></td></tr>
+    <tr><td>Is Complete?</td><td><b>${'yes' if brun.is_complete() else 'no'}</b></td></tr>
+    <tr><td>Changes Revisions</td>
+        <td>${', '.join([rev if rev else 'None' for rev in brun.changes_revision])}</td>
+    </tr>
+    <tr><td>Authors</td>
+        <td>${', '.join([auth for auth in brun.authors if auth not in (None, 'sendchange-unittest', 'sendchange')])}</td>
+    </tr>
+    <tr>
+      <td>Results</td>
+      <td>
+        <span class="success">S:${brun.results_success} </span>
+        <span class="warnings">W:${brun.results_warnings} </span>
+        <span class="failure">F:${brun.results_failure} </span>
+        <span class="other">O:${brun.results_other} </span>
+    </td></tr>
     <tr><td>No. build requests</td><td>${brun.get_total_build_requests()}</td></tr>
     <tr><td>Unique no. build requests</td><td>${brun.get_unique_total_build_requests()}</td></tr>
     <tr><td>Duration</td><td>${h.strf_hms(span) if span else '-'}</td></tr>
@@ -61,19 +76,19 @@
     <tr><td>Misc</td><td>${brun.misc}</td></tr>
     <tr><td>Rebuilds</td><td>${brun.rebuilds}</td></tr>
     <tr><td>Forcebuilds</td><td>${brun.forcebuilds}</td></tr>
-    <tr>
-      <td>Results</td>
-      <td>
-        <span class="success">S:${brun.results_success} </span>
-        <span class="warnings">W:${brun.results_warnings} </span>
-        <span class="failure">F:${brun.results_failure} </span>
-        <span class="other">O:${brun.results_other} </span>
-      </td></tr>
-    <tr><td>Builds</td><td>${len(brun.builds)} (${len(set(brun.builds))}) ${','.join(map(str,set(brun.builds)))}</td></tr>
-    <tr><td>Unittests</td><td>${len(brun.unittests)} (${len(set(brun.unittests))}) </td></tr>
-    <tr><td>Talos</td><td>${len(brun.talos)} (${len(set(brun.talos))})</td></tr>
+    <tr><td>Builds</td><td>${brun.builds}</td></tr>
+    <tr><td>Unittests</td><td>${brun.unittests}</td></tr>
+    <tr><td>Talos</td><td>${brun.talos}</td></tr>
+    <tr><td>Pending Changes</td><td>
+      <ul>
+        % for ch in sorted(brun.pending_changes, key=lambda x: x.changeid):
+          <li>${ch}</li>
+        % endfor
+      </ul>
+    </td></tr>
   </tbody>
 </table>
+
 <div class="clear"></div>
 
 <h2>Build Requests</h2>
@@ -95,13 +110,16 @@
     <th>complete_at</th>
     <th>finish_time</th>
     <th>complete</th>
+    <th>changes revisions</th>
+    <th>authors</th>
+    <th>comments</th>
     <th>reason</th>
     <th>number</th>
     <th>brid</th>
+    <th>bid</th>
+    <th>changeids</th>
     <th>buildsetid</th>
     <th>ssid</th>
-    <th>author</th>
-    <th>comments</th>
     <th>revlink</th>
     <th>category</th>
     <th>repository</th>
@@ -140,13 +158,26 @@ results_css = results_css_class[min(br.results, 2) + 1]
   <td>${print_datetime_short(br.complete_at)}</td>
   <td>${print_datetime_short(br.finish_time)}</td>
   <td>${br.complete}</td>
+  <td>${br.changes_revision}</td>
+  <td>${' '.join([auth for auth in br.authors if auth])}</td>
+  <td>${br.comments}</td>
   <td>${br.reason}</td>
   <td>${br.number}</td>
   <td>${br.brid}</td>
+  <td>${br.bid}</td>
+  <td>
+    <%
+      cids = sorted(br.changeid)
+      cids_str = ''
+      if len(cids) > 0:
+          cids_list = [cids[5*i:5*(i+1)] for i in range(0, len(cids) // 5)]
+          cids_list.append(cids[len(cids)-len(cids)%5:])
+          cids_str = ', '.join([','.join(map(str, cids_list[i])) for i in range(len(cids_list))])
+    %>
+    ${cids_str}
+  </td>
   <td>${br.buildsetid}</td>
   <td>${br.ssid}</td>
-  <td>${br.author}</td>
-  <td>${br.comments}</td>
   <td>${br.revlink}</td>
   <td>${br.category}</td>
   <td>${br.repository}</td>

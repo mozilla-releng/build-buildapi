@@ -3,7 +3,6 @@ from sqlalchemy import or_, not_
 
 import buildapi.model.meta as meta
 from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery
-from buildapi.model.endtoend import EndtoEndTimesQuery
 from buildapi.model.util import PENDING, RUNNING, NO_RESULT, SUCCESS, \
 WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
 from buildapi.model.util import BUILDERS_DETAIL_LEVELS
@@ -22,7 +21,8 @@ def BuildersQuery(starttime, endtime, branch_name):
            branch_name - branch name
     Output: query
     """
-    return EndtoEndTimesQuery(starttime, endtime, branch_name)
+    return BuildRequestsQuery(starttime=starttime, endtime=endtime,
+            branch_name=branch_name)
 
 def BuildersTypeQuery(starttime, endtime, buildername):
     """Constructs the sqlalchemy query for fetching all build requests in the 
@@ -33,13 +33,8 @@ def BuildersTypeQuery(starttime, endtime, buildername):
            buildername - builder's name
     Output: query
     """
-    q = BuildRequestsQuery().where(br.c.buildername.like(buildername))
-
-    if starttime:
-        q = q.where(or_(c.c.when_timestamp >= starttime, br.c.submitted_at >= starttime))
-    if endtime:
-        q = q.where(or_(c.c.when_timestamp < endtime, br.c.submitted_at < endtime))
-
+    q = BuildRequestsQuery(starttime=starttime, endtime=endtime)
+    q = q.where(br.c.buildername.like(buildername))
     return q
 
 def GetBuildersReport(starttime=None, endtime=None, branch_name='mozilla-central',

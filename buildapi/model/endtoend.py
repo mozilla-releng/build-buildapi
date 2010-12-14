@@ -2,7 +2,8 @@ import simplejson
 from sqlalchemy import or_
 
 import buildapi.model.meta as meta
-from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery
+from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery, GetBuildRequests
+from buildapi.model.changes import GetChanges
 from buildapi.model.util import BUILDSET_REASON, PENDING, RUNNING, COMPLETE, \
 CANCELLED, INTERRUPTED, MISC
 from buildapi.model.util import NO_RESULT, SUCCESS, WARNINGS, FAILURE, \
@@ -13,45 +14,6 @@ get_platform, get_build_type, get_job_type, get_revision, results_to_str
 br = meta.scheduler_db_meta.tables['buildrequests']
 s = meta.scheduler_db_meta.tables['sourcestamps']
 c = meta.scheduler_db_meta.tables['changes']
-
-def BuildRunQuery(revision, branch_name=None):
-    """Constructs the sqlalchemy query for fetching all build requests in a 
-    build run (sharing the same sourcestamps.revision number).
-
-    Input: revision - sourcestamps.revision (first 12 chars are enough), or 
-                None for nigthtlies
-           branch_name - branch name; if not specified, no restriction is 
-                applied on branch
-    Output: query
-    """
-    q = BuildRequestsQuery()
-
-    if not revision:
-        q = q.where(s.c.revision==None)
-    else:
-        q = q.where(s.c.revision.like(revision + '%'))
-    if branch_name:
-        q = q.where(s.c.branch.like('%' + branch_name + '%'))
-
-    return q
-
-def EndtoEndTimesQuery(starttime, endtime, branch_name):
-    """Constructs the sqlalchemy query for fetching all build requests in the 
-    specified time interval for the specified branch.
-
-    Input: starttime - start time, UNIX timestamp (in seconds)
-           endtime - end time, UNIX timestamp (in seconds)
-           branch_name - branch name
-    Output: query
-    """
-    q = BuildRequestsQuery()
-
-    q = q.where(s.c.branch.like('%' + branch_name + '%'))
-    # ??? first build job in push started, not all! --> what condition on rest??
-    q = q.where(or_(c.c.when_timestamp >= starttime, br.c.submitted_at >= starttime))
-    q = q.where(or_(c.c.when_timestamp < endtime, br.c.submitted_at < endtime))
-
-    return q
 
 def GetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'):
     """Get end to end times report for the speficied time interval and branch.
@@ -66,14 +28,16 @@ def GetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'
     """
     starttime, endtime = get_time_interval(starttime, endtime)
 
-    q = EndtoEndTimesQuery(starttime, endtime, branch_name)
-    q_results = q.execute()
-
     report = EndtoEndTimesReport(starttime, endtime, branch_name)
-    for r in q_results:
-        params = dict((str(k), v) for (k, v) in dict(r).items())
-        br = BuildRequest(**params)
-        report.add_build_request(br)
+
+    build_requests = GetBuildRequests(branch_name=branch_name, 
+        starttime=starttime, endtime=endtime, changeid_all=True)
+    for key in build_requests:
+        report.add_build_request(build_requests[key])
+
+    changes = GetChanges(branch_name=branch_name, starttime=starttime, 
+        endtime=endtime)
+    report.parse_incomplete(changes)
 
     return report
 
@@ -81,17 +45,30 @@ def GetBuildRun(branch_name=None, revision=None):
     """Get build run report. The build run report is specified by its 
     sourcestamps.revision number.
 
-    Input: revision - sourcestamps.revision (first 12 chars are enough), or 
+    Input: branch_name - branch name
+           revision - sourcestamps.revision (first 12 chars are enough), or 
                 None for nigthtlies
     Output: BuildRun
     """
-    q_results = BuildRunQuery(revision, branch_name=branch_name).execute()
+    revision = get_revision(revision)
 
     report = BuildRun(revision, branch_name)
-    for r in q_results:
-        params = dict((str(k), v) for (k, v) in dict(r).items())
-        br = BuildRequest(**params)
+
+    build_requests = GetBuildRequests(revision=revision,
+        branch_name=branch_name, changeid_all=True)
+    brun_changeids = set()
+    for key in build_requests:
+        br = build_requests[key]
         report.add(br)
+
+        for cid in br.changeid:
+            brun_changeids.add(cid)
+
+    changes = GetChanges(branch_name=branch_name, revision=revision)
+    # filter out changes without build requests
+    for cid in changes:
+        if cid not in brun_changeids:
+            report.set_incomplete(change=changes[cid])
 
     return report
 
@@ -107,6 +84,11 @@ class EndtoEndTimesReport(object):
 
     def _init_report(self):
         self._runs = {}
+        self._changes = set()
+        self.pending_changes = {}
+        # _changes_revision_runs - extra links to build run, if Build Run has 
+        # Build Requests with changes.revision other than sourcestamps.revision
+        self._changes_revision_runs = {}
         self._total_br = 0
         self._u_total_br = 0
         self._avg_run_duration = 0
@@ -136,10 +118,38 @@ class EndtoEndTimesReport(object):
 
         return self._avg_run_duration
 
+    def parse_incomplete(self, changes):
+        """For any change in changes list that has no build request created,
+        find the most likely build run it will belong to and mark is as 
+        incomplete. Also memorize these changes into self.pending_changes.
+        """
+        for cid in changes:
+            if cid not in self._changes:
+                c = changes[cid]
+                run = None
+                if c.revision in self._runs:
+                    run = self._runs[c.revision]
+                elif c.revision in self._changes_revision_runs:
+                    run = self._changes_revision_runs[c.revision]
+
+                if run:
+                    run.set_incomplete(change=c)
+                    c.ss_revision = run.revision
+                    self.pending_changes[cid] = c
+
     def add_build_request(self, br):
-        if br.revision not in self._runs: 
+        if br.revision not in self._runs:
             self._runs[br.revision] = BuildRun(br.revision, br.branch_name)
-        self._runs[br.revision].add(br)
+        run = self._runs[br.revision]
+        run.add(br)
+
+        # keep references to build run for changes.revision too
+        if br.revision != br.changes_revision:
+            if br.changes_revision not in self._changes_revision_runs:
+                self._changes_revision_runs[br.changes_revision] = run
+        # keep list of all changeid-s that have build requests
+        for changeid in br.changeid:
+            self._changes.add(changeid)
 
         self._total_br = EndtoEndTimesReport.outdated
         self._u_total_br = EndtoEndTimesReport.outdated
@@ -171,6 +181,8 @@ class BuildRun(object):
     def __init__(self, revision, branch_name):
         self.revision = revision
         self.branch_name = branch_name
+        self.changes_revision = set()
+        self.authors = set()
 
         self.build_requests = []
 
@@ -190,9 +202,9 @@ class BuildRun(object):
         self.rebuilds = 0
         self.forcebuilds = 0
 
-        self.unittests = []
-        self.talos = []
-        self.builds = []
+        self.unittests = 0
+        self.talos = 0
+        self.builds = 0
 
         self.results_success = 0
         self.results_warnings = 0
@@ -200,8 +212,16 @@ class BuildRun(object):
         self.results_other = 0
         self.results = NO_RESULT
 
+        # incomplete flag (if true, BuildRun is incomplete)
+        self.f_incomplete = False
+        self.pending_changes = []
+
     def add(self, br):
         self.build_requests.append(br)
+
+        self.changes_revision.add(br.changes_revision)
+        for auth in br.authors:
+            self.authors.add(auth)
 
         self._total_br += 1
         self._u_total_br = BuildRun.outdated  # needs recalculation
@@ -242,11 +262,11 @@ class BuildRun(object):
 
         if br.when_timestamp:
             if br.branch.endswith('unittest'):
-                self.unittests.append(br.when_timestamp)
+                self.unittests += 1
             elif br.branch.endswith('talos'):
-                self.talos.append(br.when_timestamp)
+                self.talos += 1
             else:
-                self.builds.append(br.when_timestamp)
+                self.builds += 1
 
     def get_duration(self):
         return self.gst_complete_at_time - self.lst_change_time if self.gst_complete_at_time and self.lst_change_time else 0
@@ -260,12 +280,18 @@ class BuildRun(object):
 
         return self._u_total_br
 
+    def set_incomplete(self, incomplete=True, change=None):
+        self.f_incomplete = incomplete
+        if incomplete and change:
+            self.pending_changes.append(change)
+
     def is_complete(self):
-        return not(self.running or self.pending)
+        return not(self.f_incomplete or self.running or self.pending)
 
     def to_dict(self, summary=False):
         json_obj = {
             'revision': self.revision,
+            'changes_revision': [rev if rev else 'None' for rev in self.changes_revision],
             'results': self.results,
             'results_str': results_to_str(self.results),
             'is_complete': 'yes' if self.is_complete() else 'no',
@@ -281,9 +307,10 @@ class BuildRun(object):
             'misc': self.misc,
             'rebuilds': self.rebuilds,
             'forcebuilds': self.forcebuilds,
-            'builds': len(self.builds),
-            'unittests': len(self.unittests),
-            'talos': len(self.talos),
+            'builds': self.builds,
+            'unittests': self.unittests,
+            'talos': self.talos,
+            'authors': [auth for auth in self.authors if auth],
         }
         if not summary:
             json_obj['build_requests'] = [br.to_dict() for br in self.build_requests]

@@ -1,6 +1,7 @@
 import simplejson
 
-from buildapi.model.endtoend import BuildRequest, BuildRun, EndtoEndTimesQuery, EndtoEndTimesReport
+from buildapi.model.buildrequest import BuildRequestsQuery
+from buildapi.model.endtoend import BuildRequest, BuildRun, EndtoEndTimesReport
 from buildapi.model.util import get_time_interval
 
 def TryChooserGetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'):
@@ -14,7 +15,8 @@ def TryChooserGetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozill
     """
     starttime, endtime = get_time_interval(starttime, endtime)
 
-    q = EndtoEndTimesQuery(starttime, endtime, branch_name)
+    q = BuildRequestsQuery(starttime=starttime, endtime=endtime, 
+            branch_name=branch_name)
     q_results = q.execute()
 
     report = TryChooserEndtoEndTimesReport(starttime, endtime, branch_name)
