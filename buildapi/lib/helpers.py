@@ -3,12 +3,18 @@
 Consists of functions to typically be used within templates, but also
 available to Controllers. This module is available to templates as 'h'.
 """
-# Import helpers as desired, or define your own, ie:
-#from webhelpers.html.tags import checkbox, password
-
-from pylons import url
-from webhelpers.html import tags
 import time, datetime
+import logging
+import urllib
+
+from pylons import url, app_globals
+from webhelpers.html import tags
+
+from pylons.decorators.cache import beaker_cache
+
+import buildapi.model.builds
+
+log = logging.getLogger(__name__)
 
 def strf_YmdhMs(secs):
     y = secs/31536000
@@ -97,25 +103,30 @@ def pacific_time(timestamp, format=time_format):
 
     return dt.strftime(format)
 
+def addr_for_master(claimed_by_name):
+    """Returns the fully qualified domain name and port for the master indicated by claimed_by_name"""
+    fqdn = app_globals.buildbot_masters[claimed_by_name]['hostname']
+    port = app_globals.buildbot_masters[claimed_by_name]['http_port']
+
+    return fqdn, port
+
+def url_for_build(master_addr, buildername, buildnumber):
+    fqdn, port = master_addr
+    buildername = urllib.quote(buildername, "")
+    url = "http://%(fqdn)s:%(port)i/builders/%(buildername)s/builds/%(buildnumber)s" % locals()
+    return url
+
 def convert_master(m):
     """ Given a claimed_by_name from schedulerdb return
          * pretty_name, eg 'buildbot-master1:8011'
          * master_url, eg 'http://buildbot-master1.build.mozilla.org:8011'
     """
-    if m in ('talos-master02.build.mozilla.org:/builds/buildbot/tests-master',
-             'test-master01.build.mozilla.org:/builds/buildbot/tests-master',
-             'test-master02.build.mozilla.org:/builds/buildbot/tests-master',
-             'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master4/master',
-             'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master6/master'):
-        port = '8012'
-    elif m in ('production-master02.build.mozilla.org:/builds/buildbot/try-trunk-master',
-               'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master3/master',
-               'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master5/master'):
-        port = '8011'
-    else:
-        port = '8010'
+    fqdn, port = addr_for_master(m)
+    pretty_name = '%s:%i' % (fqdn.split(".")[0], port)
+    master_url = 'http://%(fqdn)s:%(port)i' % locals()
 
-    pretty_name = '%s:%s' % (m.split('.')[0], port)
-    master_url = 'http://%s' % pretty_name.replace(':','.build.mozilla.org:')
+    return {'pretty_name': pretty_name, 'master_url': master_url, 'master_addr': (fqdn, port)}
 
-    return {'pretty_name': pretty_name, 'master_url': master_url}
+@beaker_cache(expire=600, cache_response=False)
+def get_builders(branch, starttime=None, endtime=None):
+    return buildapi.model.builds.getBuilders(branch)

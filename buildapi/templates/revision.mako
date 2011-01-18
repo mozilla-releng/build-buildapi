@@ -72,10 +72,7 @@ $(document).ready(function() {
         if build['claimed_by_name']:
           m = h.convert_master(build['claimed_by_name'])
           build['master'] = m['pretty_name']
-          build['url'] = '%s/builders/%s/builds/%s' % \
-                         (m['master_url'],
-                          build['buildername'].replace('/','%2F'),
-                          build['number'])
+          build['url'] = h.url_for_build(m['master_addr'], build['buildername'], build['number'])
       %>
       <tr>
       % for key in ('buildername','results','submitted_at_human','start_time_human','finish_time_human','time','master','rebuild'):

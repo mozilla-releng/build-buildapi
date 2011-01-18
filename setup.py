@@ -13,10 +13,12 @@ setup(
     author_email='',
     url='',
     install_requires=[
-        "Pylons>=0.9.7",
+        "Pylons>=1.0.0",
         "SQLAlchemy>=0.6",
+        "carrot>=0.10.7",
     ],
     setup_requires=["PasteScript>=1.6.3"],
+    tests_require=["nose", "mock"],
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
     test_suite='nose.collector',

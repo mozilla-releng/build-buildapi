@@ -2,7 +2,7 @@
 
 The more specific and detailed routes should be defined first so they
 may take precedent over the more generic routes. For more information
-refer to the routes manual at http://routes.groovie.org/docs/
+refer to the routes manual at http://routes.groovie.org/contents.html
 """
 from routes import Mapper
 
@@ -51,8 +51,30 @@ def make_map(config):
 
     map.connect('/reports/trychooser/{branch_name}', controller='reports', action='trychooser')
 
-    map.connect('/{controller}/{action}')
-    map.connect('/{controller}/{action}/{id}')
+    # BuildAPI
+    # Read-write
+    map.connect('reprioritize', '/builds/{branch}/request/{request_id}', controller='builds', action='reprioritize', conditions=dict(method=['PUT']))
+    map.connect('cancel_request', '/builds/{branch}/request/{request_id}', controller='builds', action='cancel_request', conditions=dict(method=['DELETE']))
+    map.connect('cancel_build', '/builds/{branch}/build/{build_id}', controller='builds', action='cancel_build', conditions=dict(method=['DELETE']))
+    map.connect('rebuild_build', '/builds/{branch}/build', controller='builds', action='rebuild_build', conditions=dict(method=['POST']))
+    map.connect('rebuild_request', '/builds/{branch}/request', controller='builds', action='rebuild_request', conditions=dict(method=['POST']))
+    map.connect('cancel_revision', '/builds/{branch}/rev/{revision}', controller='builds', action='cancel_revision', conditions=dict(method=['DELETE']))
+    map.connect('new_build_at_rev', '/builds/{branch}/rev/{revision}', controller='builds', action='new_build_at_rev', conditions=dict(method=['POST']))
+    #map.connect('new_build_for_builder', '/builds/{branch}/builders/{builder_name}', controller='builds', action='new_build_for_builder', conditions=dict(method=['POST']))
+
+    # Status of jobs
+    map.connect('job_status', '/builds/jobs/{job_id}', controller='builds', action='job_status')
+
+    # Read-only
+    map.connect('builds_home', '/builds', controller='builds', action='index')
+    map.connect('branches', '/builds/branches', controller='builds', action='branches')
+    map.connect('branch', '/builds/{branch}', controller='builds', action='branch')
+    map.connect('build', '/builds/{branch}/build/{build_id}', controller='builds', action='build')
+    map.connect('request', '/builds/{branch}/request/{request_id}', controller='builds', action='request')
+    map.connect('revision', '/builds/{branch}/rev/{revision}', controller='builds', action='revision')
+    map.connect('builders', '/builds/{branch}/builders', controller='builds', action='builders')
+    map.connect('builder', '/builds/{branch}/builders/{builder_name}', controller='builds', action='builder')
+    map.connect('user', '/builds/{branch}/user/{user}', controller='builds', action='user')
 
     # Redirect /foo/ to /foo
     map.redirect('/*(url)/', '/{url}', _redirect_code='301 Moved Permanently')

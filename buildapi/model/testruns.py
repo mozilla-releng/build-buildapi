@@ -131,8 +131,8 @@ def TestRunsQuery(starttime, endtime, category):
                )
 
     return q
-
-
+# So that nose doesn't think this is a test case...
+TestRunsQuery.__test__ = False
 
 
 def GetTestRuns(starttime=None, endtime=None, int_size=0, category=None, platform=None, group=False, btype=None):
@@ -187,6 +187,8 @@ def GetTestRuns(starttime=None, endtime=None, int_size=0, category=None, platfor
 
 
 class TestRunsReport(object):
+    # So that nose doesn't think this is a test case...
+    __test__ = False
 
     def __init__(self, starttime, endtime, builders=None, category=None, platform=None, group=False, btype=None):
         self.starttime = starttime

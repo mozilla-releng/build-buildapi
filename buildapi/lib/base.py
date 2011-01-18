@@ -2,11 +2,13 @@
 
 Provides the BaseController class for subclassing.
 """
+import time
+
 from pylons.controllers import WSGIController
 from pylons.templating import render_mako as render
-from pylons import request, response
+from pylons import request, response, tmpl_context as c
 
-import simplejson
+from buildapi.lib import json
 
 class BaseController(WSGIController):
 
@@ -19,4 +21,16 @@ class BaseController(WSGIController):
 
     def jsonify(self, data):
         response.headers['Content-Type'] = 'application/json'
-        return simplejson.dumps(data)
+        return json.dumps(data)
+
+    def __before__(self):
+        """Set self._fmt depending on query parameters or the Accept
+        header"""
+        self._started = time.time()
+        c.started = self._started
+        if 'format' in request.GET:
+            self._fmt = request.GET.getone('format')
+        elif 'Accept' in request.headers and 'application/json' in request.headers['Accept']:
+            self._fmt = 'json'
+        else:
+            self._fmt = 'html'

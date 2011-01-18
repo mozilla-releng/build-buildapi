@@ -30,9 +30,30 @@ app_instance_uuid = ${app_instance_uuid}
 #beaker.cache.data_dir = %(here)s/data/cache
 #beaker.session.data_dir = %(here)s/data/sessions
 
-# SQLAlchemy database URL
+# Pretend to be somebody else for now
+# REMOVE THIS FOR PRODUCTION
+# auth_override = me@place.com
+
+# Which branches do we support?
+branches = b1, b2
+
+# SQLAlchemy database URLs
+# Buildbot's scheduler database
 sqlalchemy.scheduler_db.url = sqlite:///production.db
+# Mozilla's status database
 sqlalchemy.status_db.url = sqlite:///production.db
+# buildapi specific database
+sqlalchemy.buildapi_db.url = sqlite:///production.db
+
+# How to connect to message broker with carrot
+carrot.hostname = localhost
+carrot.userid = buildapi
+carrot.password = buildapi
+carrot.exchange = buildapi.control
+carrot.consumer.queue = buildapi-web
+
+# Where the various masters are
+master_list = masters.json
 
 # WARNING: *THE LINE BELOW MUST BE UNCOMMENTED ON A PRODUCTION ENVIRONMENT*
 # Debug mode will enable the interactive debugging tool, allowing ANYONE to

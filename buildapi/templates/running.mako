@@ -48,10 +48,7 @@ $(document).ready(function() {
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
         m = h.convert_master(build['claimed_by_name'])
         build['master'] = m['pretty_name']
-        build['url'] = '%s/builders/%s/builds/%s' % \
-                         (m['master_url'],
-                          build['buildername'].replace('/','%2F'),
-                          build['number'])
+        build['url'] = h.url_for_build(m['master_addr'], build['buildername'], build['number'])
       %>
       <tr>
       <td>${branch}</td><td>${revision}</td>

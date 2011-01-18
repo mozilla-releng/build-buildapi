@@ -29,6 +29,8 @@ class TestController(TestCase):
     def __init__(self, *args, **kwargs):
         wsgiapp = pylons.test.pylonsapp
         config = wsgiapp.config
+        self.config = config
         self.app = TestApp(wsgiapp)
+        self.g = self.config['pylons.app_globals']
         url._push_object(URLGenerator(config['routes.map'], environ))
         TestCase.__init__(self, *args, **kwargs)

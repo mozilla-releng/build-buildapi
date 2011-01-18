@@ -1,0 +1,49 @@
+Implementation Notes
+====================
+
+This file outlines some of the implementation details of the REST API of
+buildapi.
+
+Routing
+-------
+Or, how do URLs get turned into method calls?
+
+Look in buildapi/config/routing.py.  All the /builds/ urls are to support
+the REST API.
+
+URLs get matched to an appropriate route based on these rules, and then
+methods in buildapi/controllers/builds.py are called.
+
+GETting data
+------------
+Most GET queries do a few simple operations:
+1) validate parameters
+2) make db calls with methods in buildapi/model/builds
+3) return results
+
+Results are formatted according to the 'format' query parameter
+("?format=html" or "?format=json").  If 'format' is not set, and the
+'Accept' header of the request is set to 'application/json', the format
+will be set to json.  Otherwise the format will be html.
+
+Job Requests
+------------
+PUT, POST, and DELETE requests (which can be faked by setting a '_method_'
+field to 'PUT' or 'DELETE' in a regular POST request if your client doesn't
+support PUT/DELETE easiliy...a nice feature of Routes!) represent requests
+to change buildbot state.  These are called "Job Requests".
+
+Job requests follow a simple flow:
+1) log request in jobrequests table of buildapi database.  Return
+jobrequest id to client.  The client can query the status of this job via
+the /builds/job_status/{job_id} method.
+
+2) send message to message broker on the 'requests' routing key with
+details of job request.
+
+3) an external agent (such as buildapi/scripts/buildapi-agent.py) receives
+the message, acts on it, and then sends a message on the 'finished' routing
+key to indicate the job was completed.
+
+4) a thread in the web app is waiting for messages on the 'finished'
+routing key.  It will update the jobrequests table when jobs are completed.
