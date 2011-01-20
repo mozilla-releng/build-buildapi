@@ -111,6 +111,8 @@ class BuildsController(BaseController):
         if config.get('auth_override'):
             who = config['auth_override']
             log.warn("Overriding auth for %s" % who)
+        elif 'X-Remote-User' in request.headers:
+            who = request.headers['X-Remote-User']
         else:
             who = request.remote_user
 

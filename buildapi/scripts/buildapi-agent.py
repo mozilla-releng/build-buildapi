@@ -42,7 +42,7 @@ class BuildAPIAgent:
 
     def _get_build_url(self, claimed_by_name, builder_name, build_number):
         master_url = self._get_master_url(claimed_by_name)
-        return "%s/builders/%s/builds/%s" % (master_url, urllib.quote(builder_name), build_number)
+        return "%s/builders/%s/builds/%s" % (master_url, urllib.quote(builder_name, ""), build_number)
 
     def _get_cancel_url(self, claimed_by_name, builder_name, build_number):
         build_url = self._get_build_url(claimed_by_name, builder_name, build_number)
