@@ -14,20 +14,23 @@ Generated at ${now} in ${seconds}s. All times are Mountain View, CA (US/Pacific)
 <html>
 <head>
 <title>${self.title()}</title>
+${h.tags.stylesheet_link(
+    url('/jquery/css/smoothness/jquery-ui-1.8.1.custom.css'),
+    url('/releng.css'),
+    url('/build-status.css'),
+    url('/DataTables-1.7.1/media/css/demo_page.css'),
+    url('/DataTables-1.7.1/media/css/demo_table_jui.css'),
+    )}
 ${h.tags.javascript_link(
+    url('/js/jquery-ui-1.8.1.custom.min.js'),
     url('/DataTables-1.7.1/media/js/jquery.js'),
     url('/DataTables-1.7.1/media/js/jquery.dataTables.min.js'),
     )}
-<style type="text/css">
-@import "${url('/jquery/css/smoothness/jquery-ui-1.8.1.custom.css')}";
-@import "${url('/releng.css')}";
-@import "${url('/build-status.css')}";
-</style>
 ${next.header()}
 </head>
 <body>
 ${self.breadcrumbs()}
 ${next.body()}
-</body>
 ${next.footer()}
+</body>
 </html>

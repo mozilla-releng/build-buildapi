@@ -1,9 +1,12 @@
 import logging
 
+from datetime import datetime
+
 from webhelpers.util import html_escape as e
 from sqlalchemy.orm.session import Session
 
-from pylons import request, response, tmpl_context as c, config, app_globals as g
+from pylons import request, response, tmpl_context as c, config, \
+    app_globals as g
 from pylons.controllers.util import abort, redirect
 from pylons.decorators.cache import beaker_cache
 
@@ -11,11 +14,10 @@ import formencode
 from formencode import validators
 
 from buildapi.lib.base import BaseController, render
-from buildapi.model.builds import getBuilds, getBuild, getRequest, getRevision,\
-    getBuildsForUser
+from buildapi.model.builds import getBuild, getRequest, getBuildsForUser
 from buildapi.model.buildapidb import JobRequest
 from buildapi.lib.helpers import get_builders, url
-from buildapi.lib import json
+from buildapi.lib import json, times
 
 log = logging.getLogger(__name__)
 access_log = logging.getLogger("buildapi.access")
@@ -119,7 +121,8 @@ class BuildsController(BaseController):
         if not who:
             abort(403, "ACCESS DENIED!")
 
-        access_log.info("%s accessing %s %s", who, request.method, request.path_info)
+        access_log.info("%s accessing %s %s", who, request.method,
+                request.path_info)
         return who
 
     @beaker_cache(query_args=True)
@@ -150,7 +153,6 @@ class BuildsController(BaseController):
         """Return a list of all the branches"""
         return self._format(config['branches'])
 
-    @beaker_cache(query_args=True, expire=60)
     def branch(self, branch):
         """Return a list of builds running on this branch"""
         # TODO: start/enddates
@@ -158,7 +160,16 @@ class BuildsController(BaseController):
         if branch not in config['branches']:
             return self._failed("Branch %s not found" % branch, 404)
         else:
-            builds = getBuilds(branch, limit=200)
+            today = times.now(g.tz).replace(hour=0, minute=0, second=0,
+                    microsecond=0)
+            date = request.params.get('date')
+            if date:
+                date = g.tz.localize(datetime.strptime(date, '%Y-%m-%d'))
+            else:
+                date = today
+            c.date = date
+            c.today = today
+            builds = g.buildapi_cache.get_builds_for_day(date, branch)
             return self._ok(builds)
 
     def build(self, branch, build_id):
@@ -168,7 +179,8 @@ class BuildsController(BaseController):
 
         retval = getBuild(branch, build_id)
         if not retval:
-            return self._failed("Build %s not found on branch %s" % (build_id, branch), 404)
+            return self._failed("Build %s not found on branch %s" %
+                    (build_id, branch), 404)
 
         return self._ok(retval)
 
@@ -179,19 +191,20 @@ class BuildsController(BaseController):
 
         retval = getRequest(branch, request_id)
         if not retval:
-            return self._failed("Request %s not found on branch %s" % (request_id, branch), 404)
+            return self._failed("Request %s not found on branch %s" %
+                    (request_id, branch), 404)
 
         return self._ok(retval)
 
-    @beaker_cache(query_args=True, expire=60)
     def revision(self, branch, revision):
         """Return a list of builds running for this revision"""
         if branch not in config['branches']:
             return self._failed("Branch %s not found" % branch, 404)
 
-        retval = getRevision(branch, revision)
-        if not retval['builds'] and not retval['pending']:
-            return self._failed("Revision %s not found on branch %s" % (revision, branch), 404)
+        retval = g.buildapi_cache.get_builds_for_revision(branch, revision)
+        if not retval:
+            return self._failed("Revision %s not found on branch %s" %
+                    (revision, branch), 404)
 
         return self._ok(retval)
 
@@ -258,15 +271,18 @@ class BuildsController(BaseController):
 
         retval = getRequest(branch, request_id)
         if not retval:
-            return self._failed("Request %s not found on branch %s" % (request_id, branch), 404)
+            return self._failed("Request %s not found on branch %s" %
+                    (request_id, branch), 404)
 
         if retval['complete'] != 0:
             return self._failed("Request already complete", 400)
         elif retval['claimed_at'] != 0:
             return self._failed("Request is already running", 400)
         else:
-            access_log.info("%s reprioritize %s %s to %s", who, branch, request_id, priority)
-            return self._format_mq_response(g.mq.reprioritizeRequest(who, request_id, priority))
+            access_log.info("%s reprioritize %s %s to %s", who, branch,
+                    request_id, priority)
+            return self._format_mq_response(g.mq.reprioritizeRequest(who,
+                request_id, priority))
 
         # TODO: invalidate cache for branch
         return self._format(retval)
@@ -285,7 +301,8 @@ class BuildsController(BaseController):
 
         retval = getRequest(branch, request_id)
         if not retval:
-            return self._failed("Request %s not found on branch %s" % (request_id, branch), 404)
+            return self._failed("Request %s not found on branch %s" %
+                    (request_id, branch), 404)
 
         # TODO: invalidate cache for branch
         access_log.info("%s cancel_request %s %s", who, branch, request_id)
@@ -305,13 +322,13 @@ class BuildsController(BaseController):
 
         retval = getBuild(branch, build_id)
         if not retval:
-            return self._failed("Build %s not found on branch %s" % (build_id, branch), 404)
+            return self._failed("Build %s not found on branch %s" %
+                    (build_id, branch), 404)
 
         access_log.info("%s cancel_build %s %s", who, branch, build_id)
         retval = g.mq.cancelBuild(who, build_id)
-        response.status = 202
         # TODO: invalidate cache for branch
-        return self._format(retval)
+        return self._format_mq_response(retval)
 
     def rebuild_build(self, branch):
         """Rebuild the given build"""
@@ -336,9 +353,8 @@ class BuildsController(BaseController):
 
         access_log.info("%s rebuild_build %s %s %s", who, branch, build_id, priority)
         retval = g.mq.rebuildBuild(who, build_id, priority)
-        response.status = 202
         # TODO: invalidate cache for branch
-        return self._format(retval)
+        return self._format_mq_response(retval)
 
     def rebuild_request(self, branch):
         """
@@ -366,9 +382,8 @@ class BuildsController(BaseController):
 
         access_log.info("%s rebuild_request %s %s %s", who, branch, request_id, priority)
         retval = g.mq.rebuildRequest(who, request_id, priority)
-        response.status = 202
         # TODO: invalidate cache for branch
-        return self._format(retval)
+        return self._format_mq_response(retval)
 
     def cancel_revision(self, branch, revision):
         """Cancels all running or pending builds on this revision"""
@@ -382,9 +397,8 @@ class BuildsController(BaseController):
 
         access_log.info("%s cancel_revision %s %s", who, branch, revision)
         retval = g.mq.cancelRevision(who, branch, revision)
-        response.status = 202
         # TODO: invalidate cache for branch
-        return self._format(retval)
+        return self._format_mq_response(retval)
 
     def new_build_at_rev(self, branch, revision):
         """Creates a new build at this revision"""

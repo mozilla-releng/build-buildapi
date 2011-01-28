@@ -181,7 +181,6 @@ class ReportsController(BaseController):
         report_params = dict([(k, params[k]) for k in 
                 ('pool', 'mpb', 'starttime', 'endtime', 'int_size', 'maxb')])
 
-        @beaker_cache(expire=600, cache_response=False)
         def waittimes_getReport(**params):
             return GetWaitTimes(**params)
         c.report = waittimes_getReport(**report_params)

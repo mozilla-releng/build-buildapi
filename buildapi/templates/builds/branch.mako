@@ -10,8 +10,8 @@ function revurl(rev)
 $(document).ready(function()
 {
     var options = {
-        "bJQueryUI": true,
-        "sPaginationType": "full_numbers"
+        bJQueryUI: true,
+        sPaginationType: "full_numbers"
     }
     $("#builds").dataTable(options);
     $("#running").dataTable(options);
@@ -72,6 +72,7 @@ function toggle_display(id)
 
 <%!
 import time
+from buildapi.lib.times import oneday, now
 
 def formattime(t):
     if not t:
@@ -89,6 +90,7 @@ statusText = {
 
 def formatStatus(status):
     return statusText.get(status, '')
+
 %>
 
 <%def name="buildrow(build, tabletype)">
@@ -142,6 +144,30 @@ def formatStatus(status):
 Look up builds by revision: <input id="revfield" type="text" name="revision">
 </form>
 
+% if hasattr(c, 'date'):
+<%
+before = (c.date - oneday).strftime('%Y-%m-%d')
+after = (c.date + oneday).strftime('%Y-%m-%d')
+today = c.today.strftime('%Y-%m-%d')
+%>
+Builds for ${c.branch} on ${c.date.strftime('%Y-%m-%d')}
+<a href="${h.url.current(date=before)}">Earlier</a>
+<a href="${h.url.current(date=today)}">Today</a>
+<a href="${h.url.current(date=after)}">Later</a>
+% endif
+
+<%
+builds = {'pending': [], 'running': [], 'builds': []}
+
+for b in c.data:
+    if not 'starttime' in b or not b['starttime']:
+        builds['pending'].append(b)
+    elif not b['endtime']:
+        builds['running'].append(b)
+    else:
+        builds['builds'].append(b)
+%>
+
 % for tabletype in ('pending', 'running', 'builds'):
     <h1>${tabletype}</h1>
     <div>
@@ -158,19 +184,11 @@ Look up builds by revision: <input id="revfield" type="text" name="revision">
     </tr>
     </thead>
     <tbody>
-    % for build in c.data[tabletype]:
+    % for build in builds[tabletype]:
         ${buildrow(build, tabletype)}
     % endfor
     </tbody>
     </table>
     </div>
 % endfor
-
-<br/>
-<a href='#' onclick="toggle_display('#raw')">Show raw data</a>
-<br/>
-<div id="raw" style="display:none">
-Raw data:<br/>
-${c.formatted_data|n}
-</div>
 </%def>

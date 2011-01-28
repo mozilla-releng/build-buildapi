@@ -18,6 +18,7 @@ def requestFromRow(row):
         'complete_at': row.complete_at,
         'priority': row.priority,
         'claimed_at': row.claimed_at,
+        'reason': row.reason,
         }
     return request
 
@@ -36,6 +37,7 @@ def buildFromRow(row, requestProps=False):
         'starttime': row.start_time,
         'endtime': row.finish_time,
         'status': row.results,
+        'claimed_by_name': row.claimed_by_name,
         }
     return build
 
@@ -62,6 +64,7 @@ def getRequest(branch, request_id):
         bs.c.id.label('buildset_id'),
         br.c.id.label('request_id'),
         br.c.buildername,
+        bs.c.reason,
         ss.c.branch,
         ss.c.revision,
         br.c.results,
@@ -136,6 +139,7 @@ def getBuildsQuery(branch, starttime=None, endtime=None, limit=None):
         b.c.number,
         br.c.buildername,
         bs.c.id,
+        bs.c.reason,
         ss.c.branch,
         ss.c.revision,
         b.c.start_time,
@@ -179,6 +183,7 @@ def getPendingQuery(branch, starttime=None, endtime=None, limit=None):
         br.c.buildername,
         ss.c.branch,
         ss.c.revision,
+        bs.c.reason,
         br.c.submitted_at,
         br.c.claimed_at,
         #br.c.claimed_by_name,
@@ -234,33 +239,31 @@ def getRevision(branch, revision, starttime=None, endtime=None, limit=None):
     ss = meta.scheduler_db_meta.tables['sourcestamps']
     br = meta.scheduler_db_meta.tables['buildrequests']
 
-    retval = {'builds': [], 'pending': [], 'running': []}
+    retval = []
+
+    revision = revision[:12]
 
     # TODO: Look at changes table too to find unscheduled or merged changes.
     build_q = getBuildsQuery(branch, starttime, endtime, limit)
     build_q = build_q.where(ss.c.revision.startswith(revision))
 
-    running_builds = build_q.where(br.c.complete == 0)
-    old_builds = build_q.where(br.c.complete != 0)
-
     # Elements with the same claimed_by_name, claimed_by_incarnation,
     # claimed_at, buildername, and number are actually the same build and
     # should only be represented once
     builds = {}
-    for btype, q in ( ('running', running_builds), ('builds', old_builds) ):
-        for build in q.execute():
-            key = (build.claimed_by_name, build.claimed_by_incarnation, build.claimed_at, build.buildername, build.number)
-            if key in builds:
-                request = requestFromRow(build)
-                builds[key]['requests'].append(request)
-            else:
-                builds[key] = buildFromRow(build)
-                retval[btype].append(builds[key])
+    for build in build_q.execute():
+        key = (build.claimed_by_name, build.claimed_by_incarnation, build.claimed_at, build.buildername, build.number)
+        if key in builds:
+            request = requestFromRow(build)
+            builds[key]['requests'].append(request)
+        else:
+            builds[key] = buildFromRow(build)
+            retval.append(builds[key])
 
     q = getPendingQuery(branch, starttime, endtime, limit)
     q = q.where(ss.c.revision.contains(revision))
     for req in q.execute():
-        retval['pending'].append(requestFromRow(req))
+        retval.append(requestFromRow(req))
 
     return retval
 

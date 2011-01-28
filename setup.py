@@ -16,6 +16,7 @@ setup(
         "Pylons>=1.0.0",
         "SQLAlchemy>=0.6",
         "carrot>=0.10.7",
+        "pytz",
     ],
     setup_requires=["PasteScript>=1.6.3"],
     tests_require=["nose", "mock"],
