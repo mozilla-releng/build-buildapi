@@ -1,7 +1,7 @@
 import time
 
 from buildapi.model.builds import getBuildsQuery, requestFromRow, buildFromRow, \
-        getRevision
+        getRevision, getPendingQuery
 from buildapi.lib.times import dt2ts, ts2dt, oneday, now
 
 import logging
@@ -26,6 +26,10 @@ def getBuilds(branch, starttime, endtime):
         else:
             builds[key] = buildFromRow(build)
             retval.append(builds[key])
+
+    q = getPendingQuery(branch, starttime, endtime)
+    for req in q.execute():
+        retval.append(requestFromRow(req))
 
     return retval
 
