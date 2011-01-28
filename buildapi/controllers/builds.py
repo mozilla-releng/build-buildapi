@@ -331,7 +331,9 @@ class BuildsController(BaseController):
         return self._format_mq_response(retval)
 
     def rebuild_build(self, branch):
-        """Rebuild the given build"""
+        """Rebuild `build_id`, which must be passed in as a POST parameter.
+
+        `priority` is also accepted as an optional parameter."""
         who = self._require_auth()
 
         if branch not in config['branches']:
