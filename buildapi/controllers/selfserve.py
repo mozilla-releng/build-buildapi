@@ -27,7 +27,7 @@ IntValidator = validators.Int(not_empty=True)
 class SelfserveController(BaseController):
     """
     Informational Requests
-    --------------------
+    ----------------------
     Results are formatted according to the 'format' query parameter
     ("?format=html" or "?format=json").  If 'format' is not set, and the
     'Accept' header of the request includes 'application/json', the format will
@@ -38,10 +38,10 @@ class SelfserveController(BaseController):
 
     Job Requests
     ------------
-    PUT, POST, and DELETE requests (which can be faked by setting a '_method_'
+    PUT, POST, and DELETE requests (which can be faked by setting a '_method'
     field to 'PUT' or 'DELETE' in a regular POST request if your client doesn't
-    support PUT/DELETE easiliy) represent requests
-    to change buildbot state.  These are called "Job Requests".
+    support PUT/DELETE easiliy) represent requests to change buildbot state.
+    These are called "Job Requests".
 
     Requests to these methods return a job status dictionary, which includes
     the following keys:
