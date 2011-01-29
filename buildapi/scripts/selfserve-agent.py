@@ -1,25 +1,36 @@
 #!/usr/bin/python
-"""buildapi-agent.py [options]
+"""selfserve-agent.py [options]
 
 Gets any messages and executes them."""
 import logging as log
 import time
 import urllib
 import subprocess
+from collections import namedtuple
+
 from sqlalchemy import text
 
-from collections import namedtuple
+from buildapi.lib import json
 
 BranchInfo = namedtuple('BranchInfo', ['revlink', 'repo_path'])
 
 class BuildAPIAgent:
-    def __init__(self, db, masters, buildbot, sendchange_master, publisher, branch_map):
+    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branch_map):
         self.db = db
-        self.masters = masters
+        self.masters_url = masters_url
         self.buildbot = buildbot
         self.sendchange_master = sendchange_master
         self.publisher = publisher
         self.branch_map = branch_map
+
+        self._last_masters_update = 0
+
+    def _refresh_masters(self):
+        # Refresh every 5 minutes
+        if time.time() - self._last_masters_update > 300:
+            log.info("Loading masters from %s", self.masters_url)
+            self.masters = json.load(urllib.urlopen(self.masters_url))
+            self._last_masters_update = time.time()
 
     def _get_repo_path(self, branch):
         return self.branch_map[branch].repo_path
@@ -69,6 +80,8 @@ class BuildAPIAgent:
             # We don't know how to handle this, leave it alone
             log.info("Don't know how to handle action %s" % action)
             return
+
+        self._refresh_masters()
 
         try:
             retval = action_func(message_data, message)
@@ -328,10 +341,18 @@ class BuildAPIAgent:
 
 
 if __name__ == '__main__':
+    import os
     from optparse import OptionParser
+    from ConfigParser import RawConfigParser
+
+    from carrot.connection import AMQPConnection
+    from sqlalchemy import create_engine
+
+    from buildapi.lib.mq import JobRequestConsumer, JobRequestDonePublisher
+
     parser = OptionParser()
     parser.set_defaults(
-            configfile='buildapi-agent.ini',
+            configfile='selfserve-agent.ini',
             wait=False,
             verbosity=log.INFO
             )
@@ -342,13 +363,11 @@ if __name__ == '__main__':
 
     options, args = parser.parse_args()
 
-    import os
     if not os.path.exists(options.configfile):
         parser.error("Config file %s does not exist" % options.configfile)
 
     log.basicConfig(format='%(asctime)s %(message)s', level=options.verbosity)
 
-    from ConfigParser import RawConfigParser
     config = RawConfigParser(
             {'port': 5672,
              'ssl': 'false',
@@ -358,7 +377,6 @@ if __name__ == '__main__':
 
     amqp_exchange = config.get('carrot', 'exchange')
 
-    from carrot.connection import AMQPConnection
     amqp_conn = AMQPConnection(
             hostname=config.get('carrot', 'hostname'),
             userid=config.get('carrot', 'userid'),
@@ -378,19 +396,15 @@ if __name__ == '__main__':
 
         branch_map[branch] = BranchInfo(repo_path=repo_path, revlink=revlink)
 
-    from sqlalchemy import create_engine
-    from buildapi.lib.mq import JobRequestDonePublisher
-    from buildapi.lib import json
     agent = BuildAPIAgent(
             db=create_engine(config.get('db', 'url'), pool_recycle=60),
-            masters=json.load(open(config.get('masters', 'masters-file'))),
+            masters_url=config.get('masters', 'masters-url'),
             buildbot=config.get('masters', 'buildbot'),
             sendchange_master=config.get('masters', 'sendchange-master'),
             publisher=JobRequestDonePublisher(amqp_conn, exchange=amqp_exchange),
             branch_map=branch_map,
             )
 
-    from buildapi.lib.mq import JobRequestConsumer
     consumer = JobRequestConsumer(amqp_conn, exchange=amqp_exchange, queue=config.get('carrot', 'queue'))
     consumer.register_callback(agent.receive_message)
 
