@@ -386,6 +386,7 @@ if __name__ == '__main__':
             virtual_host=config.get('carrot', 'vhost'),
             )
 
+    # TODO: This needs to be refreshed regularly
     branch_map = {}
     for section in config.sections():
         if not section.startswith('branch:'):
