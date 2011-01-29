@@ -136,7 +136,7 @@ def formatStatus(status):
 </%def>
 
 <%def name="breadcrumbs()">
-<a href="${h.url('builds_home')}">BuildAPI Home</a><br/>
+<a href="${h.url('selfserve_home')}">BuildAPI Home</a><br/>
 </%def>
 
 <%def name="body()">

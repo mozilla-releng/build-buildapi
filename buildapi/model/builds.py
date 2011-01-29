@@ -106,6 +106,7 @@ def getBuild(branch, build_id):
         br.c.buildername,
         ss.c.branch,
         ss.c.revision,
+        bs.c.reason,
         b.c.start_time,
         b.c.finish_time,
         br.c.results,

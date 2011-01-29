@@ -24,7 +24,7 @@ access_log = logging.getLogger("buildapi.access")
 
 IntValidator = validators.Int(not_empty=True)
 
-class BuildsController(BaseController):
+class SelfserveController(BaseController):
     """
     Informational Requests
     --------------------
@@ -48,7 +48,7 @@ class BuildsController(BaseController):
         "status"     - "OK" or "FAILED"
         "msg"        - informational text
         "request_id" - the job request id.  You can find the status of the job
-                       by visiting /builds/jobs/{job_id}.  This is only set for
+                       by visiting /self-serve/jobs/{job_id}.  This is only set for
                        successfull requests.
 
     Job requests can return 202 (HTTP Accepted) if the request was accepted, or
@@ -79,7 +79,7 @@ class BuildsController(BaseController):
             c.data = obj
             c.formatted_data = retval
             action = request.environ['pylons.routes_dict']['action']
-            template = '/builds/%s.mako' % action
+            template = '/self-serve/%s.mako' % action
             if g.mako_lookup.has_template(template):
                 return render(template)
             else:
@@ -131,7 +131,7 @@ class BuildsController(BaseController):
         routes = []
         for route in config['routes.map'].matchlist:
             controller = route.defaults.get('controller')
-            if controller != 'builds':
+            if controller != 'selfserve':
                 continue
 
             if route.conditions:
@@ -146,7 +146,7 @@ class BuildsController(BaseController):
         routes.sort()
         c.main_docstring = self.__doc__
         c.routes = routes
-        return render('/builds/index.mako')
+        return render('/self-serve/index.mako')
 
     @beaker_cache(query_args=True)
     def branches(self):

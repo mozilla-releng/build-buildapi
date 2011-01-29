@@ -12,7 +12,7 @@ $(document).ready(function()
 {
     // Fill in the branch table
     var table = $('#branches');
-    var baselink = '${h.url('builds_home')}';
+    var baselink = '${h.url('selfserve_home')}';
     $.getJSON('${h.url('branches')}', function(data) {
         $.each(data, function(index, value) {
             var link = baselink + '/' + value;

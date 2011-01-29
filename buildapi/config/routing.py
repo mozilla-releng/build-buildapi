@@ -53,28 +53,28 @@ def make_map(config):
 
     # BuildAPI
     # Read-write
-    map.connect('reprioritize', '/builds/{branch}/request/{request_id}', controller='builds', action='reprioritize', conditions=dict(method=['PUT']))
-    map.connect('cancel_request', '/builds/{branch}/request/{request_id}', controller='builds', action='cancel_request', conditions=dict(method=['DELETE']))
-    map.connect('cancel_build', '/builds/{branch}/build/{build_id}', controller='builds', action='cancel_build', conditions=dict(method=['DELETE']))
-    map.connect('rebuild_build', '/builds/{branch}/build', controller='builds', action='rebuild_build', conditions=dict(method=['POST']))
-    map.connect('rebuild_request', '/builds/{branch}/request', controller='builds', action='rebuild_request', conditions=dict(method=['POST']))
-    map.connect('cancel_revision', '/builds/{branch}/rev/{revision}', controller='builds', action='cancel_revision', conditions=dict(method=['DELETE']))
-    map.connect('new_build_at_rev', '/builds/{branch}/rev/{revision}', controller='builds', action='new_build_at_rev', conditions=dict(method=['POST']))
-    #map.connect('new_build_for_builder', '/builds/{branch}/builders/{builder_name}', controller='builds', action='new_build_for_builder', conditions=dict(method=['POST']))
+    map.connect('reprioritize', '/self-serve/{branch}/request/{request_id}', controller='selfserve', action='reprioritize', conditions=dict(method=['PUT']))
+    map.connect('cancel_request', '/self-serve/{branch}/request/{request_id}', controller='selfserve', action='cancel_request', conditions=dict(method=['DELETE']))
+    map.connect('cancel_build', '/self-serve/{branch}/build/{build_id}', controller='selfserve', action='cancel_build', conditions=dict(method=['DELETE']))
+    map.connect('rebuild_build', '/self-serve/{branch}/build', controller='selfserve', action='rebuild_build', conditions=dict(method=['POST']))
+    map.connect('rebuild_request', '/self-serve/{branch}/request', controller='selfserve', action='rebuild_request', conditions=dict(method=['POST']))
+    map.connect('cancel_revision', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='cancel_revision', conditions=dict(method=['DELETE']))
+    map.connect('new_build_at_rev', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='new_build_at_rev', conditions=dict(method=['POST']))
+    #map.connect('new_build_for_builder', '/self-serve/{branch}/builders/{builder_name}', controller='selfserve', action='new_build_for_builder', conditions=dict(method=['POST']))
 
     # Status of jobs
-    map.connect('job_status', '/builds/jobs/{job_id}', controller='builds', action='job_status')
+    map.connect('job_status', '/self-serve/jobs/{job_id}', controller='selfserve', action='job_status')
 
     # Read-only
-    map.connect('builds_home', '/builds', controller='builds', action='index')
-    map.connect('branches', '/builds/branches', controller='builds', action='branches')
-    map.connect('branch', '/builds/{branch}', controller='builds', action='branch')
-    map.connect('build', '/builds/{branch}/build/{build_id}', controller='builds', action='build')
-    map.connect('request', '/builds/{branch}/request/{request_id}', controller='builds', action='request')
-    map.connect('revision', '/builds/{branch}/rev/{revision}', controller='builds', action='revision')
-    map.connect('builders', '/builds/{branch}/builders', controller='builds', action='builders')
-    map.connect('builder', '/builds/{branch}/builders/{builder_name}', controller='builds', action='builder')
-    map.connect('user', '/builds/{branch}/user/{user}', controller='builds', action='user')
+    map.connect('selfserve_home', '/self-serve', controller='selfserve', action='index')
+    map.connect('branches', '/self-serve/branches', controller='selfserve', action='branches')
+    map.connect('branch', '/self-serve/{branch}', controller='selfserve', action='branch')
+    map.connect('build', '/self-serve/{branch}/build/{build_id}', controller='selfserve', action='build')
+    map.connect('request', '/self-serve/{branch}/request/{request_id}', controller='selfserve', action='request')
+    map.connect('revision', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='revision')
+    map.connect('builders', '/self-serve/{branch}/builders', controller='selfserve', action='builders')
+    map.connect('builder', '/self-serve/{branch}/builders/{builder_name}', controller='selfserve', action='builder')
+    map.connect('user', '/self-serve/{branch}/user/{user}', controller='selfserve', action='user')
 
     # Redirect /foo/ to /foo
     map.redirect('/*(url)/', '/{url}', _redirect_code='301 Moved Permanently')
