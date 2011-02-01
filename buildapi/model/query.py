@@ -65,10 +65,16 @@ def GetBuilds(branch=None, type='pending', rev=None):
                     b.c.start_time,
                     b.c.number,
             ])
+        # joins
         q = q.where(and_(b.c.brid == br.c.id,
                          br.c.buildsetid==bs.c.id,
                          bs.c.sourcestampid==ss.c.id))
-        q = q.where(and_(br.c.claimed_at > 0,br.c.complete == 0))
+        # conditions to get running builds
+        # the b.c.finish_time excludes previous builds when we retry (multiple
+        # builds per buildrequest in that situation)
+        q = q.where(and_(br.c.claimed_at > 0,
+                         br.c.complete == 0,
+                         b.c.finish_time == None))
     # use an outer join to catch pending builds
     # can probably trim the list of columns a bunch
     elif type == 'revision':
