@@ -1,5 +1,5 @@
 <%inherit file="report.mako"/>
-<%namespace file="util.mako" import="build_pool_menu, datepicker_menu, more_less_item_list"/>
+<%namespace file="util.mako" import="build_pool_menu, datepicker_menu, int_size_menu, more_less_item_list"/>
 
 <%def name="title()">Wait times Report</%def>
 
@@ -67,7 +67,10 @@
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
   <p>Report for <b>${c.report.pool}</b> for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and 
     <b>${h.pacific_time(c.report.endtime)}</b></p>
-   <p>int_size = ${c.report.int_size}s (${h.strf_hms(c.report.int_size)})</p>
+  <p>
+    <b>int_size</b> = ${c.report.int_size}s (${h.strf_hms(c.report.int_size)}) |
+    ${int_size_menu()}
+  </p>
 </%def>
 
 <% wt = c.report %>

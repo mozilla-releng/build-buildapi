@@ -1,3 +1,5 @@
+from datetime import datetime
+import math
 import simplejson
 from sqlalchemy import select, and_, or_, not_
 
@@ -74,16 +76,19 @@ class PushesReport(object):
         self.endtime = endtime
         self.int_size = int_size
         self.branch = branch    # list of branches
-        
+
         self.filter_branches = bool(self.branch)
         self._init_report()
 
     def _init_report(self):
         self.total = 0
-        self.int_no = int((self.endtime - self.starttime - 1)/self.int_size) + 1 if self.int_size else 1
+        self.timeframe = self.endtime - self.starttime - 1
+        self.int_no = int(self.timeframe / self.int_size) + 1 if self.int_size else 1
         self.intervals = [0] * self.int_no
         self.branch_intervals = {}
         self.branch_totals = {}
+        self.daily_intervals = [0] * 24
+        self.days = math.ceil(self.timeframe / 86400.)
 
         for b in self.branch: self._init_branch(b)
 
@@ -120,6 +125,9 @@ class PushesReport(object):
         self.intervals[int_idx] += 1
         self.branch_intervals[push.branch_name][int_idx] += 1
         self.branch_totals[push.branch_name] += 1
+
+        if push.stime:
+            self.daily_intervals[datetime.fromtimestamp(push.stime).hour] += 1
 
         return True
 

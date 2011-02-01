@@ -109,6 +109,68 @@ def gviz_pushes(report, resp_type='JSonResponse', req_id='0'):
     Input: rep_type - type of returned value (e.g. JSonResponse or JSCode) 
     Output: JSONResponse or JSCode Visualization API objects
     """
+    # gviz table description (columns)
+    description = {
+        'branch': ('string', 'Branch'), 
+        'totals': ('number', '# Pushes')
+    }
+
+    # gviz table data (rows)
+    data = []
+    for branch in report.branch:
+        totals = report.get_total(branch=branch)
+        data.append({'branch': branch, 'totals': totals})
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+
+    if resp_type == 'JSCode':
+        return data_table.ToJSCode("jscode_data",
+            columns_order=('branch', 'totals'))
+    else:
+        return data_table.ToJSonResponse(req_id=req_id,
+            columns_order=('branch', 'totals'))
+
+def gviz_pushes_daily_intervals(report, resp_type='JSonResponse', req_id='0'):
+    """Transforms Pushes Report Average # of Pushes per Hour to Google 
+    Visualization API Data Table, and returns it either as JSONResponse or 
+    JSCode objects.
+
+    Input: rep_type - type of returned value (e.g. JSonResponse or JSCode) 
+    Output: JSONResponse or JSCode Visualization API objects
+    """
+    # gviz table description (columns)
+    description = {
+        'hour': ('string', 'Hour'),
+        'average': ('number', 'Average # Pushes per Hour')
+    }
+
+    # gviz table data (rows)
+    data = []
+    for int_no in xrange(len(report.daily_intervals)):
+        avg = report.daily_intervals[int_no] / report.days
+        data.append({
+            'hour': '%02d' % int_no,
+            'average': avg,
+        })
+
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+
+    if resp_type == 'JSCode':
+        return data_table.ToJSCode("jscode_data",
+            columns_order=('hour', 'average'))
+    else:
+        return data_table.ToJSonResponse(req_id=req_id,
+            columns_order=('hour', 'average'))
+
+def gviz_pushes_intervals(report, resp_type='JSonResponse', req_id='0'):
+    """Transforms Pushes Report per Intervals to Google Visualization API 
+    Data Table, and returns it either as JSONResponse or JSCode objects.
+
+    Input: rep_type - type of returned value (e.g. JSonResponse or JSCode) 
+    Output: JSONResponse or JSCode Visualization API objects
+    """
     intervals = [
         time.strftime('%m/%d %H:%M', 
             time.localtime(report.get_interval_timestamp(t))) 
@@ -120,7 +182,7 @@ def gviz_pushes(report, resp_type='JSonResponse', req_id='0'):
 
     # gviz table data (rows)
     data = []
-    for i in range(report.int_no):
+    for i in xrange(report.int_no):
         row = {'intervals': intervals[i], 'totals': report.get_intervals()[i]}
         for branch in report.branch:
             row[branch] = report.get_intervals(branch=branch)[i]

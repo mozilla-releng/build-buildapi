@@ -180,6 +180,8 @@ class PushesSchema(ReportSchema):
     """Pushes Report Schema."""
     int_size = IntervalValidator()
     branch = BranchListValidator()
+    type = OneOf(list=['int', 'hourly', 'all'], if_empty='all', 
+        if_missing='all')
 
     chained_validators = ReportSchema.chained_validators + [ IntSizeInit() ]
 

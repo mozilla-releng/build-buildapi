@@ -11,8 +11,9 @@ EndtoendSchema, EndtoendRevisionSchema, BuildersSchema, BuilderDetailsSchema, \
 IdleJobsSchema, TestRunSchema
 from buildapi.lib import helpers as h
 from buildapi.lib.base import BaseController, render
-from buildapi.lib.visualization import gviz_pushes, gviz_waittimes, \
-gviz_builders, gviz_trychooser_authors, gviz_trychooser_runs, gviz_testruns, gviz_idlejobs
+from buildapi.lib.visualization import gviz_pushes, gviz_pushes_intervals, \
+gviz_pushes_daily_intervals, gviz_waittimes, gviz_builders, \
+gviz_trychooser_authors, gviz_trychooser_runs, gviz_testruns, gviz_idlejobs
 from buildapi.model.builders import GetBuildersReport, GetBuilderTypeReport
 from buildapi.model.endtoend import GetEndtoEndTimes, GetBuildRun
 from buildapi.model.pushes import GetPushes
@@ -167,7 +168,13 @@ class ReportsController(BaseController):
             return c.report.jsonify()
         elif format == 'chart':
             req_id = params['reqid']
-            return gviz_pushes(c.report, req_id=req_id)
+            rtype = params['type']
+            if rtype == 'int':
+                return gviz_pushes_intervals(c.report, req_id=req_id)
+            if rtype == 'hourly':
+                return gviz_pushes_daily_intervals(c.report, req_id=req_id)
+            else:
+                return gviz_pushes(c.report, req_id=req_id)
         else:
             return render('/reports/pushes.mako')
 

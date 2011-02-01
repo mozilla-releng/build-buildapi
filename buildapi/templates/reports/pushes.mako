@@ -1,5 +1,5 @@
 <%inherit file="report.mako"/>
-<%namespace file="util.mako" import="datepicker_menu"/>
+<%namespace file="util.mako" import="datepicker_menu, int_size_menu"/>
 
 <%def name="title()">Pushes Report</%def>
 
@@ -10,12 +10,20 @@
     google.setOnLoadCallback(initialize);
 
     function initialize() {
-        var data_url = updateUrlParams({format:'chart'});
-        var query = new google.visualization.Query(data_url);
-        query.send(handleQueryResponse);
+        var data_url_int = updateUrlParams({format:'chart', type: 'int'});
+        var query_int = new google.visualization.Query(data_url_int);
+        query_int.send(handleQueryResponseIntervals);
+
+        var data_url_all = updateUrlParams({format:'chart', type: 'all'});
+        var query_all = new google.visualization.Query(data_url_all);
+        query_all.send(handleQueryResponseAll);
+
+        var data_url_hourly = updateUrlParams({format:'chart', type: 'hourly'});
+        var query_hourly = new google.visualization.Query(data_url_hourly);
+        query_hourly.send(handleQueryResponseHourly);
     }
 
-    function handleQueryResponse(response) {
+    function handleQueryResponseIntervals(response) {
         if (response.isError()) {
            console.error('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
            return;
@@ -27,7 +35,28 @@
 
         drawLineChart(document.getElementById('line_chart_div'), data, false);
         drawColumnChart(document.getElementById('column_chart_div'), data_no_totals, true);
-        drawBarChart(document.getElementById('bar_chart_div'), data_no_totals, true, '', 600, 600);
+    }
+
+    function handleQueryResponseAll(response) {
+        if (response.isError()) {
+           console.error('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+           return;
+        }
+
+        var data = response.getDataTable();
+        drawPieChart(document.getElementById('pie_chart_div'), data, 
+            'Number of Pushes by Branch', 600, 600);
+    }
+
+    function handleQueryResponseHourly(response) {
+        if (response.isError()) {
+           console.error('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+           return;
+        }
+
+        var data = response.getDataTable();
+        drawColumnChart(document.getElementById('hourly_column_chart_div'), data, 
+            'Average Number of Pushes by Hour');
     }
 
     $(document).ready(function() {
@@ -44,7 +73,10 @@
 <%def name="main_menu()">
   <p>${datepicker_menu(c.report.starttime, c.report.endtime)}</p>
   <p>Report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
-  <p>int_size = ${c.report.int_size}s (${h.strf_hms(c.report.int_size)})</p>
+  <p>
+    <b>int_size</b> = ${c.report.int_size}s (${h.strf_hms(c.report.int_size)}) | 
+    ${int_size_menu()}
+  </p>
 </%def>
 
 <div>
@@ -81,4 +113,5 @@
 <div id="table_div"></div>
 <div id="line_chart_div"></div>
 <div id="column_chart_div"></div>
-<div id="bar_chart_div"></div>
+<div id="hourly_column_chart_div"></div>
+<div id="pie_chart_div"></div>

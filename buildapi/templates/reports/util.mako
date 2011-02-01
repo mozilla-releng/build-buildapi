@@ -7,12 +7,12 @@
   ${h.pacific_time(timestamp) if timestamp else '-'}
 </%def>
 
-<%def name="link_menu(selitem, itemlist, item_link_func)"> 
+<%def name="link_menu(selitem, itemlist, item_link_func, item_label_func=lambda x: x)"> 
   % for item in itemlist:
       % if item == selitem:
-          <b>${item}</b> | 
+          <b>${item_label_func(item)}</b> | 
       % else:
-          <a href="${item_link_func(item)}">${item}</a> | 
+          <a href="${item_link_func(item)}">${item_label_func(item)}</a> | 
       % endif
   % endfor
 </%def>
@@ -170,4 +170,22 @@
     </p>
     Link: <input type="text" class="link" readonly="readonly" size="120"/>
   </div>
+</%def>
+
+<%def name="int_size_menu()">
+  <span>
+    <%
+    intervals = [('minute', 60), ('hour', 3600), ('day', 86400),
+        ('week', 604800), ('month (30 days)', 2592000)]
+    params = dict(request.params)
+    if 'int_size' in params:
+        size = params['int_size']
+        del params['int_size']
+    int_size_link_func = lambda x: url.current(int_size=intervals[x][1], **params)
+    int_size_label_func = lambda x: intervals[x][0]
+    %>
+
+    Int size: ${link_menu(None, xrange(len(intervals)), int_size_link_func, 
+        item_label_func=int_size_label_func)}
+  </span>
 </%def>
