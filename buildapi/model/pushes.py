@@ -27,7 +27,9 @@ def PushesQuery(starttime, endtime, branches=None):
 
     q = select([s.c.revision, s.c.branch, c.c.author, c.c.when_timestamp],
                and_(sch.c.changeid == c.c.changeid, s.c.id == sch.c.sourcestampid))
-    q = q.where(c.c.revlink != '')
+    q = q.where(or_(
+        c.c.revlink.startswith('http://hg.mozilla.org'),
+        c.c.comments.startswith('http://hg.mozilla.org')))
     q = q.group_by(c.c.when_timestamp, s.c.branch)
 
     # exclude branches that are not of interest
