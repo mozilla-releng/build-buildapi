@@ -117,7 +117,7 @@ def gviz_pushes(report, resp_type='JSonResponse', req_id='0'):
 
     # gviz table data (rows)
     data = []
-    for branch in report.branch:
+    for branch in report.branches:
         totals = report.get_total(branch=branch)
         data.append({'branch': branch, 'totals': totals})
 
@@ -178,13 +178,13 @@ def gviz_pushes_intervals(report, resp_type='JSonResponse', req_id='0'):
 
     # gviz table description (columns)
     description = {'intervals': ('string', 'Interval'), 'totals': ('number', 'Totals')}
-    for branch in report.branch: description[branch] = ('number', branch)
+    for branch in report.branches: description[branch] = ('number', branch)
 
     # gviz table data (rows)
     data = []
     for i in xrange(report.int_no):
         row = {'intervals': intervals[i], 'totals': report.get_intervals()[i]}
-        for branch in report.branch:
+        for branch in report.branches:
             row[branch] = report.get_intervals(branch=branch)[i]
 
         data.append(row)
@@ -194,10 +194,10 @@ def gviz_pushes_intervals(report, resp_type='JSonResponse', req_id='0'):
 
     if resp_type == 'JSCode':
         return data_table.ToJSCode("jscode_data",
-            columns_order=tuple(['intervals', 'totals'] + sorted(report.branch)))
+            columns_order=tuple(['intervals', 'totals'] + sorted(report.branches)))
     else:
         return data_table.ToJSonResponse(req_id=req_id,
-            columns_order=tuple(['intervals', 'totals'] + sorted(report.branch)))
+            columns_order=tuple(['intervals', 'totals'] + sorted(report.branches)))
 
 def gviz_builders(report, resp_type='JSonResponse', req_id='0'):
     """Transforms Builders Report to Google Visualization API Data Table with 

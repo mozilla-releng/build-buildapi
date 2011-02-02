@@ -22,6 +22,9 @@ from buildapi.model.waittimes import GetWaitTimes, BUILDPOOL_MASTERS, get_time_i
 from buildapi.model.testruns import GetTestRuns, ALL_BRANCHES
 from buildapi.model.idlejobs import GetIdleJobsReport
 
+import logging
+log = logging.getLogger(__name__)
+
 class ReportsController(BaseController):
 
     @beaker_cache(query_args=True)
@@ -157,7 +160,7 @@ class ReportsController(BaseController):
 
         format = params['format']
         report_params = dict([(k, params[k]) for k in 
-                ('starttime', 'endtime', 'int_size', 'branch')])
+                ('starttime', 'endtime', 'int_size', 'branches')])
 
         @beaker_cache(expire=600, cache_response=False)
         def pushes_getReport(**params):

@@ -96,7 +96,7 @@
             <td>${val}</td>
           % endfor
       </tr>
-      % for branch in sorted(c.report.branch):
+      % for branch in sorted(c.report.branches):
         <tr>
           <td>${branch}</td>
           <td style="background-color:#EEFFEE">${c.report.get_total(branch=branch)}</td>

@@ -7,7 +7,10 @@ import buildapi.model.meta as meta
 from buildapi.model.util import get_time_interval, get_branch_name
 from buildapi.model.util import SOURCESTAMPS_BRANCH, PUSHES_SOURCESTAMPS_BRANCH_SQL_EXCLUDE
 
-def PushesQuery(starttime, endtime, branch=[]):
+import logging
+log = logging.getLogger(__name__)
+
+def PushesQuery(starttime, endtime, branches=None):
     """Constructs the sqlalchemy query for fetching all pushes in the specified time interval.
     One push is identified by changes.when_timestamp and branch name.
 
@@ -15,7 +18,7 @@ def PushesQuery(starttime, endtime, branch=[]):
 
     Input: starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
-           branch - filter by list of branches, if not spefified fetches all branches
+           branches - filter by list of branches, if not spefified fetches all branches
     Output: query
     """
     s = meta.scheduler_db_meta.tables['sourcestamps']
@@ -24,6 +27,7 @@ def PushesQuery(starttime, endtime, branch=[]):
 
     q = select([s.c.revision, s.c.branch, c.c.author, c.c.when_timestamp],
                and_(sch.c.changeid == c.c.changeid, s.c.id == sch.c.sourcestampid))
+    q = q.where(c.c.revlink != '')
     q = q.group_by(c.c.when_timestamp, s.c.branch)
 
     # exclude branches that are not of interest
@@ -32,8 +36,8 @@ def PushesQuery(starttime, endtime, branch=[]):
         q = q.where(and_(*bexcl))
 
     # filter desired branches
-    bexp = [s.c.branch.like('%' + b + '%') for b in branch]
-    if bexp:
+    if branches:
+        bexp = [s.c.branch.like('%' + b + '%') for b in branches]
         q = q.where(or_(*bexp))
 
     if starttime is not None:
@@ -43,22 +47,22 @@ def PushesQuery(starttime, endtime, branch=[]):
 
     return q
 
-def GetPushes(starttime=None, endtime=None, int_size=0, branch=[]):
+def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
     """Get pushes and statistics.
 
     Input: starttime - start time (UNIX timestamp in seconds), if not specified, endtime minus 24 hours
            endtime - end time (UNIX timestamp in seconds), if not specified, starttime plus 24 hours or 
                      current time (if starttime is not specified either)
            int_size - break down results per interval (in seconds), if specified
-           branch - filter by list of branches, if not spefified fetches all branches
+           branches - filter by list of branches, if not spefified fetches all branches
     Output: pushes report
     """
     starttime, endtime = get_time_interval(starttime, endtime)
 
-    q = PushesQuery(starttime, endtime, branch)
+    q = PushesQuery(starttime, endtime, branches)
     q_results = q.execute()
 
-    report = PushesReport(starttime, endtime, int_size=int_size, branch=branch)
+    report = PushesReport(starttime, endtime, int_size=int_size, branches=branches)
     for r in q_results:
         branch_name = get_branch_name(r['branch'])
         stime = float(r['when_timestamp'])
@@ -71,13 +75,16 @@ def GetPushes(starttime=None, endtime=None, int_size=0, branch=[]):
 
 class PushesReport(object):
 
-    def __init__(self, starttime, endtime, int_size=0, branch=[]):
+    def __init__(self, starttime, endtime, int_size=0, branches=None):
         self.starttime = starttime
         self.endtime = endtime
         self.int_size = int_size
-        self.branch = branch    # list of branches
+        if not branches:
+            self.branches = []
+        else:
+            self.branches = branches    # list of branches
 
-        self.filter_branches = bool(self.branch)
+        self.filter_branches = bool(self.branches)
         self._init_report()
 
     def _init_report(self):
@@ -90,10 +97,10 @@ class PushesReport(object):
         self.daily_intervals = [0] * 24
         self.days = math.ceil(self.timeframe / 86400.)
 
-        for b in self.branch: self._init_branch(b)
+        for b in self.branches: self._init_branch(b)
 
     def _init_branch(self, branch):
-        if branch not in self.branch: self.branch.append(branch)
+        if branch not in self.branches: self.branches.append(branch)
         self.branch_intervals[branch] = [0] * self.int_no
         self.branch_totals[branch] = 0
 
@@ -113,10 +120,10 @@ class PushesReport(object):
         return self.branch_intervals[branch]
 
     def add(self, push):
-        if self.filter_branches and push.branch_name not in self.branch: 
+        if self.filter_branches and push.branch_name not in self.branches:
             return False
 
-        if push.branch_name not in self.branch:
+        if push.branch_name not in self.branches:
             self._init_branch(push.branch_name)
 
         int_idx = self.get_interval_index(push.stime)
