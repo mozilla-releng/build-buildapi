@@ -128,9 +128,13 @@
           <thead><tr><th>Wait Time</th><th>Number</th><th>Percentage</th></tr></thead>
           <tbody>
             % for block in wt.get_blocks(platform=platform):
-              <% bval = wt.get_wait_times(block, platform=platform).total %>
-              <% bper = "%.2f%%" % (bval*100./ptotal) if ptotal else "-" %>
-              <tr class="gradeA"><td>${block}</td><td>${bval}</td><td>${bper}</td></tr>
+              <% 
+                blocklabel = str(block)
+                if wt.maxb and block==wt.maxb: blocklabel += '+'
+                bval = wt.get_wait_times(block, platform=platform).total
+                bper = "%.2f%%" % (bval * 100. / ptotal) if ptotal else "-"
+              %>
+              <tr class="gradeA"><td>${blocklabel}</td><td>${bval}</td><td>${bper}</td></tr>
             % endfor
           </tbody>
         </table>

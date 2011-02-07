@@ -46,13 +46,13 @@ PLATFORMS_BUILDERNAME = {
         re.compile('Rev3 Fedora 12x64 .+'),
     ],
     'leopard': [
-        re.compile('^OS X 10\.5\.2 .+'),
-        re.compile('^Rev3 MacOSX Leopard 10\.5\.8 .+'),
+        re.compile('^OS X 10\.5.+'),
+        re.compile('^Rev3 MacOSX Leopard 10\.5.+'),
         re.compile('.+ macosx .+'),
     ],
     'snowleopard': [
-        re.compile('^OS X 10\.6\.2 .+'),
-        re.compile('^Rev3 MacOSX Snow Leopard 10\.6\.2 .+'),
+        re.compile('^OS X 10\.6.+'),
+        re.compile('^Rev3 MacOSX Snow Leopard 10\.6.+'),
         re.compile('.+ macosx64 .+'),
     ],
     'xp': [
@@ -142,6 +142,7 @@ WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
     'Android Tegra 250 %',
     'nanojit-%',
     'release-%',
+    'valgrind%',
 ]
 
 WAITTIMES_BUILDSET_REASON_SQL_EXCLUDE = [
