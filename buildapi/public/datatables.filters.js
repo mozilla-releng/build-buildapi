@@ -20,6 +20,18 @@
         }
     };
 
+    $.fn.dataTableExt.oApi.fnTopColumValues = function(oSettings, iCol, top) {
+        var oDisplay = oSettings.aiDisplay;
+        var i = 0;
+        var values = [];
+        while (i < oDisplay.length && i < top) {
+            var mRow = oDisplay[i];
+            var cellData = oSettings.aoData[mRow]._aData[iCol];
+            values.push(cellData);
+        }
+        return values;
+    };
+
     function Filters(filters, elem, options) {
         this.filters = filters;
         this.elem = elem;

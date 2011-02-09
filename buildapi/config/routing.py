@@ -20,11 +20,13 @@ def make_map(config):
     # CUSTOM ROUTES HERE
     map.connect('/pending', controller='pending', action='index')
     map.connect('/pending/{branch}', controller='pending', action='index')
-    map.connect('/pending/{branch}/{platform}', controller='pending', action='index')
+    map.connect('/pending/{branch}/{platform}', controller='pending',
+        action='index')
 
     map.connect('/running', controller='running', action='index')
     map.connect('/running/{branch}', controller='running', action='index')
-    map.connect('/running/{branch}/{platform}', controller='running', action='index')
+    map.connect('/running/{branch}/{platform}', controller='running',
+        action='index')
 
     map.connect('/recent', controller='recent', action='index')
     map.connect('/recent/{slave}', controller='recent', action='index')
@@ -32,24 +34,38 @@ def make_map(config):
 
     map.connect('/revision', controller='revision', action='index')
     map.connect('/revision/{branch}', controller='revision', action='index')
-    map.connect('/revision/{branch}/{rev}', controller='revision', action='index')
+    map.connect('/revision/{branch}/{rev}', controller='revision',
+        action='index')
 
     map.connect('/pushes', controller='pushes', action='index')
     map.connect('/pushes/{branch}', controller='pushes', action='index')
     map.connect('/pushes/{branch}/{fromtime}', controller='pushes', action='index')
-    map.connect('/pushes/{branch}/{fromtime}/{totime}', controller='pushes', action='index')
+    map.connect('/pushes/{branch}/{fromtime}/{totime}', controller='pushes',
+        action='index')
     # we also support 'pushes/{branch}/?totime={totime}'
 
     map.connect('/reports/{action}', controller='reports')
-    map.connect('/reports/builder/{buildername}', controller='reports', action='builder_details')
-    map.connect('/reports/builders/{branch_name}', controller='reports', action='builders')
-    map.connect('/reports/endtoend/{branch_name}', controller='reports', action='endtoend')
+    map.connect('/reports/builder/{buildername}', controller='reports',
+        action='builder_details')
+    map.connect('/reports/builders/{branch_name}', controller='reports',
+        action='builders')
+    map.connect('/reports/endtoend/{branch_name}', controller='reports',
+        action='endtoend')
     map.connect('/reports/pushes', controller='reports', action='pushes')
     map.connect('/reports/revision', controller='reports', action='revision')
-    map.connect('/reports/revision/{branch_name}/{revision}', controller='reports', action='endtoend_revision')
-    map.connect('/reports/waittimes/{pool}', controller='reports', action='waittimes')
-
-    map.connect('/reports/trychooser/{branch_name}', controller='reports', action='trychooser')
+    map.connect('/reports/revision/{branch_name}/{revision}', 
+        controller='reports', action='endtoend_revision')
+    map.connect('/reports/slaves', controller='reports', action='slaves')
+    map.connect('/reports/slaves/{slave_id}', controller='reports', 
+        action='slave_details')
+    map.connect('/reports/status_builders', controller='reports', 
+        action='status_builders')
+    map.connect('/reports/status_builders/{builder_name}', 
+        controller='reports', action='status_builder_details')
+    map.connect('/reports/trychooser/{branch_name}', controller='reports', 
+        action='trychooser')
+    map.connect('/reports/waittimes/{pool}', controller='reports', 
+        action='waittimes')
 
     # BuildAPI
     # Read-write

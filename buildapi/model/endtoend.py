@@ -1,21 +1,19 @@
-import simplejson
-from sqlalchemy import or_
-
 import buildapi.model.meta as meta
-from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery, GetBuildRequests
+from buildapi.model.buildrequest import GetBuildRequests
 from buildapi.model.changes import GetChanges
+from buildapi.model.reports import Report
 from buildapi.model.util import BUILDSET_REASON, PENDING, RUNNING, COMPLETE, \
 CANCELLED, INTERRUPTED, MISC
 from buildapi.model.util import NO_RESULT, SUCCESS, WARNINGS, FAILURE, \
 SKIPPED, EXCEPTION, RETRY
-from buildapi.model.util import get_time_interval, get_branch_name, \
-get_platform, get_build_type, get_job_type, get_revision, results_to_str
+from buildapi.model.util import get_time_interval, get_revision, results_to_str
 
 br = meta.scheduler_db_meta.tables['buildrequests']
 s = meta.scheduler_db_meta.tables['sourcestamps']
 c = meta.scheduler_db_meta.tables['changes']
 
-def GetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'):
+def GetEndtoEndTimes(starttime=None, endtime=None,
+    branch_name='mozilla-central'):
     """Get end to end times report for the speficied time interval and branch.
 
     Input: starttime - start time (UNIX timestamp in seconds), if not 
@@ -72,10 +70,12 @@ def GetBuildRun(branch_name=None, revision=None):
 
     return report
 
-class EndtoEndTimesReport(object):
+class EndtoEndTimesReport(Report):
     outdated = -1
 
     def __init__(self, starttime, endtime, branch_name):
+        Report.__init__(self)
+
         self.starttime = starttime
         self.endtime = endtime
         self.branch_name = branch_name
@@ -98,21 +98,24 @@ class EndtoEndTimesReport(object):
 
     def get_total_build_requests(self):
         if self._total_br == EndtoEndTimesReport.outdated:
-            self._total_br = sum([self._runs[r].get_total_build_requests() for r in self._runs])
+            self._total_br = sum([self._runs[r].get_total_build_requests() 
+                for r in self._runs])
 
         return self._total_br
 
     def get_unique_total_build_requests(self):
         if self._u_total_br == EndtoEndTimesReport.outdated:
             self._u_total_br = \
-                sum([self._runs[r].get_unique_total_build_requests() for r in self._runs])
+                sum([self._runs[r].get_unique_total_build_requests() 
+                    for r in self._runs])
 
         return self._u_total_br
 
     def get_avg_duration(self):
         if self._avg_run_duration == EndtoEndTimesReport.outdated:
             if self.get_total_build_runs():
-                self._avg_run_duration = sum([self._runs[r].get_duration() for r in self._runs]) / self.get_total_build_runs()
+                self._avg_run_duration = sum([self._runs[r].get_duration() 
+                    for r in self._runs]) / self.get_total_build_runs()
             else:
                 self._avg_run_duration = 0
 
@@ -161,24 +164,25 @@ class EndtoEndTimesReport(object):
             'endtime': self.endtime,
             'branch_name': self.branch_name,
             'total_build_requests': self.get_total_build_requests(),
-            'unique_total_build_requests': self.get_unique_total_build_requests(),
+            'unique_total_build_requests': 
+                self.get_unique_total_build_requests(),
             'total_build_runs': self.get_total_build_runs(),
             'avg_duration': self.get_avg_duration(),
             'build_runs': {},
         }
         if not summary:
             for brun_key in self._runs:
-                json_obj['build_runs'][brun_key] = self._runs[brun_key].to_dict(summary=True)
+                json_obj['build_runs'][brun_key] = \
+                    self._runs[brun_key].to_dict(summary=True)
 
         return json_obj
 
-    def jsonify(self, summary=False):
-        return simplejson.dumps(self.to_dict(summary=summary))
-
-class BuildRun(object):
+class BuildRun(Report):
     outdated = -1
 
     def __init__(self, revision, branch_name):
+        Report.__init__(self)
+
         self.revision = revision
         self.branch_name = branch_name
         self.changes_revision = set()
@@ -238,7 +242,8 @@ class BuildRun(object):
         else:
             self.misc += 1
 
-        if br.when_timestamp and (br.when_timestamp < self.lst_change_time or not self.lst_change_time):
+        if br.when_timestamp and (br.when_timestamp < self.lst_change_time or 
+            not self.lst_change_time):
             self.lst_change_time = br.when_timestamp
         if br.finish_time and (br.finish_time > self.gst_finish_time):
             self.gst_finish_time = br.finish_time
@@ -269,7 +274,8 @@ class BuildRun(object):
                 self.builds += 1
 
     def get_duration(self):
-        return self.gst_complete_at_time - self.lst_change_time if self.gst_complete_at_time and self.lst_change_time else 0
+        return self.gst_complete_at_time - self.lst_change_time \
+            if self.gst_complete_at_time and self.lst_change_time else 0
 
     def get_total_build_requests(self):
         return self._total_br
@@ -291,7 +297,8 @@ class BuildRun(object):
     def to_dict(self, summary=False):
         json_obj = {
             'revision': self.revision,
-            'changes_revision': [rev if rev else 'None' for rev in self.changes_revision],
+            'changes_revision': [rev if rev else 'None' for rev in 
+                self.changes_revision],
             'results': self.results,
             'results_str': results_to_str(self.results),
             'is_complete': 'yes' if self.is_complete() else 'no',
@@ -313,9 +320,7 @@ class BuildRun(object):
             'authors': [auth for auth in self.authors if auth],
         }
         if not summary:
-            json_obj['build_requests'] = [br.to_dict() for br in self.build_requests]
+            json_obj['build_requests'] = [br.to_dict() for br in 
+                self.build_requests]
 
         return json_obj
-
-    def jsonify(self, summary=False):
-        return simplejson.dumps(self.to_dict(summary=summary))

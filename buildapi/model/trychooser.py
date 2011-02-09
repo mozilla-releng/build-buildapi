@@ -1,15 +1,16 @@
-import simplejson
-
-from buildapi.model.buildrequest import BuildRequestsQuery
-from buildapi.model.endtoend import BuildRequest, BuildRun, EndtoEndTimesReport
+from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery
+from buildapi.model.endtoend import BuildRun, EndtoEndTimesReport
 from buildapi.model.util import get_time_interval
 
-def TryChooserGetEndtoEndTimes(starttime=None, endtime=None, branch_name='mozilla-central'):
+def TryChooserGetEndtoEndTimes(starttime=None, endtime=None, 
+    branch_name='mozilla-central'):
     """Get end to end times report for the speficied time interval and branch.
 
-    Input: starttime - start time (UNIX timestamp in seconds), if not specified, endtime minus 24 hours
-           endtime - end time (UNIX timestamp in seconds), if not specified, starttime plus 24 hours or 
-                     current time (if starttime is not specified either)
+    Input: starttime - start time (UNIX timestamp in seconds), if not 
+                specified, endtime minus 24 hours
+           endtime - end time (UNIX timestamp in seconds), if not specified, 
+                starttime plus 24 hours or current time (if starttime is not 
+                specified either)
            branch_name - branch name, default vaue is 'mozilla-central'
     Output: EndtoEndTimesReport
     """
@@ -38,7 +39,9 @@ class TryChooserEndtoEndTimesReport(EndtoEndTimesReport):
         self._trychooser_flag = TryChooserEndtoEndTimesReport.uptodate
 
     def add_build_request(self, br):
-        if br.revision not in self._runs: self._runs[br.revision] = TryChooserBuildRun(br.revision, br.branch_name)
+        if br.revision not in self._runs: 
+            self._runs[br.revision] = \
+                TryChooserBuildRun(br.revision, br.branch_name)
         self._runs[br.revision].add(br)
 
         self._total_br = EndtoEndTimesReport.outdated

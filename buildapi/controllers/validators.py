@@ -8,7 +8,7 @@ BUILDERS_DETAIL_LEVELS
 from buildapi.model.util import get_time_interval
 
 class FormatValidator(OneOf, String):
-    """format parameter validator."""
+    """Format parameter validator."""
     list = ('html', 'json', 'chart')
     if_empty = 'html'
     if_missing = 'html'
@@ -25,7 +25,7 @@ class IntervalValidator(Int):
     """
     if_empty = 0
     if_missing = 0
-    min=0
+    min = 0
 
 class PoolValidator(OneOf, String):
     """Pool validator. Must be one of BUILDPOOL_MASTERS keys."""
@@ -94,7 +94,7 @@ class DetailLevelValidator(OneOf, String):
 
 class NumberTypeValidator(OneOf, String):
     """Number Type Validator. 
-    
+
     Parameter must be either a full number, or a percentage of the global sum.
     """
     list = ('full', 'ptg')  # full number or percentage
@@ -153,14 +153,15 @@ class IntSizeInit(FancyValidator):
     """Initializes int_size proportionally to selected time interval 
     (starttime, endtime) into specified number of divisions."""
     divisions = 12
+    int_size_param = 'int_size'
 
     def to_python(self, value_dict, state):
         starttime = value_dict['starttime']
         endtime = value_dict['endtime']
-        int_size = value_dict['int_size']
+        int_size = value_dict[self.int_size_param]
 
         if not int_size:
-            value_dict['int_size'] = int(
+            value_dict[self.int_size_param] = int(
                 (endtime - starttime) // self.divisions)
 
         return value_dict
@@ -207,7 +208,7 @@ class EndtoendRevisionSchema(ReportSchema):
     branch_name = BranchNameValidator()
     revision = String(min=12)
 
-    chained_validators = [RequestIdValidator()]
+    chained_validators = [ RequestIdValidator() ]
 
 class BuildersSchema(ReportSchema):
     """Average Time per Builder Report Schema."""
@@ -223,8 +224,37 @@ class BuilderDetailsSchema(ReportSchema):
     buildername = String(not_empty=True)
 
 class IdleJobsSchema(ReportSchema):
-    """IdleJobs Report Schema"""
+    """IdleJobs Report Schema."""
     int_size = IntervalValidator()
+
+class SlaveDetailsSchema(ReportSchema):
+    """Slave Details Report Schema."""
+    int_size = IntervalValidator()
+    last_int_size = IntervalValidator()
+    slave_id = Int(min=0)
+    type = OneOf(list=['busy', 'all'], if_empty='all', if_missing='all')
+
+    chained_validators = ReportSchema.chained_validators + [
+        IntSizeInit(divisions=24), 
+        IntSizeInit(divisions=24, int_size_param='last_int_size') ]
+
+class SlavesSchema(ReportSchema):
+    """Slaves Report Schema."""
+    int_size = IntervalValidator()
+    last_int_size = IntervalValidator()
+    type = OneOf(list=['silos', 'all'], if_empty='all', if_missing='all')
+
+    chained_validators = ReportSchema.chained_validators + [
+        IntSizeInit(divisions=2000), 
+        IntSizeInit(divisions=24, int_size_param='last_int_size') ]
+
+class StatusBuilderDetailsSchema(ReportSchema):
+    """Builder Details Report Schema."""
+    builder_name = String(not_empty=True)
+
+class StatusBuildersSchema(ReportSchema):
+    """Builders Report Schema."""
+    format = FormatValidator(list=('html', 'json'))
 
 class TestRunSchema(ReportSchema):
     """Test Run Report Schema"""

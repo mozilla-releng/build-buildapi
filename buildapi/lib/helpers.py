@@ -17,20 +17,20 @@ import buildapi.model.builds
 log = logging.getLogger(__name__)
 
 def strf_YmdhMs(secs):
-    y = secs/31536000
-    secs -= y*31536000
-    m = secs/2592000
+    y = secs / 31536000
+    secs -= y * 31536000
+    m = secs / 2592000
     secs -= m * 2592000
-    d = secs/86400
+    d = secs / 86400
     secs -= d * 86400
-    return ("%dy, %dm, %dd " % (y,m,d)) + strf_hms(secs)
+    return ("%dy, %dm, %dd " % (y, m, d)) + strf_hms(secs)
 
 def strf_hms(tspans):
-    h = tspans/3600
-    tspans -= h*3600
-    m = tspans/60
-    s = tspans - m*60
-    
+    h = tspans // 3600
+    tspans -= h * 3600
+    m = tspans // 60
+    s = tspans - m * 60
+
     return "%dh %dm %ds" % (h, m, s)
 
 ZERO = datetime.timedelta(0)
@@ -71,8 +71,10 @@ class USTimeZone(datetime.tzinfo):
         assert dt.tzinfo is self
 
         # Find first Sunday in April & the last in October.
-        start = self._first_sunday_on_or_after(USTimeZone.DSTSTART.replace(year=dt.year))
-        end = self._first_sunday_on_or_after(USTimeZone.DSTEND.replace(year=dt.year))
+        start = self._first_sunday_on_or_after(
+            USTimeZone.DSTSTART.replace(year=dt.year))
+        end = self._first_sunday_on_or_after(
+            USTimeZone.DSTEND.replace(year=dt.year))
 
         # Can't compare naive to aware objects, so strip the timezone from
         # dt first.
@@ -85,7 +87,7 @@ class USTimeZone(datetime.tzinfo):
         days_to_go = 6 - dt.weekday()
         if days_to_go:
             dt += datetime.timedelta(days_to_go)
-   	    return dt
+        return dt
 
 class Pacific(USTimeZone):
     def __init__(self):
@@ -95,10 +97,12 @@ pacific_tz = Pacific()
 time_format = '%a, %d %b %Y %H:%M:%S %z (%Z)'
 
 def pacific_time(timestamp, format=time_format):
-    """Convert a time expressed in seconds since the epoch to a string representing Pacific time. 
-    If secs is not provided or None, the current time as returned by time() is used.
+    """Convert a time expressed in seconds since the epoch to a string 
+    representing Pacific time. If secs is not provided or None, the current 
+    time as returned by time() is used.
     """
-    if not timestamp: timestamp = time.time()
+    if not timestamp:
+        timestamp = time.time()
     dt = datetime.datetime.fromtimestamp(timestamp, pacific_tz)
 
     return dt.strftime(format)

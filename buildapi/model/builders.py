@@ -1,8 +1,8 @@
 import simplejson
-from sqlalchemy import or_, not_
 
 import buildapi.model.meta as meta
 from buildapi.model.buildrequest import BuildRequest, BuildRequestsQuery
+from buildapi.model.reports import Report
 from buildapi.model.util import PENDING, RUNNING, NO_RESULT, SUCCESS, \
 WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY
 from buildapi.model.util import BUILDERS_DETAIL_LEVELS
@@ -37,8 +37,9 @@ def BuildersTypeQuery(starttime, endtime, buildername):
     q = q.where(br.c.buildername.like(buildername))
     return q
 
-def GetBuildersReport(starttime=None, endtime=None, branch_name='mozilla-central',
-    platform=[], build_type=[], job_type=[], detail_level='builder'):
+def GetBuildersReport(starttime=None, endtime=None, 
+    branch_name='mozilla-central', platform=None, build_type=None, 
+    job_type=None, detail_level='builder'):
     """Get the average time per builder report for the speficied time interval 
     and branch.
 
@@ -50,14 +51,20 @@ def GetBuildersReport(starttime=None, endtime=None, branch_name='mozilla-central
            branch_name - branch name, default vaue is 'mozilla-central'
     Output: BuildersReport
     """
+    platform = platform or []
+    build_type = build_type or []
+    job_type = job_type or []
+
     starttime, endtime = get_time_interval(starttime, endtime)
     detail_level_no = BUILDERS_DETAIL_LEVELS.index(detail_level) + 1
 
     q = BuildersQuery(starttime, endtime, branch_name)
     q_results = q.execute()
 
-    report = BuildersReport(starttime, endtime, branch_name, detail_level=detail_level_no)
-    report.set_filters(dict(platform=platform, build_type=build_type, job_type=job_type))
+    report = BuildersReport(starttime, endtime, branch_name, 
+        detail_level=detail_level_no)
+    report.set_filters(dict(platform=platform, build_type=build_type, 
+        job_type=job_type))
 
     for r in q_results:
         params = dict((str(k), v) for (k, v) in dict(r).items())
@@ -83,7 +90,8 @@ def GetBuilderTypeReport(starttime=None, endtime=None, buildername=None):
     q = BuildersTypeQuery(starttime, endtime, buildername)
     q_results = q.execute()
 
-    report = BuilderTypeReport(buildername=buildername, starttime=starttime, endtime=endtime)
+    report = BuilderTypeReport(buildername=buildername, starttime=starttime, 
+        endtime=endtime)
     for r in q_results:
         params = dict((str(k), v) for (k, v) in dict(r).items())
         br = BuildRequest(**params)
@@ -97,22 +105,27 @@ class Node(object):
         self.info = info
         self.next = {}
 
-class BuildersReport(object):
+class BuildersReport(Report):
 
     def __init__(self, starttime, endtime, branch_name, detail_level=4):
+        Report.__init__(self)
+
         self.starttime = starttime
         self.endtime = endtime
         self.branch_name = branch_name
 
-        self.filters = dict(platform=[], build_type=[], job_type=[], buildername=[])
-        self._filter_names = ('platform', 'build_type', 'job_type', 'buildername')
+        self.filters = dict(platform=[], build_type=[], job_type=[], 
+            buildername=[])
+        self._filter_names = ('platform', 'build_type', 'job_type', 
+            'buildername')
         self.detail_level = detail_level
 
         # builders tree
-        self.builders = Node(self.branch_name, info=BuilderTypeReport(detail_level=0))
+        self.builders = Node(self.branch_name, 
+            info=BuilderTypeReport(detail_level=0))
 
     def add(self, br):
-        path = (br.platform, br.build_type, br.job_type, br.buildername)[:self.detail_level]
+        path = self.get_path(br)
 
         if not self._passes_filters(path):
             return
@@ -125,7 +138,8 @@ class BuildersReport(object):
 
             # create node if it doesn't exist
             if name not in node.next:
-                node.next[name] = Node(name, info=BuilderTypeReport(detail_level=level + 1, **params))
+                node.next[name] = Node(name, 
+                    info=BuilderTypeReport(detail_level=level + 1, **params))
 
             # update report
             node = node.next[name]
@@ -134,7 +148,8 @@ class BuildersReport(object):
     def _passes_filters(self, path):
         for level, name in enumerate(path):
             filter_name = self._filter_names[level]
-            if len(self.filters[filter_name]) > 0 and name not in self.filters[filter_name]:
+            if len(self.filters[filter_name]) > 0 and \
+                name not in self.filters[filter_name]:
                 return False
         return True
 
@@ -146,17 +161,21 @@ class BuildersReport(object):
         return results
 
     def get_path(self, b):
-        return (b.platform, b.build_type, b.job_type, b.buildername)[:self.detail_level]
+        return (b.platform, b.build_type, b.job_type, 
+            b.buildername)[:self.detail_level]
 
     def set_filters(self, filters):
         self.filters.update(filters)
 
     def _traverse_tree(self, node, blist, leafs_only, max_level, level):
-        if not node or level > max_level: return
+        if not node or level > max_level:
+            return
         if not leafs_only or (leafs_only and level == max_level):
             blist.append(node.info)
+
         for c in node.next:
-            self._traverse_tree(node.next[c], blist, leafs_only, max_level, level+1)
+            self._traverse_tree(node.next[c], blist, leafs_only, max_level, 
+                level + 1)
 
     def get_sum_run_time(self):
         return self.builders.info.get_sum_run_time()
@@ -174,10 +193,13 @@ class BuildersReport(object):
         json_obj.update(self.filters)
         if not summary:
             json_obj['builders'] = []
-            for b in self.get_builders(leafs_only=leafs_only, detail_level=detail_level):
+            for b in self.get_builders(leafs_only=leafs_only, 
+                detail_level=detail_level):
                 obj = b.to_dict(summary=True)
                 obj['ptg_run_time'] = "%.2f" % \
-                    (b.get_sum_run_time() * 100. / total_sum_run_time if total_sum_run_time else 0)
+                    (b.get_sum_run_time() * 100. / total_sum_run_time \
+                        if total_sum_run_time else 0)
+
                 json_obj['builders'].append(obj)
 
         return json_obj
@@ -186,19 +208,21 @@ class BuildersReport(object):
         return simplejson.dumps(self.to_dict(summary=summary, 
             leafs_only=leafs_only, detail_level=detail_level))
 
-class BuilderTypeReport(object):
+class BuilderTypeReport(Report):
 
     def __init__(self, buildername=None, platform=None, build_type=None, 
         job_type=None, starttime=None, endtime=None, detail_level=4):
         """If platform, build_type or job_type are not specified, they will be 
         parsed out of the buildername.
         """
+        Report.__init__(self)
+
         self.starttime = starttime
         self.endtime = endtime
 
         self.platform = platform or get_platform(buildername)
         self.build_type = build_type or get_build_type(buildername) # opt / debug
-        self.job_type = job_type or get_job_type(buildername)       # build / unittest / talos
+        self.job_type = job_type or get_job_type(buildername) # build / unittest / talos
         self.buildername = buildername
 
         self.detail_level = detail_level
@@ -237,7 +261,8 @@ class BuilderTypeReport(object):
     def get_ptg_results(self):
         if not self._total_br:
             return self._total_br_results
-        return dict([(r, (float(n) / self._total_br) * 100) for (r, n) in self._total_br_results.items()])
+        return dict([(r, n * 100. / self._total_br) 
+            for (r, n) in self._total_br_results.items()])
 
     def add(self, br, summary=False, exclude=(PENDING, RUNNING)):
         # exclude pending and running build requests
@@ -245,15 +270,19 @@ class BuilderTypeReport(object):
             return
 
         d = br.get_run_time()
-        if d < self._d_min or self._d_min == None: self._d_min = d
-        if d > self._d_max: self._d_max = d
+        if d < self._d_min or self._d_min == None:
+            self._d_min = d
+        if d > self._d_max:
+            self._d_max = d
         self._d_sum += d
 
         self._total_br += 1
         if br.results in self._total_br_results:
-            self._total_br_results[br.results] = self._total_br_results[br.results] + 1
+            self._total_br_results[br.results] = \
+                self._total_br_results[br.results] + 1
 
-        if not summary: self.build_requests.append(br)
+        if not summary:
+            self.build_requests.append(br)
 
     def to_dict(self, summary=False):
         json_obj = {
@@ -275,6 +304,3 @@ class BuilderTypeReport(object):
             })
 
         return json_obj
-
-    def jsonify(self, summary=False):
-        return simplejson.dumps(self.to_dict(summary=summary))

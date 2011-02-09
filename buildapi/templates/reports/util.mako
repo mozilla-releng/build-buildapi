@@ -81,11 +81,15 @@
 
 <%def name="reports_menu()">
   <%
+  params = dict(buildername=None, branch_name=None, pool=None, revision=None, 
+      slave_id=None, builder_name=None)
   report_url_mapper = {
-     'Average Time per Builder': url.current(action='builders', branch_name=None, pool=None),
-     'End to End Times': url.current(action='endtoend', branch_name=None, pool=None),
-     'Pushes': url.current(action='pushes', branch_name=None, pool=None),
-     'Wait Times': url.current(action='waittimes', branch_name=None, pool=None),
+     'Average Time per Builder': url.current(action='builders', **params),
+     'Builders' : url.current(action='status_builders', **params),
+     'End to End Times': url.current(action='endtoend', **params),
+     'Pushes': url.current(action='pushes', **params),
+     'Slaves' : url.current(action='slaves', **params),
+     'Wait Times': url.current(action='waittimes', **params),
   }  
   report_link_func = lambda x: report_url_mapper[x]
   %>

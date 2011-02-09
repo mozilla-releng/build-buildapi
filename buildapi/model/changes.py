@@ -1,4 +1,4 @@
-from sqlalchemy import and_, or_, select
+from sqlalchemy import or_, select
 
 import buildapi.model.meta as meta
 from buildapi.model.util import get_revision
@@ -19,7 +19,8 @@ def ChangesQuery(revision=None, branch_name=None, starttime=None, endtime=None):
     q = select([c.c.changeid, c.c.revision, c.c.branch, c.c.when_timestamp])
 
     if revision:
-        if type(revision) != type(list()): revision = [revision]
+        if not isinstance(revision, list):
+            revision = [revision]
         revmatcher = [c.c.revision.like(rev + '%') for rev in revision if rev]
         if revmatcher:
             q = q.where(or_(*revmatcher))

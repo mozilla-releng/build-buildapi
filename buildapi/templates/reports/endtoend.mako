@@ -42,7 +42,7 @@
   <p>Report for jobs submitted between <b>${h.pacific_time(c.report.starttime)}</b> and <b>${h.pacific_time(c.report.endtime)}</b></p>
 </%def>
 
-<div style="float:left; padding: 0px 20px;">
+<div style="float:left; padding: 0px 20px 20px 20px;">
   <h2>Summary</h2>
   Branch name: <b>${c.report.branch_name}</b><br />
   Total build requests: <b>${c.report.get_total_build_requests()}</b><br />

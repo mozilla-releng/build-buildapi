@@ -85,7 +85,7 @@
     <th>brid</th>
     <th>buildsetid</th>
     <th>ssid</th>
-    <th>author</th>
+    <th>authors</th>
     <th>comments</th>
     <th>revlink</th>
     <th>category</th>
@@ -132,7 +132,7 @@ results_css = results_css_class[min(br.results, 2) + 1]
   <td>${br.brid}</td>
   <td>${br.buildsetid}</td>
   <td>${br.ssid}</td>
-  <td>${br.author}</td>
+  <td>${', '.join([auth for auth in br.authors if auth])}</td>
   <td>${br.comments}</td>
   <td>${br.revlink}</td>
   <td>${br.category}</td>

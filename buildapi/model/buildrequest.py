@@ -1,11 +1,9 @@
-import simplejson
 from sqlalchemy import outerjoin, or_
 
 import buildapi.model.meta as meta
-from buildapi.model.util import BUILDSET_REASON, PENDING, RUNNING, COMPLETE, \
-CANCELLED, INTERRUPTED, MISC
-from buildapi.model.util import NO_RESULT, SUCCESS, WARNINGS, FAILURE, \
-SKIPPED, EXCEPTION, RETRY
+from buildapi.model.util import PENDING, RUNNING, COMPLETE, CANCELLED, \
+INTERRUPTED, MISC
+from buildapi.model.util import NO_RESULT
 from buildapi.model.util import get_branch_name, get_platform, get_build_type, \
 get_job_type, get_revision, results_to_str, status_to_str
 
@@ -76,16 +74,19 @@ def BuildRequestsQuery(revision=None, branch_name=None, starttime=None,
         ])
 
     if revision:
-        if type(revision) != type(list()): revision = [revision]
+        if not isinstance(revision, list):
+            revision = [revision]
         revmatcher = [s.c.revision.like(rev + '%') for rev in revision if rev]
         if revmatcher: 
             q = q.where(or_(*revmatcher))
     if branch_name:
         q = q.where(s.c.branch.like('%' + branch_name + '%'))
     if starttime:
-        q = q.where(or_(c.c.when_timestamp >= starttime, br.c.submitted_at >= starttime))
+        q = q.where(or_(c.c.when_timestamp >= starttime, 
+            br.c.submitted_at >= starttime))
     if endtime:
-        q = q.where(or_(c.c.when_timestamp < endtime, br.c.submitted_at < endtime))
+        q = q.where(or_(c.c.when_timestamp < endtime, 
+            br.c.submitted_at < endtime))
 
     # some build requests might have multiple builds or changeids
     if not changeid_all:
@@ -149,7 +150,7 @@ class BuildRequest(object):
         self.branch_name = get_branch_name(branch)
         self.buildername = buildername
         self.ssid = ssid
-        self.revision = get_revision(revision)    # get at most the first 12 chars
+        self.revision = get_revision(revision) # get at most the first 12 chars
         self.changes_revision = get_revision(changes_revision)
 
         self.changeid = set([changeid])
@@ -163,7 +164,7 @@ class BuildRequest(object):
         self.claimed_by_name = claimed_by_name
         self.complete = complete
         self.reason = reason
-        self.results = results if results!=None else NO_RESULT
+        self.results = results if results != None else NO_RESULT
 
         self.authors = set([author])
         self.comments = comments
@@ -177,7 +178,7 @@ class BuildRequest(object):
 
         self.platform = get_platform(buildername)
         self.build_type = get_build_type(buildername) # opt / debug
-        self.job_type = get_job_type(buildername)     # build / unittest / talos
+        self.job_type = get_job_type(buildername)    # build / unittest / talos
 
     def _compute_status(self):
         # when_timestamp & submitted_at ?
@@ -194,18 +195,21 @@ class BuildRequest(object):
             return CANCELLED
         if self.complete and self.complete_at and not self.finish_time and \
             self.start_time and self.claimed_at:
-            # build interrupted (eg slave disconnected) and buildbot retriggered the build
+            # build interrupted (eg slave disconnected) and buildbot 
+            # retriggered the build
             return INTERRUPTED
 
         return MISC                       # what's going on?
 
     def get_duration(self):
         change_time = self.when_timestamp or self.submitted_at
-        return self.complete_at - change_time if self.complete_at and change_time else 0
+        return self.complete_at - change_time \
+            if self.complete_at and change_time else 0
 
     def get_wait_time(self):
         change_time = self.when_timestamp or self.submitted_at
-        return self.start_time - change_time if self.start_time and change_time else 0
+        return self.start_time - change_time \
+            if self.start_time and change_time else 0
 
     def get_run_time(self):
         return self.get_duration() - self.get_wait_time()
@@ -249,6 +253,3 @@ class BuildRequest(object):
             'buildsetid': self.buildsetid,
         }
         return json_obj
-
-    def jsonify(self, summary=False):
-        return simplejson.dumps(self.to_dict(summary=summary))

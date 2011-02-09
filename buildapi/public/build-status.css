@@ -167,3 +167,7 @@ div.menu-reports {
     float: right;
     font-weight: bold;
 }
+
+span.normal {
+    font-weight: normal;
+}
