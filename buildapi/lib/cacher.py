@@ -12,94 +12,45 @@ class BaseCache:
         raise NotImplementedError()
 
     def get(self, key, func, args=None, kwargs=None, expire=0, lock_time=600):
-        readlock = "readlocks:%s" % key
-        log.debug("Getting read lock %s", readlock)
-        self._getlock(readlock, expire=time.time()+lock_time)
-        log.debug("Got read lock %s", readlock)
-
-        try:
-            retval = self._get(key)
-            self._releaselock(readlock)
-            return retval
-        except KeyError:
-            pass
-        except:
-            self._releaselock(readlock)
-            raise
-
-        writelock = "writelocks:%s" % key
-        log.debug("Getting write lock %s", writelock)
-        self._getlock(writelock, expire=time.time()+lock_time)
-        log.debug("Got write lock %s", writelock)
-
         if args is None:
             args = ()
         if kwargs is None:
             kwargs = {}
 
         try:
-            retval = func(*args, **kwargs)
-            self._put(key, retval, expire)
-            return retval
-        finally:
-            self._releaselock(readlock)
-            self._releaselock(writelock)
+            readlock = "readlocks:%s" % key
+            log.debug("Getting read lock %s", readlock)
+            self._getlock(readlock, expire=time.time()+lock_time)
+            log.debug("Got read lock %s", readlock)
+
+            try:
+                retval = self._get(key)
+                self._releaselock(readlock)
+                return retval
+            except KeyError:
+                pass
+            except:
+                self._releaselock(readlock)
+                raise
+
+            writelock = "writelocks:%s" % key
+            log.debug("Getting write lock %s", writelock)
+            self._getlock(writelock, expire=time.time()+lock_time)
+            log.debug("Got write lock %s", writelock)
+
+            try:
+                retval = func(*args, **kwargs)
+                self._put(key, retval, expire)
+                return retval
+            finally:
+                self._releaselock(readlock)
+                self._releaselock(writelock)
+        except:
+            log.exception("Problem with cache!")
+            return func(*args, **kwargs)
 
     def put(self, key, val, expire=0):
         return self._put(key, val, expire)
-
-try:
-    import memcache
-    class MemcacheLock(object):
-        def __init__(self, cache, key):
-            self.cache = cache
-            self.key = str(key)
-
-        def acquire(self):
-            while True:
-                now = time.time()
-                t = self.cache.add(self.key, now)
-                if t:
-                    break
-                if now - int(self.cache.get(self.key)) > 60:
-                    self.cache.delete(self.key)
-                time.sleep(1)
-            return
-
-        def release(self):
-            self.cache.delete(self.key)
-
-    class MemcacheCache(BaseCache):
-        def __init__(self, servers=None):
-            if servers is None:
-                servers = ['localhost:11211']
-            self.m = memcache.Client(servers, debug=1)
-            self.locks = {}
-
-        def _get(self, key):
-            key = str(key)
-            retval = self.m.get(key)
-            if retval is None:
-                raise KeyError
-            return json.loads(retval.decode('zlib'))
-
-        def _put(self, key, val, expire=0):
-            self.m.set(str(key), json.dumps(val).encode('zlib'), time=expire)
-
-        def has_key(self, key):
-            return self.m.get(str(key)) is not None
-
-        def _getlock(self, key, expire):
-            l = MemcacheLock(self.m, key)
-            l.acquire()
-            self.locks[key] = l
-
-        def _releaselock(self, key):
-            self.locks[key].release()
-            del self.locks[key]
-
-except ImportError:
-    pass
 
 try:
     import redis.client

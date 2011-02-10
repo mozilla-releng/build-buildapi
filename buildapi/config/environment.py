@@ -63,13 +63,16 @@ def load_environment(global_conf, app_conf):
     config['branches'] = [b.strip() for b in config.get('branches', '').split(',')]
 
     # Create our AMQP message publisher
-    config['pylons.app_globals'].mq = LoggingJobRequestPublisher(buildapi_engine,
-            config, 'carrot')
+    if 'carrot.hostname' in config:
+        config['pylons.app_globals'].mq = LoggingJobRequestPublisher(buildapi_engine,
+                config, 'carrot')
 
-    # And our consumer
-    config['pylons.app_globals'].mq_consumer = LoggingJobRequestDoneConsumer(
-            buildapi_engine,
-            config, 'carrot')
-    thread.start_new_thread(config['pylons.app_globals'].mq_consumer.wait, ())
+        # And our consumer
+        config['pylons.app_globals'].mq_consumer = LoggingJobRequestDoneConsumer(
+                buildapi_engine,
+                config, 'carrot')
+        thread.start_new_thread(config['pylons.app_globals'].mq_consumer.wait, ())
+    else:
+        config['pylons.app_globals'].mq = None
 
     return config
