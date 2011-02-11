@@ -5,7 +5,7 @@ def f(text):
     return textwrap.dedent(text).strip().replace("\n", "<br/>\n")
 
 %>
-<%def name="title()">Self-Serve API</%def>
+<%def name="title()">RelEng Self-Serve API</%def>
 <%def name="header()">
 <script type="text/javascript">
 $(document).ready(function()
@@ -24,7 +24,7 @@ $(document).ready(function()
 </script>
 </%def>
 <%def name="body()">\
-<h1>Welcome to the Build Self-Serve API</h1>
+<h1>Welcome to the RelEng Self-Serve API</h1>
 
 Available branches:<br/>
 <table id="branches"></table>
