@@ -34,7 +34,7 @@ def GetEndtoEndTimes(starttime=None, endtime=None,
         report.add_build_request(build_requests[key])
 
     changes = GetChanges(branch_name=branch_name, starttime=starttime, 
-        endtime=endtime)
+        endtime=endtime, pending_only=True)
     report.parse_incomplete(changes)
 
     return report
@@ -62,7 +62,8 @@ def GetBuildRun(branch_name=None, revision=None):
         for cid in br.changeid:
             brun_changeids.add(cid)
 
-    changes = GetChanges(branch_name=branch_name, revision=revision)
+    changes = GetChanges(branch_name=branch_name, revision=revision, 
+        pending_only=True)
     # filter out changes without build requests
     for cid in changes:
         if cid not in brun_changeids:

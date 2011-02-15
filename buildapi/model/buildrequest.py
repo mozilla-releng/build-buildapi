@@ -80,7 +80,7 @@ def BuildRequestsQuery(revision=None, branch_name=None, starttime=None,
         if revmatcher: 
             q = q.where(or_(*revmatcher))
     if branch_name:
-        q = q.where(s.c.branch.like('%' + branch_name + '%'))
+        q = q.where(s.c.branch.like(branch_name + '%'))
     if starttime:
         q = q.where(or_(c.c.when_timestamp >= starttime, 
             br.c.submitted_at >= starttime))

@@ -1,4 +1,4 @@
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, not_
 
 import buildapi.model.meta as meta
 from buildapi.model.util import get_revision
@@ -25,7 +25,7 @@ def ChangesQuery(revision=None, branch_name=None, starttime=None, endtime=None):
         if revmatcher:
             q = q.where(or_(*revmatcher))
     if branch_name:
-        q = q.where(c.c.branch.like('%' + branch_name + '%'))
+        q = q.where(c.c.branch.like(branch_name + '%'))
     if starttime:
         q = q.where(c.c.when_timestamp >= starttime)
     if endtime:
@@ -33,7 +33,28 @@ def ChangesQuery(revision=None, branch_name=None, starttime=None, endtime=None):
 
     return q
 
-def GetChanges(revision=None, branch_name=None, starttime=None, endtime=None):
+def PendingChangesQuery(revision=None, branch_name=None, starttime=None, 
+    endtime=None):
+    """Constructs the sqlalchemy query for fetching pending changes (changes 
+    with no build requests yet).
+
+    Input: (if any of the parameters are not specified (None), no restrictions
+           will be applied for them):
+           revision - sourcestamp revision, or list of revisions
+           branch_name - branch name
+           starttime - start time (UNIX timestamp in seconds)
+           endtime - end time (UNIX timestamp in seconds)
+    Output: query
+    """
+    c = meta.scheduler_db_meta.tables['changes']
+    sch = meta.scheduler_db_meta.tables['sourcestamp_changes']
+
+    return ChangesQuery(revision=revision, branch_name=branch_name, 
+            starttime=starttime, endtime=endtime).where(
+            not_(c.c.changeid.in_(select([sch.c.changeid]))))
+
+def GetChanges(revision=None, branch_name=None, starttime=None, endtime=None,
+    pending_only=False):
     """Fetches all changes matching the parameters, and returns them as 
     a dictionary of changes tuples, keyed by the changeid. 
 
@@ -45,8 +66,12 @@ def GetChanges(revision=None, branch_name=None, starttime=None, endtime=None):
            endtime - end time (UNIX timestamp in seconds)
     Output: dictionary of Change objects keyed by changeid
     """
-    q = ChangesQuery(starttime=starttime, endtime=endtime, 
-        branch_name=branch_name, revision=revision)
+    if not pending_only:
+        q = ChangesQuery(starttime=starttime, endtime=endtime, 
+            branch_name=branch_name, revision=revision)
+    else:
+        q = PendingChangesQuery(starttime=starttime, endtime=endtime, 
+            branch_name=branch_name, revision=revision)
     q_results = q.execute()
 
     changes = {}
