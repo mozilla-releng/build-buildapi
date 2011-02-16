@@ -28,7 +28,9 @@ $(document).ready(function()
 
 Available branches:<br/>
 <table id="branches"></table>
-Click to view builds on that branch
+Click to view builds on that branch<br/>
+
+<a href="${h.url('jobs')}">self-serve request history</a>
 
 <h1>API Documentation</h1>
 <pre>${textwrap.dedent(c.main_docstring)|n}</pre>

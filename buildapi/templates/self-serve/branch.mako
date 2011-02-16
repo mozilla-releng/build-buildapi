@@ -69,30 +69,6 @@ function toggle_display(id)
 <input type="submit" value="${label}" />
 </form>
 </%def>
-
-<%!
-import time
-from buildapi.lib.times import oneday, now
-
-def formattime(t):
-    if not t:
-        return ""
-    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
-
-statusText = {
-    0: 'Success',
-    1: 'Warnings',
-    2: 'Failure',
-    3: 'Skipped',
-    4: 'Exception',
-    5: 'Retry',
-    }
-
-def formatStatus(status):
-    return statusText.get(status, '')
-
-%>
-
 <%def name="buildrow(build, tabletype)">
 <tr class="result${build.get('status')}">
     <td>
@@ -120,17 +96,17 @@ def formatStatus(status):
     % endif
     </td>
     % if tabletype == 'builds':
-        <td>${formatStatus(build.get('status'))}</td>
+        <td>${self.attr.formatStatus(build.get('status'))}</td>
     % endif
     % if tabletype == 'pending':
-        <td>${formattime(build.get('submittime'))}</td>
+        <td>${self.attr.formattime(build.get('submittime'))}</td>
         <td>${build.get('priority')}
             ${priority_form(build['request_id'], build.get('priority', 0)+1, '+1')}
             ${priority_form(build['request_id'], build.get('priority', 0)-1, '-1')}
         </td>
     % else:
-        <td>${formattime(build.get('starttime'))}</td>
-        <td>${formattime(build.get('endtime'))}</td>
+        <td>${self.attr.formattime(build.get('starttime'))}</td>
+        <td>${self.attr.formattime(build.get('endtime'))}</td>
     % endif
 </tr>
 </%def>
@@ -146,8 +122,8 @@ Look up builds by revision: <input id="revfield" type="text" name="revision">
 
 % if hasattr(c, 'date'):
 <%
-before = (c.date - oneday).strftime('%Y-%m-%d')
-after = (c.date + oneday).strftime('%Y-%m-%d')
+before = (c.date - self.attr.oneday).strftime('%Y-%m-%d')
+after = (c.date + self.attr.oneday).strftime('%Y-%m-%d')
 today = c.today.strftime('%Y-%m-%d')
 %>
 Builds for ${c.branch} on ${c.date.strftime('%Y-%m-%d')}
@@ -169,6 +145,10 @@ for b in c.data:
 %>
 
 % for tabletype in ('pending', 'running', 'builds'):
+    % if not builds[tabletype]:
+    <h1>no ${tabletype}</h1>
+    <% continue %>
+    % endif
     <h1>${tabletype}</h1>
     <div>
     <table id="${tabletype}">

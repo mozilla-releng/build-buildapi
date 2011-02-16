@@ -232,6 +232,13 @@ class SelfserveController(BaseController):
             builds = getBuildsForUser(branch, user, limit=200)
             return self._ok(builds)
 
+    def jobs(self):
+        """Return a list of past self-serve requests"""
+        s = Session()
+        jobs = s.query(JobRequest).order_by(JobRequest.when.desc())
+
+        return self._ok([j.asDict() for j in jobs])
+
     def job_status(self, job_id):
         """Return information about a job request"""
         s = Session()

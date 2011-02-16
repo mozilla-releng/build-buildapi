@@ -30,5 +30,5 @@ class JobRequest(Base):
                     who=self.who,
                     when=self.when,
                     completed_at=self.completed_at,
-                    complete_data=self.complete_data,
+                    complete_data=(json.loads(self.complete_data) if self.complete_data else self.complete_data),
                     what=json.loads(self.what))

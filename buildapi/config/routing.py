@@ -80,6 +80,8 @@ def make_map(config):
 
     # Status of jobs
     map.connect('job_status', '/self-serve/jobs/{job_id}', controller='selfserve', action='job_status')
+    # History of requsts
+    map.connect('jobs', '/self-serve/jobs', controller='selfserve', action='jobs')
 
     # Read-only
     map.connect('selfserve_home', '/self-serve', controller='selfserve', action='index')

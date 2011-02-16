@@ -1,3 +1,25 @@
+<%!
+import time
+
+from buildapi.lib.times import oneday, now
+
+def formattime(t):
+    if not t:
+        return ""
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
+
+statusText = {
+    0: 'Success',
+    1: 'Warnings',
+    2: 'Failure',
+    3: 'Skipped',
+    4: 'Exception',
+    5: 'Retry',
+    }
+
+def formatStatus(status):
+    return statusText.get(status, '')
+%>
 <%def name="title()">NO TITLE</%def>\
 <%def name="footer()">\
 <%
