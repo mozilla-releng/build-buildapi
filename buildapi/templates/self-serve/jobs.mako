@@ -6,7 +6,8 @@ $(document).ready(function()
 {
     var options = {
         bJQueryUI: true,
-        sPaginationType: "full_numbers"
+        sPaginationType: "full_numbers",
+        aaSorting: [[2, 'desc']]
     }
     $("#jobs").dataTable(options);
 })
