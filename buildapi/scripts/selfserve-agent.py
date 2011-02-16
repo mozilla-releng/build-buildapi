@@ -59,13 +59,25 @@ class BuildAPIAgent:
         build_url = self._get_build_url(claimed_by_name, builder_name, build_number)
         return "%s/stop" % build_url
 
+    def _can_cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
+        # Until Bug 634605 is fixed, we shouldn't cancel test runs
+        unstoppable = ['opt test', 'debug test', 'talos']
+        for u in unstoppable:
+            if u in builder_name:
+                return False
+        return True
+
     def _cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
         cancel_url = self._get_cancel_url(claimed_by_name, builder_name, build_number)
+        if not self._can_cancel_build(claimed_by_name, builder_name, build_number, who, comments):
+            log.info("Not stopping unstoppable build at %s", cancel_url)
+            return "Not stopping unstoppable build"
         data = urllib.urlencode({
             "comments": comments,
             "username": who,
             })
         urllib.urlopen(cancel_url, data)
+        return "Ok"
 
     def receive_message(self, message_data, message):
         log.debug("Received %s", message_data)
@@ -140,8 +152,8 @@ class BuildAPIAgent:
             cancel_url = self._get_cancel_url(request.claimed_by_name, request.buildername, build.number)
             log.debug("Cancelling at %s", cancel_url)
             try:
-                self._cancel_build(request.claimed_by_name, request.buildername, build.number, who, "Cancelled via self-serve")
-                return {"errors": False, "msg": "Ok"}
+                msg = self._cancel_build(request.claimed_by_name, request.buildername, build.number, who, "Cancelled via self-serve")
+                return {"errors": False, "msg": msg}
             except:
                 log.exception("Couldn't cancel build")
                 return {"errors": True, "msg": "Error cancelling build"}
@@ -310,8 +322,8 @@ class BuildAPIAgent:
             cancel_url = self._get_cancel_url(build.claimed_by_name, build.buildername, build.number)
             log.debug("Cancelling at %s", cancel_url)
             try:
-                self._cancel_build(build.claimed_by_name, build.buildername, build.number, who, "Cancelled via self-serve")
-                return {"errors": False, "msg": "Ok"}
+                msg = self._cancel_build(build.claimed_by_name, build.buildername, build.number, who, "Cancelled via self-serve")
+                return {"errors": False, "msg": msg}
             except:
                 log.exception("Couldn't cancel build")
                 return {"errors": True, "msg": "Error cancelling build"}
