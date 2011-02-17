@@ -197,7 +197,7 @@ class JobRequestConsumer(Consumer):
     routing_key = 'requests'
     exchange_type = 'topic'
 
-class JobRequestDonePublisher(Publisher):
+class JobRequestDonePublisher(ReconnectingPublisher):
     """For agents publishing job completion messages."""
     routing_key = 'finished'
     exchange_type = 'topic'
