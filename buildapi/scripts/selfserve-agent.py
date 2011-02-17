@@ -360,7 +360,7 @@ if __name__ == '__main__':
     from carrot.connection import AMQPConnection
     from sqlalchemy import create_engine
 
-    from buildapi.lib.mq import JobRequestConsumer, JobRequestDonePublisher
+    from buildapi.lib.mq import JobRequestConsumer, JobRequestDonePublisher, amqp_connection_from_config
 
     parser = OptionParser()
     parser.set_defaults(
@@ -387,16 +387,17 @@ if __name__ == '__main__':
              })
     config.read([options.configfile])
 
-    amqp_exchange = config.get('carrot', 'exchange')
+    amqp_config = {}
 
-    amqp_conn = AMQPConnection(
-            hostname=config.get('carrot', 'hostname'),
-            userid=config.get('carrot', 'userid'),
-            password=config.get('carrot', 'password'),
-            port=config.getint('carrot', 'port'),
-            ssl=config.getboolean('carrot', 'ssl'),
-            virtual_host=config.get('carrot', 'vhost'),
-            )
+    for option in config.options('carrot'):
+        if option == 'ssl':
+            amqp_config['carrot.%s' % option] = config.getboolean('carrot', option)
+        else:
+            amqp_config['carrot.%s' % option] = config.get('carrot', option)
+
+
+    amqp_exchange = config.get('carrot', 'exchange')
+    amqp_conn = amqp_connection_from_config(amqp_config, 'carrot')
 
     # TODO: This needs to be refreshed regularly
     branch_map = {}
@@ -414,7 +415,7 @@ if __name__ == '__main__':
             masters_url=config.get('masters', 'masters-url'),
             buildbot=config.get('masters', 'buildbot'),
             sendchange_master=config.get('masters', 'sendchange-master'),
-            publisher=JobRequestDonePublisher(amqp_conn, exchange=amqp_exchange),
+            publisher=JobRequestDonePublisher(amqp_config, 'carrot'),
             branch_map=branch_map,
             )
 
