@@ -117,9 +117,9 @@
     <td>${brun.misc}</td>
     <td>${brun.rebuilds}</td>
     <td>${brun.forcebuilds}</td>
-    <td>${len(brun.builds)} (${len(set(brun.builds))})</td>
-    <td>${len(brun.unittests)} (${len(set(brun.unittests))})</td>
-    <td>${len(brun.talos)} (${len(set(brun.talos))})</td>
+    <td>${brun.builds}</td>
+    <td>${brun.unittests}</td>
+    <td>${brun.talos}</td>
   </tr>
 % endfor
 </tbody></table>

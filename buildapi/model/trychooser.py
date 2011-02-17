@@ -86,15 +86,19 @@ class TryChooserBuildRun(BuildRun):
         self.uses_try_chooser = {}  # author: boolean (uses try)
         self.used_trychooser = False
 
+        self.exclude_authors = set(['sendchange', 'sendchange-unittest'])
+
     def add(self, br):
         BuildRun.add(self, br)
 
-        if br.author and br.author not in ('sendchange', 'sendchange-unittest'):
-            if br.author not in self.uses_try_chooser:
-                self.uses_try_chooser[br.author] = False
-            if 'try:' in br.comments:
-                self.used_trychooser = True
-                self.uses_try_chooser[br.author] = True
+        authors = br.authors - self.exclude_authors
+        if authors:
+            for auth in authors:
+                if auth not in self.uses_try_chooser:
+                    self.uses_try_chooser[auth] = False
+                if 'try:' in br.comments:
+                    self.used_trychooser = True
+                    self.uses_try_chooser[auth] = True
 
     def get_used_trychooser(self):
         return self.used_trychooser
