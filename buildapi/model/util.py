@@ -36,6 +36,7 @@ BUILDPOOL_MASTERS = {
 PLATFORMS_BUILDERNAME = {
     'linux': [
         re.compile('^Linux (?!x86-64).+'),
+        re.compile('.*linux(?!64).*'),
         re.compile('^Maemo 4 .+'),
         re.compile('^Maemo 5 QT .+'),
         re.compile('^Maemo 5 GTK .+'),
@@ -43,6 +44,7 @@ PLATFORMS_BUILDERNAME = {
     ],
     'linux64': [
         re.compile('^Linux x86-64 .+'),
+        re.compile('.*linux64.*'),
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
@@ -53,19 +55,19 @@ PLATFORMS_BUILDERNAME = {
     'leopard': [
         re.compile('^OS X 10\.5.+'),
         re.compile('^Rev3 MacOSX Leopard 10\.5.+'),
-        re.compile('.+ macosx .+'),
+        re.compile('.*macosx(?!64).*'),
     ],
     'snowleopard': [
         re.compile('^OS X 10\.6.+'),
         re.compile('^Rev3 MacOSX Snow Leopard 10\.6.+'),
-        re.compile('.+ macosx64 .+'),
+        re.compile('.*macosx64.*'),
     ],
     'xp': [
         re.compile('^Rev3 WINNT 5\.1 .+')
     ],
     'win2k3': [
         re.compile('^WINNT 5\.2 .+'),
-        re.compile('.+ win32 .+'),
+        re.compile('.*win32.*'),
     ],
     'win7': [
         re.compile('^Rev3 WINNT 6\.1 '),

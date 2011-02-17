@@ -121,7 +121,7 @@ class WaitTimesReport(IntervalsReport):
         self.masters = masters or BUILDPOOL_MASTERS[pool]
 
         self.mpb = mpb
-        self.maxb = int(maxb/mpb)*mpb  # normalize
+        self.maxb = int(maxb / mpb) * mpb  # normalize
 
         self.otherplatforms = set()
         self.unknownbuilders = set()
