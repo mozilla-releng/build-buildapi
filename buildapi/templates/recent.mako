@@ -45,7 +45,10 @@ $(document).ready(function() {
 %>
 % for build in c.recent_builds:
   <%
-    build['running_for'] = build['endtime'] - build['starttime']
+    if build['endtime'] and build['starttime']:
+        build['running_for'] = build['endtime'] - build['starttime']
+    else:
+        build['running_for'] = ""
   %>
   <tr>
   % for key in ('slavename','buildname','buildnumber','master','result','starttime','endtime','running_for'):
