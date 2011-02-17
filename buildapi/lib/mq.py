@@ -226,12 +226,14 @@ class LoggingJobRequestDoneConsumer(JobRequestDoneConsumer):
         """Handles new job completion messages.  Marks them as finished in the
         DB by setting the complete_at and complete_data columsn."""
         try:
+            log.info("Got %s", message_data)
             now = self._clock()
             s = self.session()
             r = s.query(buildapidb.JobRequest).get(message_data['request_id'])
             if not r:
                 log.warn("Couldn't find message %s", message_data['request_id'])
             else:
+                log.info("Updating complete data")
                 r.completed_at = now
                 r.complete_data = json.dumps(message_data)
                 s.commit()
