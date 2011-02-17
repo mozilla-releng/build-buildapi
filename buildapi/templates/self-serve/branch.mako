@@ -23,6 +23,13 @@ $(document).ready(function()
         $(location).attr('href', revurl(rev));
         return false;
     });
+
+    $("#newbuildform").submit(function()
+    {
+        var rev = $("#newbuildform input[name=revision]").val();
+        $("#newbuildform").attr('action', revurl(rev));
+        return true;
+    });
 })
 
 function toggle_display(id)
@@ -171,4 +178,9 @@ for b in c.data:
     </table>
     </div>
 % endfor
+
+<h1>Create a new build</h1>
+<form method="POST" id="newbuildform">
+Create a new build on ${c.branch}: <input type="text" name="revision" /> <input type="submit" value="Submit" />
+</form>
 </%def>
