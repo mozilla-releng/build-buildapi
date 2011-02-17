@@ -120,6 +120,10 @@ class ReportsController(BaseController):
             return GetBuildRun(**params)
         c.report = endtoend_revision_get_report(**report_params)
 
+        if c.report.get_total_build_requests() == 0 and \
+            len(c.report.pending_changes) == 0:
+            abort(404, 'no such revision')
+
         if format == 'json':
             return c.report.jsonify()
         else:

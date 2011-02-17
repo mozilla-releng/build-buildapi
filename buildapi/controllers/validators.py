@@ -206,7 +206,7 @@ class EndtoendRevisionSchema(ReportSchema):
     starttime = None    # no starttime and endtime parameters
     endtime = None
     branch_name = BranchNameValidator()
-    revision = String(min=12)
+    revision = String(min=12, max=12)
 
     chained_validators = [ RequestIdValidator() ]
 
