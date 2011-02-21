@@ -46,6 +46,8 @@ class ResultsController(BaseController):
             c.running_builds = GetBuilds(branch=branch, type='running')
         if self.revision:
             c.all_builds = GetBuilds(branch=branch, type='revision', rev=rev)
+            c.branch = branch[0]
+            c.revision = revision[0]
 
         # Return a rendered template
         # or, return a json blob
@@ -60,6 +62,6 @@ class ResultsController(BaseController):
               results['running'] = c.running_builds
             if self.revision:
               results['all'] = c.all_builds
-              results['branch'] = branch
-              results['revision'] = rev
+              results['branch'] = branch[0]
+              results['revision'] = rev[0]
             return self.jsonify(results)
