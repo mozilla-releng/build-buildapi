@@ -60,4 +60,6 @@ class ResultsController(BaseController):
               results['running'] = c.running_builds
             if self.revision:
               results['all'] = c.all_builds
+              results['branch'] = branch
+              results['revision'] = rev
             return self.jsonify(results)
