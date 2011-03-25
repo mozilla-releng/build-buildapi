@@ -5,7 +5,6 @@ from beaker.util import parse_cache_config_options
 
 import pytz
 
-from buildapi.lib import json
 from buildapi.lib import cacher, cache
 
 class Globals(object):
@@ -22,20 +21,12 @@ class Globals(object):
         """
         self.cache = CacheManager(**parse_cache_config_options(config))
 
-        self.buildbot_masters = {}
-
-        # TODO: Support loading this from a URL and refreshing on occasion?
-        master_file = config['master_list']
-
-        masters = json.load(open(master_file))
-
-        for master in masters:
-            self.buildbot_masters[master['db_name']] = master
-
         cache_spec = config.get('buildapi.cache')
         tz_name = config.get('timezone')
         tz = pytz.timezone(tz_name)
         self.tz = tz
+
+        self.masters_url = config['masters_url']
 
         # TODO: handle other hosts/ports
         if cache_spec.startswith('memcached:'):

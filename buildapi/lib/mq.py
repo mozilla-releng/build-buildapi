@@ -156,6 +156,9 @@ class JobRequestPublisher(ReconnectingPublisher):
     def newBuildAtRevision(self, who, branch, revision):
         return self.send_msg('new_build_at_revision', who=who, branch=branch, revision=revision)
 
+    def newNightlyAtRevision(self, who, branch, revision, priority):
+        return self.send_msg('new_nightly_at_revision', who=who, branch=branch, revision=revision, priority=priority)
+
 
 class LoggingJobRequestPublisher(JobRequestPublisher):
     """For publishing job requests, recording them first in the database."""

@@ -7,12 +7,40 @@ import time
 import urllib
 import subprocess
 from collections import namedtuple
+import uuid
 
 from sqlalchemy import text
 
 from buildapi.lib import json
 
 BranchInfo = namedtuple('BranchInfo', ['revlink', 'repo_path'])
+
+def genBuildID(now=None):
+    """Return a buildid based on the current time"""
+    if not now:
+        now = time.time()
+    return time.strftime("%Y%m%d%H%M%S", time.localtime(now))
+
+def genBuildUID():
+    """Return a unique build uid"""
+    return uuid.uuid4().hex
+
+def create_buildset(db, idstring, reason, ssid, submitted_at):
+    q = text("""INSERT INTO buildsets
+        (`external_idstring`, `reason`, `sourcestampid`, `submitted_at`, `complete`, `complete_at`, `results`)
+        VALUES
+        (:idstring, :reason, :sourcestampid, :submitted_at, 0, NULL, NULL)""")
+    log.debug(q)
+
+    r = db.execute(q,
+            idstring=idstring,
+            reason=reason,
+            sourcestampid=ssid,
+            submitted_at=submitted_at,
+            )
+    buildsetid = r.lastrowid
+    log.debug("Created buildset %s", buildsetid)
+    return buildsetid
 
 class BuildAPIAgent:
     def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branch_map):
@@ -188,22 +216,13 @@ class BuildAPIAgent:
             return {"errors": True, "msg": "No build with that id"}
 
         # Create a new buildset
-        q = text("""INSERT INTO buildsets
-            (`external_idstring`, `reason`, `sourcestampid`, `submitted_at`, `complete`, `complete_at`, `results`)
-            VALUES
-            (:idstring, :reason, :sourcestampid, :submitted_at, 0, NULL, NULL)""")
-        log.debug(q)
-
         now = time.time()
-        r = self.db.execute(q,
+        buildsetid = create_buildset(self.db,
                 idstring=build.external_idstring,
                 reason='Rebuilt by %s' % who,
-                sourcestampid=build.sourcestampid,
+                ssid=build.sourcestampid,
                 submitted_at=now,
                 )
-
-        buildsetid = r.lastrowid
-        log.debug("Created buildset %s", buildsetid)
 
         # Copy buildset properties
         q = text("""INSERT INTO buildset_properties
@@ -252,22 +271,13 @@ class BuildAPIAgent:
             return {"errors": True, "msg": "No request with that id"}
 
         # Create a new buildset
-        q = text("""INSERT INTO buildsets
-            (`external_idstring`, `reason`, `sourcestampid`, `submitted_at`, `complete`, `complete_at`, `results`)
-            VALUES
-            (:idstring, :reason, :sourcestampid, :submitted_at, 0, NULL, NULL)""")
-        log.debug(q)
-
         now = time.time()
-        r = self.db.execute(q,
+        buildsetid = create_buildset(self.db,
                 idstring=request.external_idstring,
                 reason='Rebuilt by %s' % who,
-                sourcestampid=request.sourcestampid,
+                ssid=request.sourcestampid,
                 submitted_at=now,
                 )
-
-        buildsetid = r.lastrowid
-        log.debug("Created buildset %s", buildsetid)
 
         # Copy buildset properties
         q = text("""INSERT INTO buildset_properties
@@ -351,6 +361,75 @@ class BuildAPIAgent:
         subprocess.check_call(cmd)
         return {"errors": False, "msg": "Ok"}
 
+    def do_new_nightly_at_revision(self, message_data, message):
+        who = message_data['who']
+        branch = message_data['body']['branch']
+        revision = message_data['body']['revision']
+        priority = message_data['body']['priority']
+        log.info("New nightly by %s of %s %s", who, branch, revision)
+
+        now = time.time()
+
+        # Find nightly builders that have been active in the past 2 weeks
+        q = """SELECT DISTINCT buildername FROM buildrequests WHERE
+                buildername LIKE :buildername AND
+                submitted_at > :submitted_at"""
+        result = self.db.execute(text(q),
+                buildername="%% %s nightly" % branch,
+                submitted_at=time.time() - 14*24*3600,
+                )
+
+        buildernames = [r[0] for r in result]
+        log.debug("buildernames are %s", buildernames)
+
+        # Create a sourcestamp
+        q = text("""INSERT INTO sourcestamps
+                (`branch`, `revision`, `patchid`, `repository`, `project`)
+                VALUES
+                (:branch, :revision, NULL, '', '')
+                """)
+        log.debug(q)
+        r = self.db.execute(q, branch=branch, revision=revision)
+        ssid = r.lastrowid
+        log.debug("Created sourcestamp %s", ssid)
+
+        # Create a new buildset
+        buildsetid = create_buildset(self.db,
+                idstring=None,
+                reason='Requested via self-serve by %s' % who,
+                ssid=ssid,
+                submitted_at=now,
+                )
+
+        # Create buildset properties (buildid, builduid)
+        q = text("""INSERT INTO buildset_properties
+                (`buildsetid`, `property_name`, `property_value`)
+                VALUES
+                (:buildsetid, :key, :value)
+                """)
+        props = {
+                'buildid': json.dumps((genBuildID(now), "self-serve")),
+                'builduid': json.dumps((genBuildUID(), "self-serve")),
+        }
+        log.debug(q)
+        for key, value in props.items():
+            r = self.db.execute(q, buildsetid=buildsetid, key=key, value=value)
+            log.debug("Created buildset_property %s=%s", key, value)
+
+        # Create buildrequests
+        q = text("""INSERT INTO buildrequests
+                (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
+                VALUES
+                (:buildsetid, :buildername, :submitted_at, :priority, 0, 0, NULL, 0, NULL, NULL)""")
+        log.debug(q)
+        for buildername in buildernames:
+            r = self.db.execute(q,
+                    buildsetid=buildsetid,
+                    buildername=buildername,
+                    submitted_at=now,
+                    priority=priority)
+            log.debug("Created buildrequest %s: %i", buildername, r.lastrowid)
+        return {"errors": False, "msg": "Ok"}
 
 if __name__ == '__main__':
     import os

@@ -76,6 +76,7 @@ def make_map(config):
     map.connect('rebuild_request', '/self-serve/{branch}/request', controller='selfserve', action='rebuild_request', conditions=dict(method=['POST']))
     #map.connect('cancel_revision', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='cancel_revision', conditions=dict(method=['DELETE']))
     map.connect('new_build_at_rev', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='new_build_at_rev', conditions=dict(method=['POST']))
+    map.connect('new_nightly_at_rev', '/self-serve/{branch}/rev/{revision}/nightly', controller='selfserve', action='new_nightly_at_rev', conditions=dict(method=['POST']))
     #map.connect('new_build_for_builder', '/self-serve/{branch}/builders/{builder_name}', controller='selfserve', action='new_build_for_builder', conditions=dict(method=['POST']))
 
     # Status of jobs

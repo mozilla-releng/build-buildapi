@@ -30,6 +30,12 @@ $(document).ready(function()
         $("#newbuildform").attr('action', revurl(rev));
         return true;
     });
+    $("#newnightlyform").submit(function()
+    {
+        var rev = $("#newnightlyform input[name=revision]").val();
+        $("#newnightlyform").attr('action', revurl(rev) + '/nightly');
+        return true;
+    });
 })
 
 function toggle_display(id)
@@ -182,5 +188,8 @@ for b in c.data:
 <h1>Create a new build</h1>
 <form method="POST" id="newbuildform">
 Create a new build on ${c.branch}: <input type="text" name="revision" /> <input type="submit" value="Submit" />
+</form>
+<form method="POST" id="newnightlyform">
+Create new nightly builds on ${c.branch}: <input type="text" name="revision" /> <input type="submit" value="Submit" />
 </form>
 </%def>

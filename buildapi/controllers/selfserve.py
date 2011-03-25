@@ -422,6 +422,26 @@ class SelfserveController(BaseController):
         # TODO: invalidate cache for branch
         return self._format(retval)
 
+    def new_nightly_at_rev(self, branch, revision):
+        """Creates a new set of nightly builds at this revision.
+
+        `priority` is optional, and if set should be an integer priority."""
+        who = self._require_auth()
+
+        if branch not in config['branches']:
+            return self._failed("Branch %s not found" % branch, 404)
+
+        try:
+            priority = validators.Int(if_empty=0).to_python(request.POST.get('priority'))
+        except formencode.Invalid:
+            return self._failed('Bad priority', 400)
+
+        access_log.info("%s new_nightly of %s %s", who, branch, revision)
+        retval = g.mq.newNightlyAtRevision(who, branch, revision, priority)
+        response.status = 202
+        # TODO: invalidate cache for branch
+        return self._format(retval)
+
     def new_build_for_builder(self, branch, builder_name):
         who = self._require_auth()
 

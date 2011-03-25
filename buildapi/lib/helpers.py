@@ -13,6 +13,7 @@ from webhelpers.html import tags
 from pylons.decorators.cache import beaker_cache
 
 import buildapi.model.builds
+from buildapi.lib import json
 
 log = logging.getLogger(__name__)
 
@@ -107,10 +108,40 @@ def pacific_time(timestamp, format=time_format):
 
     return dt.strftime(format)
 
+_masters = []
+_masters_by_dbname = {}
+_last_master_check = 0
+# Cache for 90 seconds
+_masters_cache_timeout = 90
+
+def get_masters():
+    global _masters, _last_master_check, _masters_by_dbname
+
+    now = time.time()
+
+    if now - _last_master_check < _masters_cache_timeout:
+        return
+
+    url = app_globals.masters_url
+    log.info("Fetching master list from %s", url)
+    try:
+        masters = json.load(urllib.urlopen(url))
+        _masters = masters
+    except:
+        log.exception("Error loading masters json")
+
+    _last_master_check = now
+    _masters_by_dbname = {}
+    for m in _masters:
+        _masters_by_dbname[m['db_name']] = m
+    return _masters
+
 def addr_for_master(claimed_by_name):
-    """Returns the fully qualified domain name and port for the master indicated by claimed_by_name"""
-    fqdn = app_globals.buildbot_masters[claimed_by_name]['hostname']
-    port = app_globals.buildbot_masters[claimed_by_name]['http_port']
+    """Returns the fully qualified domain name and port for the master
+    indicated by claimed_by_name"""
+    get_masters()
+    fqdn = _masters_by_dbname[claimed_by_name]['hostname']
+    port = _masters_by_dbname[claimed_by_name]['http_port']
 
     return fqdn, port
 
