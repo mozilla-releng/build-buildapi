@@ -197,7 +197,7 @@ def gviz_pushes_intervals(report, resp_type='JSonResponse', req_id='0'):
     # gviz table description (columns)
     description = {'intervals': ('string', 'Interval'),
         'totals': ('number', 'Totals')}
-    for branch in report.branch: 
+    for branch in report.branches:
         description[branch] = ('number', branch)
 
     # gviz table data (rows)
