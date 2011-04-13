@@ -11,6 +11,21 @@ from routes.middleware import RoutesMiddleware
 
 from buildapi.config.environment import load_environment
 
+import logging
+log = logging.getLogger(__name__)
+
+class ControlHeadersMiddleware(object):
+    def __init__(self, app, config):
+        self.app = app
+        self.config = config
+
+    def __call__(self, environ, start_response):
+        def custom_start_response(status, headers, exc_info=None):
+            headers.append(('Access-Control-Allow-Credentials', 'true'))
+            headers.append(('Access-Control-Allow-Origin', self.config['allowed_origins']))
+            return start_response(status, headers, exc_info)
+        return self.app(environ, custom_start_response)
+
 def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
     """Create a Pylons WSGI application and return it
 
@@ -68,4 +83,9 @@ def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
 
     # gzip middleware
     app = make_gzip_middleware(app, config)
+
+    # Add Access-Control headers
+    if 'allowed_origins' in config:
+        log.info("Adding ControlHeadersMiddleware")
+        app = ControlHeadersMiddleware(app, config)
     return app
