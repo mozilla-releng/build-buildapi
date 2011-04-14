@@ -21,8 +21,10 @@ class ControlHeadersMiddleware(object):
 
     def __call__(self, environ, start_response):
         def custom_start_response(status, headers, exc_info=None):
-            headers.append(('Access-Control-Allow-Credentials', 'true'))
-            headers.append(('Access-Control-Allow-Origin', self.config['allowed_origins']))
+            origins = self.config['allowed_origins'].split(' ')
+            if 'HTTP_ORIGIN' in environ and environ['HTTP_ORIGIN'] in origins:
+                headers.append(('Access-Control-Allow-Credentials', 'true'))
+                headers.append(('Access-Control-Allow-Origin', environ['HTTP_ORIGIN']))
             return start_response(status, headers, exc_info)
         return self.app(environ, custom_start_response)
 
