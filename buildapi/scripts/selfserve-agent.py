@@ -88,8 +88,7 @@ class BuildAPIAgent:
         return "%s/stop" % build_url
 
     def _can_cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
-        # Until Bug 634605 is fixed, we shouldn't cancel test runs
-        unstoppable = ['opt test', 'debug test', 'talos']
+        unstoppable = []
         for u in unstoppable:
             if u in builder_name:
                 return False
