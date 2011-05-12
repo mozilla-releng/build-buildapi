@@ -52,21 +52,13 @@ class ReconnectingPublisher(object):
 
         self.exchange = config["%s.exchange" % keyroot]
 
-        self.connection = None
-
     def connect(self):
-        if not self.connection:
-            self.connection = amqp_connection_from_config(self.config, self.keyroot)
-
-    def disconnect(self):
-        if self.connection:
-            self.connection.close()
-            self.connection = None
+        return amqp_connection_from_config(self.config, self.keyroot)
 
     def send(self, *args, **kwargs):
-        self.connect()
+        connection = self.connect()
 
-        publisher = Publisher(connection=self.connection,
+        publisher = Publisher(connection=connection,
                               exchange=self.exchange,
                               exchange_type=self.exchange_type,
                               routing_key=self.routing_key)
