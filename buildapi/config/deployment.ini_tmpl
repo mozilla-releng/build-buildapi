@@ -53,7 +53,13 @@ carrot.exchange = buildapi.control
 carrot.consumer.queue = buildapi-web
 
 # Where the various masters are
-master_list = masters.json
+masters_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json
+
+# Which cache to use
+buildapi.cache = redis:
+
+# What timezone we're in
+timezone = US/Pacific
 
 # WARNING: *THE LINE BELOW MUST BE UNCOMMENTED ON A PRODUCTION ENVIRONMENT*
 # Debug mode will enable the interactive debugging tool, allowing ANYONE to
