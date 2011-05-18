@@ -1,10 +1,10 @@
 import math
-
 from sqlalchemy import outerjoin, and_, not_, or_
+
+from buildapi.lib.helpers import get_masters_for_pool
 import buildapi.model.meta as meta
 from buildapi.model.reports import IntervalsReport
 from buildapi.model.util import get_time_interval, get_platform
-from buildapi.model.util import BUILDPOOL_MASTERS
 from buildapi.model.util import WAITTIMES_BUILDSET_REASON_SQL_EXCLUDE, \
 WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE, \
 WAITTIMES_BUILDREQUESTS_BUILDERNAME_EXCLUDE
@@ -16,7 +16,7 @@ def WaitTimesQuery(starttime, endtime, pool):
     Input: pool - name of the pool (e.g. buildpool, or trybuildpool)
            starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
-           pool - fetches the builds only for masters in pool (BUILDPOOL_MASTERS)
+           pool - fetches the builds only for masters in pool
     Output: query
     """
     b  = meta.scheduler_db_meta.tables['builds']
@@ -45,7 +45,7 @@ def WaitTimesQuery(starttime, endtime, pool):
     q = q.where(or_(c.c.when_timestamp < endtime, br.c.submitted_at < endtime))
 
     # filter by masters
-    masters = BUILDPOOL_MASTERS[pool]
+    masters = get_masters_for_pool(pool)
     mnames_matcher = [br.c.claimed_by_name.startswith(master) 
         for master in masters]
     if mnames_matcher:
@@ -81,8 +81,6 @@ def GetWaitTimes(pool='buildpool', mpb=15, starttime=None, endtime=None,
            endtime - end time (UNIX timestamp in seconds), if not specified, 
                     starttime plus 24 hours or current time (if starttime is 
                     not specified either)
-           masters - if not spefified fetches the builds only for masters in 
-                    pool (BUILDPOOL_MASTERS)
            int_size - break down results per interval (in seconds), if specified
            maxb - maximum block size; for wait times larger than maxb, group 
                     into the largest block
@@ -94,7 +92,7 @@ def GetWaitTimes(pool='buildpool', mpb=15, starttime=None, endtime=None,
     q_results = q.execute()
 
     report = WaitTimesReport(pool, starttime, endtime, mpb=mpb, maxb=maxb, 
-        int_size = int_size, masters=BUILDPOOL_MASTERS[pool])
+        int_size = int_size, masters=get_masters_for_pool(pool))
     for r in q_results:
         buildername = r['buildername']
         # start time is changes.when_timestamp, or buildrequests.submitted_at 
@@ -118,7 +116,7 @@ class WaitTimesReport(IntervalsReport):
         IntervalsReport.__init__(self, starttime, endtime, int_size=int_size)
 
         self.pool = pool
-        self.masters = masters or BUILDPOOL_MASTERS[pool]
+        self.masters = masters or get_masters_for_pool(pool)
 
         self.mpb = mpb
         self.maxb = int(maxb / mpb) * mpb  # normalize

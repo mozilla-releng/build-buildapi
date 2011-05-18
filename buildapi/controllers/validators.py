@@ -2,7 +2,7 @@ from formencode import Schema
 from formencode.validators import FancyValidator, Int, Number, String, \
 Invalid, OneOf, Bool
 
-from buildapi.model.util import BUILDPOOL_MASTERS, SOURCESTAMPS_BRANCH, \
+from buildapi.model.util import POOLS, SOURCESTAMPS_BRANCH, \
 PLATFORMS_BUILDERNAME, BUILD_TYPE_BUILDERNAME, JOB_TYPE_BUILDERNAME, \
 BUILDERS_DETAIL_LEVELS
 from buildapi.model.util import get_time_interval
@@ -28,8 +28,8 @@ class IntervalValidator(Int):
     min = 0
 
 class PoolValidator(OneOf, String):
-    """Pool validator. Must be one of BUILDPOOL_MASTERS keys."""
-    list = BUILDPOOL_MASTERS.keys()
+    """Pool validator. Must be present in util.POOLS."""
+    list = POOLS
     if_empty = 'buildpool'
     if_missing = 'buildpool'
 

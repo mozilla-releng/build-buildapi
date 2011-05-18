@@ -14,6 +14,7 @@ from pylons.decorators.cache import beaker_cache
 
 import buildapi.model.builds
 from buildapi.lib import json
+from buildapi.model.util import BUILDPOOL, TRYBUILDPOOL, TESTPOOL
 
 log = logging.getLogger(__name__)
 
@@ -108,14 +109,24 @@ def pacific_time(timestamp, format=time_format):
 
     return dt.strftime(format)
 
+
+# Matches a master from production-masters.json, to the corresponding 
+# build pool, by looking at the 'role' field
+ROLE_MASTERS_POOLS = {
+    'build': BUILDPOOL,
+    'tests': TESTPOOL,
+    'try': TRYBUILDPOOL,
+}
+
 _masters = []
 _masters_by_dbname = {}
+_masters_pools = {BUILDPOOL: [], TRYBUILDPOOL: [], TESTPOOL: []}
 _last_master_check = 0
 # Cache for 90 seconds
 _masters_cache_timeout = 90
 
 def get_masters():
-    global _masters, _last_master_check, _masters_by_dbname
+    global _masters, _last_master_check, _masters_by_dbname, _masters_pools
 
     now = time.time()
 
@@ -132,9 +143,18 @@ def get_masters():
 
     _last_master_check = now
     _masters_by_dbname = {}
+    _masters_pools = {BUILDPOOL: [], TRYBUILDPOOL: [], TESTPOOL: []}
     for m in _masters:
         _masters_by_dbname[m['db_name']] = m
+        pool = ROLE_MASTERS_POOLS.get(m['role'], None)
+        if pool in _masters_pools:
+            _masters_pools[pool].append(m['db_name'])
     return _masters
+
+def get_masters_for_pool(pool):
+    """Returns the masters for a pool."""
+    get_masters()
+    return _masters_pools[pool]
 
 def addr_for_master(claimed_by_name):
     """Returns the fully qualified domain name and port for the master

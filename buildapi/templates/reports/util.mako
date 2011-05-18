@@ -31,11 +31,11 @@
 
 <%def name="build_pool_menu(pool)">
   <%
-    from buildapi.model.util import BUILDPOOL_MASTERS
+    from buildapi.model.util import POOLS
     params = dict(request.params)
     if 'pool' in params: del params['pool']
 
-    pool_list = sorted(BUILDPOOL_MASTERS.keys())
+    pool_list = sorted(POOLS)
     pool_link_func = lambda x: url.current(pool=x, **params)
   %>
 

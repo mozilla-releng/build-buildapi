@@ -1,6 +1,12 @@
 import re
 import time
 
+# Masters build pools
+BUILDPOOL = 'buildpool'
+TRYBUILDPOOL = 'trybuildpool'
+TESTPOOL = 'testpool'
+POOLS = [BUILDPOOL, TRYBUILDPOOL, TESTPOOL]
+
 # Buildrequest statuses
 PENDING, RUNNING, COMPLETE, CANCELLED, INTERRUPTED, MISC = range(6)
 
@@ -11,36 +17,6 @@ NO_RESULT, SUCCESS, WARNINGS, FAILURE, SKIPPED, EXCEPTION, RETRY = range(-1, 6)
 IDLE = 0
 BUSY = 1
 UNKNOWN = 2
-
-BUILDPOOL_MASTERS = {
-    'buildpool': [
-        'production-master01.build.mozilla.org:/builds/buildbot/builder_master1',
-        'production-master03.build.mozilla.org:/builds/buildbot/builder_master',
-        'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/build_master3/master',
-        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/build_master4/master',
-        'buildbot-master04.build.scl1.mozilla.com:/builds/buildbot/build1/master',
-        'buildbot-master5.build.mozilla.org:/builds/buildbot/build_master6/master',
-        'buildbot-master06.build.scl1.mozilla.com:/builds/buildbot/build1/master',
-    ],
-    'trybuildpool': [
-        'production-master02.build.mozilla.org:/builds/buildbot/try-trunk-master',
-        'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/try_master2/master',
-        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/try_master3/master',
-        'buildbot-master3.build.mozilla.org:/builds/buildbot/try_master1/master',
-        'buildbot-master04.build.scl1.mozilla.com:/builds/buildbot/try1/master',
-        'buildbot-master5.build.mozilla.org:/builds/buildbot/try_master5/master',
-        'buildbot-master06.build.scl1.mozilla.com:/builds/buildbot/try1/master',
-    ],
-    'testpool': [
-        'test-master01.build.mozilla.org:/builds/buildbot/tests-master',
-        'buildbot-master1.build.scl1.mozilla.com:/builds/buildbot/tests_master4/master',
-        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master5/master',
-        'buildbot-master2.build.scl1.mozilla.com:/builds/buildbot/tests_master6/master',
-        'buildbot-master04.build.scl1.mozilla.com:/builds/buildbot/tests1/master',
-        'buildbot-master5.build.mozilla.org:/builds/buildbot/tests_master3/master',
-        'buildbot-master06.build.scl1.mozilla.com:/builds/buildbot/tests1/master',
-    ],
-}
 
 PLATFORMS_BUILDERNAME = {
     'linux': [
