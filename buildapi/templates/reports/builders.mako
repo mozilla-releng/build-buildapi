@@ -9,7 +9,7 @@ ${h.tags.javascript_link(
     url('/DataTables-1.7.1/extras/fnGetNodes.js'),
     url('/datatables.filters.js'),
 )}
-<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
     google.load('visualization', '1', {'packages':['corechart']});
 

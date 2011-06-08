@@ -15,7 +15,7 @@ ${h.tags.javascript_link(
 @import "${url('/DataTables-1.7.1/media/css/demo_table_jui.css')}";
 @import "${url('/build-status.css')}";
 </style>
-<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
     google.load('visualization', '1', {'packages':['corechart', 'table']});
     google.setOnLoadCallback(initialize);

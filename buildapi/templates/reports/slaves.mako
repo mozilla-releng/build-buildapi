@@ -8,7 +8,7 @@
 ${h.tags.javascript_link(
     url('/dygraph-combined.js'),
 )}
-<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
     google.load('visualization', '1', {'packages':['corechart']});
 

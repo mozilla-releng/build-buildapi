@@ -4,7 +4,7 @@
 <%def name="title()">Pushes Report</%def>
 
 <%def name="head()">
-<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
     google.load('visualization', '1', {'packages':['corechart', 'table']});
     google.setOnLoadCallback(initialize);
