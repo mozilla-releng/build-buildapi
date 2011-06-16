@@ -368,6 +368,7 @@ class BuildAPIAgent:
         log.info("New nightly by %s of %s %s", who, branch, revision)
 
         now = time.time()
+        repo_path = self._get_repo_path(branch)
 
         # Find nightly builders that have been active in the past 2 weeks
         q = """SELECT DISTINCT buildername FROM buildrequests WHERE
@@ -388,7 +389,7 @@ class BuildAPIAgent:
                 (:branch, :revision, NULL, '', '')
                 """)
         log.debug(q)
-        r = self.db.execute(q, branch=branch, revision=revision)
+        r = self.db.execute(q, branch=repo_path, revision=revision)
         ssid = r.lastrowid
         log.debug("Created sourcestamp %s", ssid)
 
