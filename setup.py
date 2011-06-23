@@ -17,6 +17,7 @@ setup(
         "SQLAlchemy>=0.6",
         "carrot>=0.10.7",
         "pytz",
+        "MySQL-python",
     ],
     setup_requires=["PasteScript>=1.6.3"],
     tests_require=["nose", "mock"],
