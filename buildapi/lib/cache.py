@@ -125,8 +125,8 @@ class BuildapiCache:
                     # Expire soon
                     expire = time.time() + 60
                 else:
-                    # Don't expire
-                    expire = 0
+                    # Expire in half an hour
+                    expire = time.time() + 1800
                 key = self.build_key_for_day(date, branch)
                 self.cache.put(key, builds, expire=expire)
 
