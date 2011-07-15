@@ -60,6 +60,9 @@ PLATFORMS_BUILDERNAME = {
     'win764': [
         re.compile('^Rev3 WINNT 6\.1 x64 .+'),
     ],
+    'tegra': [
+        re.compile('^Android Tegra 250 .+'),
+    ],
 }
 
 BUILD_TYPE_BUILDERNAME = {
@@ -162,7 +165,6 @@ Wait Times Report Configs
 """
 WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
     'fuzzer-%',
-    'Android Tegra 250 %',
     'nanojit-%',
     'release-%',
     'valgrind%',
