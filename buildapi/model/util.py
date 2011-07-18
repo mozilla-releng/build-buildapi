@@ -33,22 +33,27 @@ PLATFORMS_BUILDERNAME = {
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
+        re.compile('jetpack-fedora'),
     ],
     'fedora64': [
         re.compile('Rev3 Fedora 12x64 .+'),
+        re.compile('jetpack-fedora64'),
     ],
     'leopard': [
         re.compile('^OS X 10\.5.+'),
         re.compile('^Rev3 MacOSX Leopard 10\.5.+'),
         re.compile('.*macosx(?!64).*'),
+        re.compile('jetpack-leopard'),
     ],
     'snowleopard': [
         re.compile('^OS X 10\.6.+'),
         re.compile('^Rev3 MacOSX Snow Leopard 10\.6.+'),
         re.compile('.*macosx64.*'),
+        re.compile('jetpack-snowleopard'),
     ],
     'xp': [
-        re.compile('^Rev3 WINNT 5\.1 .+')
+        re.compile('^Rev3 WINNT 5\.1 .+'),
+        re.compile('jetpack-xp'),
     ],
     'win2k3': [
         re.compile('^WINNT 5\.2 .+'),
@@ -56,9 +61,11 @@ PLATFORMS_BUILDERNAME = {
     ],
     'win7': [
         re.compile('^Rev3 WINNT 6\.1 '),
+        re.compile('jetpack-win7'),
     ],
     'win764': [
         re.compile('^Rev3 WINNT 6\.1 x64 .+'),
+        re.compile('jetpack-w764'),
     ],
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
