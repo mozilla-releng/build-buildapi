@@ -52,7 +52,7 @@ ${next.header()}
 </head>
 <body>
 ${self.breadcrumbs()}
-${next.body()}
-${next.footer()}
+${self.body()}
+${self.footer()}
 </body>
 </html>

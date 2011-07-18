@@ -106,6 +106,40 @@ class BuildAPIAgent:
         urllib.urlopen(cancel_url, data)
         return "Ok"
 
+    def _cancel_request(self, who, request):
+        brid = request.id
+        log.info("cancelling request by %s of %s", who, brid)
+
+        # Check that the request is still active
+        request = self.db.execute(text("SELECT * FROM buildrequests WHERE id=:brid"), brid=brid).fetchone()
+
+        if request.complete_at and request.complete:
+            log.info("request is complete, nothing to do")
+            return {"errors": False, "msg": "Request %i is complete, nothing to do" % brid}
+
+        if request.claimed_at:
+            log.info("request is running, going to cancel it!")
+            build = self.db.execute(text("SELECT * from builds where brid=:brid and finish_time is null"), brid=brid).fetchone()
+            cancel_url = self._get_cancel_url(request.claimed_by_name, request.buildername, build.number)
+            log.debug("Cancelling at %s", cancel_url)
+            try:
+                msg = self._cancel_build(request.claimed_by_name, request.buildername, build.number, who, "Cancelled via self-serve")
+                return {"errors": False, "msg": "%i: %s" % (brid, msg)}
+            except:
+                log.exception("Couldn't cancel build")
+                return {"errors": True, "msg": "Error cancelling build (request %i)" % brid}
+
+        log.info("request is pending, going to cancel it")
+        now = time.time()
+        result = self.db.execute(text("UPDATE buildrequests SET complete=1, results=2, complete_at=:now WHERE id=:brid"),
+                brid=brid,
+                now=now,
+                )
+        log.debug("updated DB: %i", result.rowcount)
+        if result.rowcount != 1:
+            return {"errors": True, "msg": "Error cancelling request %i: %i rows affected" % (brid, result.rowcount)}
+        return {"errors": False, "msg": "%i: Ok" % brid}
+
     def receive_message(self, message_data, message):
         log.debug("Received %s", message_data)
         if 'action' not in message_data:
@@ -160,7 +194,6 @@ class BuildAPIAgent:
     def do_cancel_request(self, message_data, message):
         who = message_data['who']
         brid = message_data['body']['brid']
-        log.info("cancelling request by %s of %s", who, brid)
 
         # Check that the request is still active
         request = self.db.execute(text("SELECT * FROM buildrequests WHERE id=:brid"), brid=brid).fetchone()
@@ -169,32 +202,7 @@ class BuildAPIAgent:
             log.info("No request with id %s, giving up" % brid)
             return {"errors": True, "msg": "No request with that id"}
 
-        if request.complete_at and request.complete:
-            log.info("request is complete, nothing to do")
-            return {"errors": False, "msg": "Request is complete, nothing to do"}
-
-        if request.claimed_at:
-            log.info("request is running, going to cancel it!")
-            build = self.db.execute(text("SELECT * from builds where brid=:brid and finish_time is null"), brid=brid).fetchone()
-            cancel_url = self._get_cancel_url(request.claimed_by_name, request.buildername, build.number)
-            log.debug("Cancelling at %s", cancel_url)
-            try:
-                msg = self._cancel_build(request.claimed_by_name, request.buildername, build.number, who, "Cancelled via self-serve")
-                return {"errors": False, "msg": msg}
-            except:
-                log.exception("Couldn't cancel build")
-                return {"errors": True, "msg": "Error cancelling build"}
-
-        log.info("request is pending, going to cancel it")
-        now = time.time()
-        result = self.db.execute(text("UPDATE buildrequests SET complete=1, results=2, complete_at=:now WHERE id=:brid"),
-                brid=brid,
-                now=now,
-                )
-        log.debug("updated DB: %i", result.rowcount)
-        if result.rowcount != 1:
-            return {"errors": True, "msg": "%i rows affected" % result.rowcount}
-        return {"errors": False, "msg": "Ok"}
+        return self._cancel_request(who, request)
 
     def do_rebuild_build(self, message_data, message):
         who = message_data['who']
@@ -431,12 +439,40 @@ class BuildAPIAgent:
             log.debug("Created buildrequest %s: %i", buildername, r.lastrowid)
         return {"errors": False, "msg": "Ok"}
 
+    def do_cancel_revision(self, message_data, message):
+        who = message_data['who']
+        branch = message_data['body']['branch']
+        revision = "%s%%" % message_data['body']['revision'][:12]
+        prefixbranch = "%s%%" % branch
+        suffixbranch = "%%%s" % branch
+
+        q = text("""SELECT buildrequests.*
+                    FROM
+                        buildrequests, buildsets, sourcestamps
+                    WHERE
+                        buildrequests.buildsetid = buildsets.id AND
+                        buildsets.sourcestampid = sourcestamps.id AND
+                        sourcestamps.revision LIKE :revision AND
+                        buildrequests.complete = 0 AND
+                        (sourcestamps.branch LIKE :prefixbranch OR
+                         sourcestamps.branch LIKE :suffixbranch)
+                """)
+        requests = self.db.execute(q, revision=revision, prefixbranch=prefixbranch, suffixbranch=suffixbranch)
+
+        msgs = []
+        errors = False
+        for request in requests:
+            result = self._cancel_request(who, request)
+            if result['errors']:
+                errors = True
+            msgs.append(result['msg'])
+        return {"errors": errors, "msg": "\n".join(msgs)}
+
 if __name__ == '__main__':
     import os
     from optparse import OptionParser
     from ConfigParser import RawConfigParser
 
-    from carrot.connection import AMQPConnection
     from sqlalchemy import create_engine
 
     from buildapi.lib.mq import JobRequestConsumer, JobRequestDonePublisher, amqp_connection_from_config

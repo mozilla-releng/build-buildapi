@@ -77,7 +77,10 @@ def getRequest(branch, request_id):
         br.c.complete_at,
         ])
     q = q.where(and_(br.c.buildsetid == bs.c.id, bs.c.sourcestampid==ss.c.id))
-    q = q.where(ss.c.branch.contains(branch))
+    q = q.where(or_(
+            ss.c.branch.startswith(branch),
+            ss.c.branch.endswith(branch),
+    ))
     q = q.where(br.c.id == request_id)
     q = q.limit(1)
     req = q.execute().fetchone()
@@ -119,7 +122,10 @@ def getBuild(branch, build_id):
         br.c.complete_at,
         ])
     q = q.where(and_(br.c.id == b.c.brid, br.c.buildsetid == bs.c.id, bs.c.sourcestampid==ss.c.id))
-    q = q.where(ss.c.branch.contains(branch))
+    q = q.where(or_(
+            ss.c.branch.startswith(branch),
+            ss.c.branch.endswith(branch),
+    ))
     q = q.where(b.c.id == build_id)
     q = q.limit(1)
     build = q.execute().fetchone()
@@ -159,7 +165,10 @@ def getBuildsQuery(branch, starttime=None, endtime=None, limit=None):
         bs.c.id == br.c.buildsetid,
         ss.c.id == bs.c.sourcestampid,
         ))
-    q = q.where(ss.c.branch.contains(branch))
+    q = q.where(or_(
+            ss.c.branch.startswith(branch),
+            ss.c.branch.endswith(branch),
+    ))
     if starttime:
         q = q.where(b.c.start_time >= starttime)
     if endtime:
@@ -196,7 +205,10 @@ def getPendingQuery(branch, starttime=None, endtime=None, limit=None):
     q = q.where(and_(br.c.buildsetid == bs.c.id, bs.c.sourcestampid==ss.c.id))
     q = q.where(br.c.claimed_at == 0)
     q = q.where(br.c.complete == 0)
-    q = q.where(ss.c.branch.contains(branch))
+    q = q.where(or_(
+            ss.c.branch.startswith(branch),
+            ss.c.branch.endswith(branch),
+    ))
     if starttime:
         q = q.where(br.c.submitted_at >= starttime)
     if endtime:
