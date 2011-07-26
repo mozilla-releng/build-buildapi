@@ -25,7 +25,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Maemo 4 .+'),
         re.compile('^Maemo 5 QT .+'),
         re.compile('^Maemo 5 GTK .+'),
-        re.compile('^Android R7 .+'),
+        re.compile('^Android (?!Tegra).+'),
     ],
     'linux64': [
         re.compile('^Linux x86-64 .+'),
