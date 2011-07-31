@@ -58,6 +58,9 @@ def WaitTimesQuery(starttime, endtime, pool):
     if rmatcher:
         q = q.where(and_(*rmatcher))
 
+    # exclude pushes which are DONTBUILD
+    q = q.where(not_(c.c.comments.like("%DONTBUILD%")))
+
     # exclude unrelated buildrequests.buildername-s
     bmatcher = [not_(br.c.buildername.like(rpat)) \
         for rpat in WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE]
