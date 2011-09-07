@@ -59,6 +59,10 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^WINNT 5\.2 .+'),
         re.compile('.*win32.*'),
     ],
+    'win64': [
+        re.compile('^WINNT 6\.1 .+'),
+        re.compile('.*win64.*'),
+    ],
     'win7': [
         re.compile('^Rev3 WINNT 6\.1 '),
         re.compile('jetpack-win7'),
