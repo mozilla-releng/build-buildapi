@@ -32,6 +32,14 @@ class Globals(object):
         if cache_spec.startswith('memcached:'):
             self.buildapi_cache = cache.BuildapiCache(cacher.MemcacheCache(), tz)
         elif cache_spec.startswith('redis:'):
-            self.buildapi_cache = cache.BuildapiCache(cacher.RedisCache(), tz)
+            bits = cache_spec.split(':')
+            kwargs = {}
+            if len(bits) >= 2:
+                kwargs['host'] = bits[1]
+
+            if len(bits) == 3:
+                kwargs['port'] = int(bits[2])
+
+            self.buildapi_cache = cache.BuildapiCache(cacher.RedisCache(**kwargs), tz)
         else:
             self.buildapi_cache = None
