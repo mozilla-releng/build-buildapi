@@ -51,6 +51,9 @@ PLATFORMS_BUILDERNAME = {
         re.compile('.*macosx64.*'),
         re.compile('jetpack-snowleopard'),
     ],
+    'snowleopard-r4': [
+        re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
+    ],
     'xp': [
         re.compile('^Rev3 WINNT 5\.1 .+'),
         re.compile('jetpack-xp'),
@@ -139,6 +142,7 @@ SLAVE_SILOS = {
     'talos-r3-fed64': [re.compile('^talos-r3-fed64-.+')],
     'talos-r3-leopard': [re.compile('^talos-r3-leopard-.+')],
     'talos-r3-snow': [re.compile('^talos-r3-snow-.+')],
+    'talos-r4-snow': [re.compile('^talos-r4-snow-.+')],
     'talos-r3-w7': [re.compile('^talos-r3-w7-.+')],
     'talos-r3-xp': [re.compile('^talos-r3-xp-.+')],
     'tegra': [re.compile('^tegra-.+')],
@@ -179,6 +183,7 @@ WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
     'nanojit-%',
     'release-%',
     'valgrind%',
+    'Rev4%',
 ]
 
 WAITTIMES_BUILDSET_REASON_SQL_EXCLUDE = [
