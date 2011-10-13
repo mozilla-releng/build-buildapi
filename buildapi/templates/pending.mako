@@ -46,20 +46,22 @@ $(document).ready(function() {
 % for branch in c.pending_builds:
   % for revision in c.pending_builds[branch]:
     % for build in c.pending_builds[branch][revision]:
-      <%
-        build['submitted_at_human'] = datetime.fromtimestamp(build['submitted_at']).strftime('%Y-%m-%d %H:%M:%S')
-        build['waiting_for'] = now - datetime.fromtimestamp(build['submitted_at'])
-      %>
-      <tr>
-      <td>${branch}</td><td>${revision}</td>
-      % for key in ('buildername','submitted_at','waiting_for'):
-        % if key == 'submitted_at':
-          <td title='${build['submitted_at']}'>${build['submitted_at_human']}</td>
-        % else:
-          <td>${build[key]}</td>
-        % endif
-      % endfor
-      </tr>
+      % if ${build["buildername"]}.startswith("Rev4"): 
+        <%
+          build['submitted_at_human'] = datetime.fromtimestamp(build['submitted_at']).strftime('%Y-%m-%d %H:%M:%S')
+          build['waiting_for'] = now - datetime.fromtimestamp(build['submitted_at'])
+        %>
+        <tr>
+        <td>${branch}</td><td>${revision}</td>
+        % for key in ('buildername','submitted_at','waiting_for'):
+          % if key == 'submitted_at':
+            <td title='${build['submitted_at']}'>${build['submitted_at_human']}</td>
+          % else:
+            <td>${build[key]}</td>
+          % endif
+        % endfor
+        </tr>
+      % endif
     % endfor
   % endfor
 %endfor
