@@ -183,7 +183,6 @@ WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
     'nanojit-%',
     'release-%',
     'valgrind%',
-    'Rev4%',
 ]
 
 WAITTIMES_BUILDSET_REASON_SQL_EXCLUDE = [
