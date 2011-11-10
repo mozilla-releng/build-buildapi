@@ -24,6 +24,9 @@ PLATFORMS_BUILDERNAME = {
     'snowleopard': [re.compile('.+snowleopard.*'),
                     re.compile('.+_snowleopard.*')
                    ],
+    'lion': [re.compile('.+lion.*'),
+             re.compile('.+_lion.*')
+            ],
     'xp': [re.compile('.+_xp_test.*'),
            re.compile('.+xp.*')],
     'win7': [re.compile('.+_win7_test.*'),
