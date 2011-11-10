@@ -368,22 +368,16 @@ class BuildAPIAgent:
         subprocess.check_call(cmd)
         return {"errors": False, "msg": "Ok"}
 
-    def do_new_nightly_at_revision(self, message_data, message):
-        who = message_data['who']
-        branch = message_data['body']['branch']
-        revision = message_data['body']['revision']
-        priority = message_data['body']['priority']
-        log.info("New nightly by %s of %s %s", who, branch, revision)
-
+    def _create_build_for_revision(self, who, branch, revision, priority, builder_expression):
         now = time.time()
         repo_path = self._get_repo_path(branch)
 
-        # Find nightly builders that have been active in the past 2 weeks
+        # Find builders that have been active in the past 2 weeks
         q = """SELECT DISTINCT buildername FROM buildrequests WHERE
                 buildername LIKE :buildername AND
                 submitted_at > :submitted_at"""
         result = self.db.execute(text(q),
-                buildername="%% %s nightly" % branch,
+                buildername=builder_expression,
                 submitted_at=time.time() - 14*24*3600,
                 )
 
@@ -438,6 +432,32 @@ class BuildAPIAgent:
                     priority=priority)
             log.debug("Created buildrequest %s: %i", buildername, r.lastrowid)
         return {"errors": False, "msg": "Ok"}
+
+    def do_new_pgobuild_at_revision(self, message_data, message):
+        who = message_data['who']
+        branch = message_data['body']['branch']
+        revision = message_data['body']['revision']
+        priority = message_data['body']['priority']
+        log.info("New PGO build by %s of %s %s", who, branch, revision)
+        return self._create_build_for_revision(
+                    who,
+                    branch,
+                    revision,
+                    priority,
+                    "%% %s pgo-build" % branch)
+
+    def do_new_nightly_at_revision(self, message_data, message):
+        who = message_data['who']
+        branch = message_data['body']['branch']
+        revision = message_data['body']['revision']
+        priority = message_data['body']['priority']
+        log.info("New nightly by %s of %s %s", who, branch, revision)
+        return self._create_build_for_revision(
+                    who,
+                    branch,
+                    revision,
+                    priority,
+                    "%% %s nightly" % branch)
 
     def do_cancel_revision(self, message_data, message):
         who = message_data['who']

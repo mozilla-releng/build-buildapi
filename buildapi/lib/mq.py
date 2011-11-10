@@ -148,6 +148,9 @@ class JobRequestPublisher(ReconnectingPublisher):
     def newBuildAtRevision(self, who, branch, revision):
         return self.send_msg('new_build_at_revision', who=who, branch=branch, revision=revision)
 
+    def newPGOBuildAtRevision(self, who, branch, revision, priority):
+        return self.send_msg('new_pgobuild_at_revision', who=who, branch=branch, revision=revision, priority=priority)
+
     def newNightlyAtRevision(self, who, branch, revision, priority):
         return self.send_msg('new_nightly_at_revision', who=who, branch=branch, revision=revision, priority=priority)
 

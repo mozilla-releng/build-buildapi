@@ -30,6 +30,12 @@ $(document).ready(function()
         $("#newbuildform").attr('action', revurl(rev));
         return true;
     });
+    $("#newpgobuildform").submit(function()
+    {
+        var rev = $("#newpgobuildform input[name=revision]").val();
+        $("#newpgobuildform").attr('action', revurl(rev) + '/pgo');
+        return true;
+    });
     $("#newnightlyform").submit(function()
     {
         var rev = $("#newnightlyform input[name=revision]").val();
@@ -188,6 +194,9 @@ for b in c.data:
 <h1>Create a new build</h1>
 <form method="POST" id="newbuildform">
 Create new dep builds on ${c.branch} revision <input type="text" name="revision" /> <input type="submit" value="Submit" />
+</form>
+<form method="POST" id="newpgobuildform">
+Create new PGO builds on ${c.branch} revision <input type="text" name="revision" /> <input type="submit" value="Submit" />
 </form>
 <form method="POST" id="newnightlyform">
 Create new nightly builds on ${c.branch} revision <input type="text" name="revision" /> <input type="submit" value="Submit" />
