@@ -139,7 +139,8 @@ def get_masters():
         masters = json.load(urllib.urlopen(url))
         _masters = masters
     except:
-        log.exception("Error loading masters json")
+        log.exception("Error loading masters json; using old list")
+        return _masters
 
     _last_master_check = now
     _masters_by_dbname = {}
