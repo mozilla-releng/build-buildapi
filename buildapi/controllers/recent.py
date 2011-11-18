@@ -14,6 +14,8 @@ class RecentController(BaseController):
     def index(self, slave=None):
         if 'numbuilds' in request.GET:
             count = int(request.GET.getone('numbuilds'))
+        else:
+            count = 25
 
         if 'format' in request.GET:
             format = request.GET.getone('format')
