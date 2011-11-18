@@ -192,7 +192,7 @@ class WaittimesSchema(ReportSchema):
     pool = PoolValidator()
     num = NumberTypeValidator()
     mpb = Int(min=0, if_missing=15, if_empty=15)    # minutes per block
-    maxb = Int(min=0, if_missing=1000, if_empty=1000) # max block
+    maxb = Int(min=0, if_missing=120, if_empty=120) # max block
 
     chained_validators = ReportSchema.chained_validators + [ IntSizeInit() ]
 
