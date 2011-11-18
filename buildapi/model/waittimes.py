@@ -1,5 +1,5 @@
 import math
-from sqlalchemy import outerjoin, and_, not_, or_
+from sqlalchemy import outerjoin, and_, not_, or_, func
 
 from buildapi.lib.helpers import get_masters_for_pool
 import buildapi.model.meta as meta
@@ -34,15 +34,14 @@ def WaitTimesQuery(starttime, endtime, pool):
             .select() \
             .with_only_columns([
                 br.c.buildername,
-                b.c.start_time,
                 br.c.claimed_at,
                 br.c.submitted_at,
-                c.c.when_timestamp
+                func.min(b.c.start_time).label("start_time"),
+                func.min(c.c.when_timestamp).label("when_timestamp"),
             ])
 
-    q = q.where(or_(c.c.when_timestamp >= starttime, 
-            br.c.submitted_at >= starttime))
-    q = q.where(or_(c.c.when_timestamp < endtime, br.c.submitted_at < endtime))
+    q = q.where(bs.c.submitted_at >= starttime)
+    q = q.where(bs.c.submitted_at < endtime)
 
     # filter by masters
     masters = get_masters_for_pool(pool)

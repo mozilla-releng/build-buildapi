@@ -12,6 +12,9 @@ log = logging.getLogger(__name__)
 class RecentController(BaseController):
 
     def index(self, slave=None, count=20):
+        if 'count' in request.GET:
+            count = int(request.GET.getone('count'))
+
         if 'format' in request.GET:
             format = request.GET.getone('format')
         else:

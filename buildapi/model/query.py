@@ -181,24 +181,38 @@ def GetHistoricBuilds(slave, count=20):
     bs = meta.status_db_meta.tables['builders']
     s  = meta.status_db_meta.tables['slaves']
     m  = meta.status_db_meta.tables['masters']
-    ss = meta.scheduler_db_meta.tables['sourcestamps']
-    q = select([b.c.id,
-                bs.c.name.label('buildname'),
-                b.c.buildnumber,
-                b.c.starttime,
-                b.c.endtime,
-                b.c.result,
-                s.c.name.label('slavename'),
-                m.c.name.label('master'),
-            ])
-    q = q.where(and_(b.c.slave_id==s.c.id,
-                     b.c.builder_id==bs.c.id,
-                     b.c.master_id==m.c.id))
-    q = q.where(b.c.result != None)
     if slave is not None:
-      q = q.where(s.c.name.like(slave+'%'))
-    # should order b.c.starttime but that's much slower than id
-    q = q.order_by(b.c.id.desc()).limit(count)
+        q = select([b.c.id,
+                    bs.c.name.label('buildname'),
+                    b.c.buildnumber,
+                    b.c.starttime,
+                    b.c.endtime,
+                    b.c.result,
+                    s.c.name.label('slavename'),
+                    m.c.name.label('master'),
+                ])
+        q = q.where(and_(b.c.slave_id==s.c.id,
+                        b.c.builder_id==bs.c.id,
+                        b.c.master_id==m.c.id))
+        q = q.where(b.c.result != None)
+        q = q.where(s.c.name.like(slave+'%'))
+        q = q.order_by(b.c.id.desc()).limit(count)
+    else:
+        subq = select([b.c.id,
+                       bs.c.name.label('buildname'),
+                       b.c.buildnumber,
+                       b.c.starttime,
+                       b.c.endtime,
+                       b.c.result,
+                       b.c.slave_id,
+                       b.c.master_id])
+        subq = subq.where(b.c.builder_id == bs.c.id)
+        subq = subq.order_by(b.c.id.desc()).limit(count)
+        subq = subq.alias('t')
+        q = select([subq.c.id, subq.c.buildname, subq.c.buildnumber, subq.c.starttime, subq.c.endtime, subq.c.result, s.c.name.label('slavename'), m.c.name.label('master')])
+        q = q.where(subq.c.slave_id == s.c.id)
+        q = q.where(subq.c.master_id == m.c.id)
+        q = q.order_by(subq.c.id.desc())
 
     query_results = q.execute()
 

@@ -30,7 +30,6 @@ def make_map(config):
 
     map.connect('/recent', controller='recent', action='index')
     map.connect('/recent/{slave}', controller='recent', action='index')
-    map.connect('/recent/{slave}/{count}', controller='recent', action='index')
 
     #map.connect('/revision', controller='revision', action='index')
     #map.connect('/revision/{branch}', controller='revision', action='index')
