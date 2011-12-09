@@ -25,6 +25,21 @@ WT_ENDTIME_DEFAULT = None
 
 log = logging.getLogger('buildapi.controllers.mailwaittimes')
 
+def merge_platforms(platform1, platform2):
+    merged = {}
+    merged['wt'] = {}
+    for minutes in platform1['wt'].keys():
+        merged['wt'][minutes] = {}
+        merged['wt'][minutes]['intervals'] = map(lambda x, y: x + y,
+                                                 platform1['wt'][minutes]['intervals'],
+                                                 platform2['wt'][minutes]['intervals'])
+
+        merged['wt'][minutes]['total'] = \
+                                       platform1['wt'][minutes]['total'] + \
+                                       platform2['wt'][minutes]['total']
+    merged['total'] = platform1['total'] + platform2['total']
+    return merged
+
 def format_wait_times(wait_times):
     """Format wait times statistics in a pretty human readable format.
 
@@ -49,6 +64,17 @@ def format_wait_times(wait_times):
     text.append(format_wait_times_stats(wait_times['wt'], mpb, maxb, total))
 
     text.append("\nPlatform break down\n")
+
+    # Merge the results for linux and tegra, since they are runnning
+    # on the same hardware, just with different interfaces.
+    if wait_times['pool'] == 'testpool':
+        if wait_times['platforms'].has_key('linux'):
+            if wait_times['platforms'].has_key('tegra'):
+                wait_times['platforms']['tegra'] = merge_platforms(wait_times['platforms']['tegra'], wait_times['platforms']['linux'])
+            else:
+                wait_times['platforms']['tegra'] = wait_times['platforms']['tegra'].copy()
+            del wait_times['platforms']['linux']
+
     for platform in sorted(wait_times['platforms']):
         pwt = wait_times['platforms'][platform]
         text.append("%s: %s" % (platform, pwt['total']))
