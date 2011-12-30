@@ -1,11 +1,12 @@
 import logging
+import datetime
 
-from pylons import request, response, session, tmpl_context as c, url
-from pylons.controllers.util import abort, redirect
-from pylons.decorators import jsonify
+from pylons import request, tmpl_context as c, app_globals as g
+from pylons.controllers.util import abort
 
 from buildapi.lib.base import BaseController, render
 from buildapi.model.query import GetHistoricBuilds
+from buildapi.lib import times
 
 log = logging.getLogger(__name__)
 
@@ -37,4 +38,9 @@ class RecentController(BaseController):
             c.recent_builds = builds
             return render("/recent.mako")
         else:
+            for b in builds:
+                for k,v in b.items():
+                    if isinstance(v, datetime.datetime):
+                        v = g.tz.localize(v)
+                        b[k] = times.dt2ts(v)
             return self.jsonify(builds)
