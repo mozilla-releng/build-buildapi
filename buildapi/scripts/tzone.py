@@ -52,7 +52,7 @@ class USTimeZone(datetime.tzinfo):
         days_to_go = 6 - dt.weekday()
         if days_to_go:
             dt += datetime.timedelta(days_to_go)
-   	    return dt
+        return dt
 
 class Pacific(USTimeZone):
     def __init__(self):
