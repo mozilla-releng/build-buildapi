@@ -30,13 +30,11 @@ def merge_platforms(platform1, platform2):
     merged['wt'] = {}
     for minutes in platform1['wt'].keys():
         merged['wt'][minutes] = {}
-        merged['wt'][minutes]['intervals'] = map(lambda x, y: x + y,
-                                                 platform1['wt'][minutes]['intervals'],
-                                                 platform2['wt'][minutes]['intervals'])
-
-        merged['wt'][minutes]['total'] = \
-                                       platform1['wt'][minutes]['total'] + \
-                                       platform2['wt'][minutes]['total']
+        merged['wt'][minutes]['intervals'] = platform1['wt'][minutes]['intervals'][:]
+        merged['wt'][minutes]['total'] = platform1['wt'][minutes]['total']
+        if minutes in platform2['wt']:
+            merged['wt'][minutes]['intervals'] += platform2['wt'][minutes]['intervals']
+            merged['wt'][minutes]['total'] += platform2['wt'][minutes]['total']
     merged['total'] = platform1['total'] + platform2['total']
     return merged
 
