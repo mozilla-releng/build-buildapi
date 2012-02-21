@@ -273,10 +273,11 @@ if __name__ == '__main__':
         endtime=op.endtime, mpb=op.mpb, maxb=op.maxb,
         tries=op.tries, sleep=op.sleep)
 
-    print resp['msg']
     if resp['status'] == 'error':
+        print resp['msg']
         sys.exit(1)         # an exception was thrown, the mail was not sent to any of the receivers
     if len(resp['refused'].keys()) > 0:
+        print resp['msg']
         sys.exit(2)         # mail was not sent to all receivers (just a subset)
     else:
         sys.exit(0)         # success - mail sent to all receivers
