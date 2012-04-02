@@ -55,6 +55,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
     ],
     'lion': [
+        re.compile('^OS X 10\.7.+'),
         re.compile('^Rev4 MacOSX Lion 10\.7.+'),
     ],
     'xp': [
@@ -80,6 +81,10 @@ PLATFORMS_BUILDERNAME = {
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
     ],
+    'mock-hp': [
+        re.compile('^b2g.+'),
+        re.compile('.*mock.*'),
+    ]
 }
 
 BUILD_TYPE_BUILDERNAME = {
