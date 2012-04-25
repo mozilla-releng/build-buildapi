@@ -14,7 +14,12 @@ $(document).ready(function()
     var table = $('#branches');
     var baselink = '${h.url('selfserve_home')}';
     $.getJSON('${h.url('branches')}', function(data) {
+        var branches = [];
         $.each(data, function(index, value) {
+            branches.push(index);
+        });
+        branches.sort();
+        $.each(branches, function(index, value) {
             var link = baselink + '/' + value;
             var txt = '<a href="' + link + '">' + link + '</a>';
             table.append('<tr><td>' + txt + '</td></tr>');

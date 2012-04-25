@@ -60,8 +60,6 @@ def load_environment(global_conf, app_conf):
     # CONFIGURATION OPTIONS HERE (note: all config options will override
     # any Pylons config options)
 
-    config['branches'] = [b.strip() for b in config.get('branches', '').split(',')]
-
     # Create our AMQP message publisher
     if 'carrot.hostname' in config:
         config['pylons.app_globals'].mq = LoggingJobRequestPublisher(buildapi_engine,

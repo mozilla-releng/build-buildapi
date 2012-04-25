@@ -43,29 +43,36 @@ def create_buildset(db, idstring, reason, ssid, submitted_at):
     return buildsetid
 
 class BuildAPIAgent:
-    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branch_map):
+    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branches_url):
         self.db = db
         self.masters_url = masters_url
+        self.branches_url = branches_url
         self.buildbot = buildbot
         self.sendchange_master = sendchange_master
         self.publisher = publisher
-        self.branch_map = branch_map
+        self.branches = {}
+        self.masters = []
 
-        self._last_masters_update = 0
+        self._last_refresh = 0
 
-    def _refresh_masters(self):
+    def _refresh(self):
         # Refresh every 5 minutes
-        if time.time() - self._last_masters_update > 300:
-            log.info("Loading masters from %s", self.masters_url)
-            self.masters = json.load(urllib.urlopen(self.masters_url))
-            self._last_masters_update = time.time()
+        if time.time() - self._last_refresh > 300:
+            try:
+                log.info("Loading masters from %s", self.masters_url)
+                self.masters = json.load(urllib.urlopen(self.masters_url))
+                log.info("Loading branches from %s", self.branches_url)
+                self.branches = json.load(urllib.urlopen(self.branches_url))
+                self._last_refresh = time.time()
+            except:
+                log.exception("Couldn't load data; using old ones")
 
     def _get_repo_path(self, branch):
-        return self.branch_map[branch].repo_path
+        return self.branches[branch]['repo']
 
     def _get_revlink(self, branch, revision):
-        repo_path = self.branch_map[branch].repo_path
-        return self.branch_map[branch].revlink % dict(repo_path=repo_path, branch=branch, revision=revision)
+        repo_path = self.branches[branch]['repo']
+        return "%s/rev/%s" % (repo_path, revision)
 
     def _get_master_pb(self, name):
         for master in self.masters:
@@ -154,7 +161,7 @@ class BuildAPIAgent:
             log.info("Don't know how to handle action %s" % action)
             return
 
-        self._refresh_masters()
+        self._refresh()
 
         try:
             retval = action_func(message_data, message)
@@ -534,24 +541,13 @@ if __name__ == '__main__':
     amqp_exchange = config.get('carrot', 'exchange')
     amqp_conn = amqp_connection_from_config(amqp_config, 'carrot')
 
-    # TODO: This needs to be refreshed regularly
-    branch_map = {}
-    for section in config.sections():
-        if not section.startswith('branch:'):
-            continue
-        branch = section.split(':', 1)[1]
-        repo_path = config.get(section, 'repo_path')
-        revlink = config.get(section, 'revlink')
-
-        branch_map[branch] = BranchInfo(repo_path=repo_path, revlink=revlink)
-
     agent = BuildAPIAgent(
             db=create_engine(config.get('db', 'url'), pool_recycle=60),
             masters_url=config.get('masters', 'masters-url'),
             buildbot=config.get('masters', 'buildbot'),
             sendchange_master=config.get('masters', 'sendchange-master'),
             publisher=JobRequestDonePublisher(amqp_config, 'carrot'),
-            branch_map=branch_map,
+            branches_url=config.get('branches', 'url'),
             )
 
     consumer = JobRequestConsumer(amqp_conn, exchange=amqp_exchange, queue=config.get('carrot', 'queue'))

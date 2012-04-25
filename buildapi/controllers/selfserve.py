@@ -16,7 +16,7 @@ from formencode import validators
 from buildapi.lib.base import BaseController, render
 from buildapi.model.builds import getBuild, getRequest, getBuildsForUser
 from buildapi.model.buildapidb import JobRequest
-from buildapi.lib.helpers import get_builders, url
+from buildapi.lib.helpers import get_builders, url, get_branches
 from buildapi.lib import json, times
 
 log = logging.getLogger(__name__)
@@ -57,6 +57,10 @@ class SelfserveController(BaseController):
 
     Missing or bad parameters for the request type will result in a 400 error.
     """
+    def __before__(self):
+        self._branches_cache = get_branches()
+        return super(SelfserveController, self).__before__()
+
     def _htmlify(self, obj):
         return "<pre>%s</pre>" % e(json.dumps(obj, indent=2))
 
@@ -151,13 +155,13 @@ class SelfserveController(BaseController):
     @beaker_cache(query_args=True)
     def branches(self):
         """Return a list of all the branches"""
-        return self._format(config['branches'])
+        return self._format(self._branches_cache)
 
     def branch(self, branch):
         """Return a list of builds running on this branch"""
         # TODO: start/enddates
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
         else:
             today = times.now(g.tz).replace(hour=0, minute=0, second=0,
@@ -174,7 +178,7 @@ class SelfserveController(BaseController):
 
     def build(self, branch, build_id):
         """Return information about a build"""
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         retval = getBuild(branch, build_id)
@@ -186,7 +190,7 @@ class SelfserveController(BaseController):
 
     def request(self, branch, request_id):
         """Return information about a request"""
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         retval = getRequest(branch, request_id)
@@ -198,7 +202,7 @@ class SelfserveController(BaseController):
 
     def revision(self, branch, revision):
         """Return a list of builds running for this revision"""
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         retval = g.buildapi_cache.get_builds_for_revision(branch, revision)
@@ -211,7 +215,7 @@ class SelfserveController(BaseController):
     @beaker_cache(query_args=True, expire=60)
     def builders(self, branch):
         """Return a list of valid builders for this branch"""
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         retval = get_builders(branch)
@@ -226,7 +230,7 @@ class SelfserveController(BaseController):
     @beaker_cache(query_args=True, expire=60)
     def user(self, branch, user):
         """Return a list of builds for this user"""
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
         else:
             builds = getBuildsForUser(branch, user, limit=200)
@@ -263,7 +267,7 @@ class SelfserveController(BaseController):
         Returns a job status message."""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -298,7 +302,7 @@ class SelfserveController(BaseController):
         """Cancel the given request"""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -319,7 +323,7 @@ class SelfserveController(BaseController):
         """Cancel the given build"""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -343,7 +347,7 @@ class SelfserveController(BaseController):
         `priority` is also accepted as an optional parameter."""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -372,7 +376,7 @@ class SelfserveController(BaseController):
         `priority` is also accepted as an optional parameter."""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -398,7 +402,7 @@ class SelfserveController(BaseController):
         """Cancels all running or pending builds on this revision"""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         # Force short form of revision
@@ -413,7 +417,7 @@ class SelfserveController(BaseController):
         """Creates a new build at this revision"""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         access_log.info("%s new_build of %s %s", who, branch, revision)
@@ -428,7 +432,7 @@ class SelfserveController(BaseController):
         `priority` is optional, and if set should be an integer priority."""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -448,7 +452,7 @@ class SelfserveController(BaseController):
         `priority` is optional, and if set should be an integer priority."""
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         try:
@@ -465,7 +469,7 @@ class SelfserveController(BaseController):
     def new_build_for_builder(self, branch, builder_name):
         who = self._require_auth()
 
-        if branch not in config['branches']:
+        if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
         # TODO: Make sure that the 'fake' branches for sourcestamps are obeyed?

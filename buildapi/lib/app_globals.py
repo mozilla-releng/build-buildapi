@@ -27,6 +27,7 @@ class Globals(object):
         self.tz = tz
 
         self.masters_url = config['masters_url']
+        self.branches_url = config['branches_url']
 
         # TODO: handle other hosts/ports
         if cache_spec.startswith('memcached:'):

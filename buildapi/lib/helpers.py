@@ -122,21 +122,20 @@ _masters = []
 _masters_by_dbname = {}
 _masters_pools = {BUILDPOOL: [], TRYBUILDPOOL: [], TESTPOOL: []}
 _last_master_check = 0
-# Cache for 90 seconds
-_masters_cache_timeout = 90
-
+# Cache for 5 minutes
+_masters_cache_timeout = 300
 def get_masters():
     global _masters, _last_master_check, _masters_by_dbname, _masters_pools
 
     now = time.time()
 
     if now - _last_master_check < _masters_cache_timeout:
-        return
+        return _masters
 
-    url = app_globals.masters_url
-    log.info("Fetching master list from %s", url)
+    masters_url = app_globals.masters_url
+    log.info("Fetching master list from %s", masters_url)
     try:
-        masters = json.load(urllib.urlopen(url))
+        masters = json.load(urllib.urlopen(masters_url))
         _masters = masters
     except:
         log.exception("Error loading masters json; using old list")
@@ -151,6 +150,28 @@ def get_masters():
         if pool in _masters_pools:
             _masters_pools[pool].append(m['db_name'])
     return _masters
+
+_branches = {}
+_last_branches_check = 0
+# Cache for 5 minutes
+_last_branches_timeout = 300
+def get_branches():
+    global _branches, _last_branches_check
+
+    now = time.time()
+    if now - _last_branches_check < _last_branches_timeout:
+        return _branches
+
+    branches_url = app_globals.branches_url
+    log.info("Fetching branches list from %s", branches_url)
+    try:
+        branches = json.load(urllib.urlopen(branches_url))
+        _branches = branches
+        _last_branches_check = now
+    except:
+        log.exception("Error loading branches json; using old list")
+
+    return _branches
 
 def get_masters_for_pool(pool):
     """Returns the masters for a pool."""
