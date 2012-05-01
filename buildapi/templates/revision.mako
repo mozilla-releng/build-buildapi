@@ -67,7 +67,7 @@ $(document).ready(function() {
       else:
         build['time'] = datetime.fromtimestamp(build['finish_time']) - datetime.fromtimestamp(build['start_time'])
         build['state'] = 'result%s' % build['results']
-  
+
       if build['claimed_by_name']:
         m = h.convert_master(build['claimed_by_name'])
         build['master'] = m['pretty_name']

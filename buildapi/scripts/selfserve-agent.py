@@ -254,7 +254,7 @@ class BuildAPIAgent:
         q = text("""INSERT INTO buildrequests
                 (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
                 VALUES
-                (:buildsetid, :buildername, :submitted_at, 0, 0, 0, NULL, 0, NULL, NULL)""")
+                (:buildsetid, :buildername, :submitted_at, 0, 0, NULL, NULL, 0, NULL, NULL)""")
         log.debug(q)
 
         r = self.db.execute(q,
@@ -309,7 +309,7 @@ class BuildAPIAgent:
         q = text("""INSERT INTO buildrequests
                 (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
                 VALUES
-                (:buildsetid, :buildername, :submitted_at, 0, 0, 0, NULL, 0, NULL, NULL)""")
+                (:buildsetid, :buildername, :submitted_at, 0, 0, NULL, NULL, 0, NULL, NULL)""")
         log.debug(q)
 
         r = self.db.execute(q,
@@ -429,7 +429,7 @@ class BuildAPIAgent:
         q = text("""INSERT INTO buildrequests
                 (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
                 VALUES
-                (:buildsetid, :buildername, :submitted_at, :priority, 0, 0, NULL, 0, NULL, NULL)""")
+                (:buildsetid, :buildername, :submitted_at, :priority, 0, NULL, NULL, 0, NULL, NULL)""")
         log.debug(q)
         for buildername in buildernames:
             r = self.db.execute(q,
