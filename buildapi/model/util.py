@@ -273,6 +273,9 @@ def get_platform(buildername):
     if buildername == None:
         return None
 
+    if buildername.startswith('TB '):
+        buildername = buildername[3:]
+
     for platform in PLATFORMS_BUILDERNAME:
         for pat in PLATFORMS_BUILDERNAME[platform]:
             if pat.match(buildername):
