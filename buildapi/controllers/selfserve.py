@@ -239,7 +239,13 @@ class SelfserveController(BaseController):
     def jobs(self):
         """Return a list of past self-serve requests"""
         s = Session()
-        jobs = s.query(JobRequest).order_by(JobRequest.when.desc())
+        try:
+            num_jobs = IntValidator.to_python(request.GET.get('num', '100'))
+            offset = IntValidator.to_python(request.GET.get('offset', '0'))
+        except formencode.Invalid:
+            num_jobs = 100
+            offset = 0
+        jobs = s.query(JobRequest).order_by(JobRequest.when.desc()).limit(num_jobs).offset(offset)
 
         return self._ok([j.asDict() for j in jobs])
 
