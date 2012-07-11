@@ -19,6 +19,10 @@ BUSY = 1
 UNKNOWN = 2
 
 PLATFORMS_BUILDERNAME = {
+    'linux-mock': [
+        re.compile('^B2G gb_armv7a.+'),
+        re.compile('^B2G linux_gecko .+'),
+    ],
     'linux': [
         re.compile('^Linux (?!x86-64).+'),
         re.compile('.*linux(?!64).*'),
