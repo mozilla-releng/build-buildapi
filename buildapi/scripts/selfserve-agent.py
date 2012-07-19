@@ -5,15 +5,13 @@ Gets any messages and executes them."""
 import logging as log
 import time
 import urllib
+from urlparse import urlparse
 import subprocess
-from collections import namedtuple
 import uuid
 
 from sqlalchemy import text
 
 from buildapi.lib import json
-
-BranchInfo = namedtuple('BranchInfo', ['revlink', 'repo_path'])
 
 def genBuildID(now=None):
     """Return a buildid based on the current time"""
@@ -68,7 +66,10 @@ class BuildAPIAgent:
                 log.exception("Couldn't load data; using old ones")
 
     def _get_repo_path(self, branch):
-        return self.branches[branch]['repo']
+        # branches[branch]['repo'] is a string like "http://hg.mozilla.org/projects/foo"
+        # use urlparse to get the path out of that ("/projects/foo"), and remove
+        # the leading / to be left with "projects/foo"
+        return urlparse(self.branches[branch]['repo']).path.lstrip("/")
 
     def _get_revlink(self, branch, revision):
         repo_path = self.branches[branch]['repo']
