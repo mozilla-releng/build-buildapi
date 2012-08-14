@@ -31,10 +31,11 @@ def GetBranchName(longname):
 
     allBranches = GetAllBranches()
     shortname = longname.split('/')[-1]
-    if shortname not in allBranches:
-        return 'Unknown'
+    for branch in allBranches:
+       if shortname.startswith(branch):
+           return branch
 
-    return shortname
+    return 'Unknown'
 
 def GetBuilds(branch=None, type='pending', rev=None):
     b  = meta.scheduler_db_meta.tables['builds']
