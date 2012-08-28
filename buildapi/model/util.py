@@ -62,6 +62,9 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^OS X 10\.7.+'),
         re.compile('^Rev4 MacOSX Lion 10\.7.+'),
     ],
+    'mountainlion': [
+        re.compile('^Rev5 MacOSX Mountain Lion 10\.8+'),
+    ],
     'xp': [
         re.compile('^Rev3 WINNT 5\.1 .+'),
         re.compile('jetpack-xp'),
@@ -156,6 +159,7 @@ SLAVE_SILOS = {
     'talos-r3-snow': [re.compile('^talos-r3-snow-.+')],
     'talos-r4-snow': [re.compile('^talos-r4-snow-.+')],
     'talos-r4-lion': [re.compile('^talos-r4-lion-.+')],
+    'talos-mtnlion-r5': [re.compile('^talos-mtnlion-r5-.+')],
     'talos-r3-w7': [re.compile('^talos-r3-w7-.+')],
     'talos-r3-xp': [re.compile('^talos-r3-xp-.+')],
     'tegra': [re.compile('^tegra-.+')],
