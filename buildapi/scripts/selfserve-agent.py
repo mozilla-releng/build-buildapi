@@ -234,7 +234,7 @@ class BuildAPIAgent:
         now = time.time()
         buildsetid = create_buildset(self.db,
                 idstring=build.external_idstring,
-                reason='Rebuilt by %s' % who,
+                reason='Self-serve: Rebuilt by %s' % who,
                 ssid=build.sourcestampid,
                 submitted_at=now,
                 )
@@ -289,7 +289,7 @@ class BuildAPIAgent:
         now = time.time()
         buildsetid = create_buildset(self.db,
                 idstring=request.external_idstring,
-                reason='Rebuilt by %s' % who,
+                reason='Self-serve: Rebuilt by %s' % who,
                 ssid=request.sourcestampid,
                 submitted_at=now,
                 )
@@ -406,7 +406,7 @@ class BuildAPIAgent:
         # Create a new buildset
         buildsetid = create_buildset(self.db,
                 idstring=None,
-                reason='Requested via self-serve by %s' % who,
+                reason='Self-serve: Requested by %s' % who,
                 ssid=ssid,
                 submitted_at=now,
                 )
