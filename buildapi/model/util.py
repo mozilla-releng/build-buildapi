@@ -20,8 +20,9 @@ UNKNOWN = 2
 
 PLATFORMS_BUILDERNAME = {
     'linux-mock': [
-        re.compile('^B2G gb_armv7a.+'),
-        re.compile('^B2G linux_gecko .+'),
+        re.compile('^B2G .+_armv7a.+'),
+        re.compile('^B2G linux32_gecko .+'),
+        re.compile('^Android (?!Tegra).+'),
     ],
     'linux': [
         re.compile('^Linux (?!x86-64).+'),
@@ -29,7 +30,6 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Maemo 4 .+'),
         re.compile('^Maemo 5 QT .+'),
         re.compile('^Maemo 5 GTK .+'),
-        re.compile('^Android (?!Tegra).+'),
     ],
     'linux64': [
         re.compile('^Linux x86-64 .+'),
