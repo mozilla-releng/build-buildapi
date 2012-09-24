@@ -22,14 +22,11 @@ PLATFORMS_BUILDERNAME = {
     'linux-mock': [
         re.compile('^B2G .+_armv7a.+'),
         re.compile('^B2G linux32_gecko .+'),
-        re.compile('^Android (?!Tegra).+'),
+        re.compile('^Android (?!(Tegra|Armv6 Tegra)).+'),
     ],
     'linux': [
         re.compile('^Linux (?!x86-64).+'),
         re.compile('.*linux(?!64).*'),
-        re.compile('^Maemo 4 .+'),
-        re.compile('^Maemo 5 QT .+'),
-        re.compile('^Maemo 5 GTK .+'),
     ],
     'linux64': [
         re.compile('^Linux x86-64 .+'),
@@ -37,23 +34,23 @@ PLATFORMS_BUILDERNAME = {
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
-        re.compile('jetpack-fedora'),
+        re.compile('jetpack-.*-fedora'),
     ],
     'fedora64': [
         re.compile('Rev3 Fedora 12x64 .+'),
-        re.compile('jetpack-fedora64'),
+        re.compile('jetpack-.*-fedora64'),
     ],
     'leopard': [
         re.compile('^OS X 10\.5.+'),
         re.compile('^Rev3 MacOSX Leopard 10\.5.+'),
         re.compile('.*macosx(?!64).*'),
-        re.compile('jetpack-leopard'),
+        re.compile('jetpack-.*-leopard'),
     ],
     'snowleopard': [
         re.compile('^OS X 10\.6.+'),
         re.compile('^Rev3 MacOSX Snow Leopard 10\.6.+'),
         re.compile('.*macosx64.*'),
-        re.compile('jetpack-snowleopard'),
+        re.compile('jetpack-.*-snowleopard'),
     ],
     'snowleopard-r4': [
         re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
@@ -61,13 +58,15 @@ PLATFORMS_BUILDERNAME = {
     'lion': [
         re.compile('^OS X 10\.7.+'),
         re.compile('^Rev4 MacOSX Lion 10\.7.+'),
+        re.compile('jetpack-.*-lion'),
     ],
     'mountainlion': [
         re.compile('^Rev5 MacOSX Mountain Lion 10\.8+'),
+        re.compile('jetpack-.*-mountainlion'),
     ],
     'xp': [
         re.compile('^Rev3 WINNT 5\.1 .+'),
-        re.compile('jetpack-xp'),
+        re.compile('jetpack-.*-xp'),
     ],
     'win2k3': [
         re.compile('^WINNT 5\.2 .+'),
@@ -79,14 +78,15 @@ PLATFORMS_BUILDERNAME = {
     ],
     'win7': [
         re.compile('^Rev3 WINNT 6\.1 '),
-        re.compile('jetpack-win7'),
+        re.compile('jetpack-.*-win7'),
     ],
     'win764': [
         re.compile('^Rev3 WINNT 6\.1 x64 .+'),
-        re.compile('jetpack-w764'),
+        re.compile('jetpack-.*-w764'),
     ],
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
+        re.compile('^Android Armv6 Tegra 250 .+'),
     ],
     'mock-hp': [
         re.compile('^b2g.+'),
