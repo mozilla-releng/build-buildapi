@@ -20,17 +20,10 @@ UNKNOWN = 2
 
 PLATFORMS_BUILDERNAME = {
     'linux-mock': [
-        re.compile('^B2G .+_armv7a.+'),
-        re.compile('^B2G linux32_gecko .+'),
+        re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
+        re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
         re.compile('^Android (?!(Tegra|Armv6 Tegra)).+'),
-    ],
-    'linux': [
-        re.compile('^Linux (?!x86-64).+'),
-        re.compile('.*linux(?!64).*'),
-    ],
-    'linux64': [
-        re.compile('^Linux x86-64 .+'),
-        re.compile('.*linux64.*'),
+        re.compile('.*linux.*',  re.IGNORECASE),
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
@@ -88,10 +81,6 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Android Tegra 250 .+'),
         re.compile('^Android Armv6 Tegra 250 .+'),
     ],
-    'mock-hp': [
-        re.compile('^b2g.+'),
-        re.compile('.*mock.*'),
-    ]
 }
 
 BUILD_TYPE_BUILDERNAME = {
