@@ -22,6 +22,7 @@ PLATFORMS_BUILDERNAME = {
     'linux-mock': [
         re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
         re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
+        re.compile('^b2g_.+',  re.IGNORECASE),
         re.compile('^Android (?!(Tegra|Armv6 Tegra)).+'),
         re.compile('.*linux.*',  re.IGNORECASE),
     ],
