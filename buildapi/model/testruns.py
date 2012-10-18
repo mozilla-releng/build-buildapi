@@ -74,6 +74,7 @@ test_suites = (
     "xpcshell",
     "jsreftest",
     "mochitest-other",
+    "mochitest-browser-chrome",
     "mochitests-1",
     "mochitests-2",
     "mochitests-3",
