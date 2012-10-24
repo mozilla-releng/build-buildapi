@@ -91,7 +91,6 @@ BUILD_TYPE_BUILDERNAME = {
         re.compile('.+ talos .+'),          # all talos are made only for opt
         re.compile('.+ nightly$'),          # all nigtly builds are opt
         re.compile('.+ xulrunner$'),        # nightly
-        re.compile('.+ shark$'),            # nightly
         re.compile('.+ code coverage$'),    # nightly
     ],
     'debug': [
@@ -105,7 +104,6 @@ JOB_TYPE_BUILDERNAME = {
         re.compile('.+ build'),
         re.compile('.+(?<!l10n) nightly$'),     # all 'nightly'-s are builds
         re.compile('.+ xulrunner$'),            # nightly
-        re.compile('.+ shark$'),                # nightly
         re.compile('.+ code coverage$'),        # nightly
     ],
     'unittest': [ re.compile('.+(?<!leak) test .+') ],
@@ -286,8 +284,8 @@ def get_build_type(buildername):
 
     Build requests are matched to a build type, as following:
     * opt, if buildername contains 'opt', 'build' not preceded by 'leak test',
-         'talos' (all talos tests are for opt), 'nightly', 'xulrunner' or 
-         'shark' (last 3 are all nightlies)
+         'talos' (all talos tests are for opt), 'nightly' or 'xulrunner'
+         (last 2 are all nightlies)
     * debug, if buildername contains 'debug' or 'leak test build' (debug build)
 
     Input:  buildername - buildername field value from buildrequests 
@@ -308,8 +306,8 @@ def get_job_type(buildername):
     """Returns the job type based on the buildername.
 
     Build requests are matched to a job type, as following:
-    * build, if buildername contains 'build', 'nightly', 'xulrunner' or 
-        'shark' (last 3 are all nightlies)
+    * build, if buildername contains 'build', 'nightly' or 'xulrunner'
+        (last 2 are all nightlies)
     * unittest, if buildername contains 'test', but not preceded by 'leak' 
         (it would make it a build)
     * talos, if buildername contains 'talos'
