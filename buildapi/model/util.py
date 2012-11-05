@@ -81,6 +81,10 @@ PLATFORMS_BUILDERNAME = {
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
         re.compile('^Android Armv6 Tegra 250 .+'),
+        re.compile('^Android no-ionmonkey Tegra 250 .+'),
+    ],
+    'panda-android': [
+        re.compile('^Android 4.0 Panda .+'),
     ],
 }
 
