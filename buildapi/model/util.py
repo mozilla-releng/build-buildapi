@@ -197,7 +197,7 @@ WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
 WAITTIMES_BUILDSET_REASON_SQL_EXCLUDE = [
     "The web-page 'force build' button was pressed by %",
     "The web-page 'rebuild' button was pressed by %",
-    "Rebuilt by %",
+    "%Rebuilt by %",
 ]
 
 WAITTIMES_BUILDREQUESTS_BUILDERNAME_EXCLUDE = [
