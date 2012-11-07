@@ -22,13 +22,14 @@ PLATFORMS_BUILDERNAME = {
     'linux-mock': [
         re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
         re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
-        re.compile('^b2g_.+',  re.IGNORECASE),
+        re.compile('^b2g_((?!(test|talos)).)+$',  re.IGNORECASE),
         re.compile('^Android (?!(Tegra|Armv6 Tegra)).+'),
         re.compile('.*linux.*',  re.IGNORECASE),
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
         re.compile('jetpack-.*-fedora'),
+        re.compile('^b2g_.+(opt|debug) test.+',  re.IGNORECASE)
     ],
     'fedora64': [
         re.compile('Rev3 Fedora 12x64 .+'),
