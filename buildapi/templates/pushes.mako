@@ -55,7 +55,7 @@ all repositories
 % for author in c.pushes:
   <tr> <td>${author}</td><td>${c.pushes[author]}</td> </tr>
 %endfor
-</tbody><table>
+</tbody></table>
 
 </body>
 </html>

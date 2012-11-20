@@ -69,7 +69,7 @@ $(document).ready(function() {
     % endfor
   % endfor
 %endfor
-</tbody><table>
+</tbody></table>
 
 </body>
 </html>

@@ -62,7 +62,7 @@ $(document).ready(function() {
   % endfor
   </tr>
 %endfor
-</tbody><table>
+</tbody></table>
 
 </body>
 </html>

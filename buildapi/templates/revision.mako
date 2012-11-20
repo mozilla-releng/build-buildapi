@@ -98,7 +98,7 @@ $(document).ready(function() {
     </tr>
   % endfor
 % endif
-</tbody><table>
+</tbody></table>
 
 </body>
 </html>
