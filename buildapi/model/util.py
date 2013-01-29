@@ -28,12 +28,18 @@ PLATFORMS_BUILDERNAME = {
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
-        re.compile('jetpack-.*-fedora'),
+        re.compile('jetpack-.*-fedora(?!64)'),
         re.compile('^b2g_.+(opt|debug) test.+',  re.IGNORECASE)
     ],
     'fedora64': [
         re.compile('Rev3 Fedora 12x64 .+'),
         re.compile('jetpack-.*-fedora64'),
+    ],
+    'ubuntu32': [
+        re.compile('Ubuntu 12.04 (?!x64).+'),
+    ],
+    'ubuntu64': [
+        re.compile('Ubuntu 12.04 x64 .+'),
     ],
     'leopard': [
         re.compile('^OS X 10\.5.+'),
@@ -111,9 +117,9 @@ JOB_TYPE_BUILDERNAME = {
         re.compile('.+ xulrunner$'),            # nightly
         re.compile('.+ code coverage$'),        # nightly
     ],
-    'unittest': [ re.compile('.+(?<!leak) test .+') ],
-    'talos': [ re.compile('.+ talos .+') ],
-    'repack': [ re.compile ('.+ l10n .+') ],
+    'unittest': [re.compile('.+(?<!leak) test .+')],
+    'talos': [re.compile('.+ talos .+')],
+    'repack': [re.compile('.+ l10n .+')],
 }
 
 SOURCESTAMPS_BRANCH = {
@@ -121,7 +127,7 @@ SOURCESTAMPS_BRANCH = {
     'birch': [re.compile('^birch.+'), re.compile('^projects/birch.*')],
     'cedar': [re.compile('^cedar.+'), re.compile('^projects/cedar.*')],
     'electrolysis': [
-        re.compile('^electrolysis.*'), 
+        re.compile('^electrolysis.*'),
         re.compile('^projects/electrolysis.*')],
     'jaegermonkey': [re.compile('^projects/jaegermonkey.*')],
     'maple': [re.compile('^maple.*'), re.compile('^projects/maple.*')],
@@ -163,21 +169,21 @@ SLAVE_SILOS = {
     'try-w32': [re.compile('^try-w32-slave.+')],
     'w32-ix': [re.compile('^w32-ix-slave.+')],
     'win32': [re.compile('^win32-slave.+')],
+    'bld-linux64-ec2': [re.compile(r'^bld-linux64-ec2-\d+')],
+    'try-linux64-ec2': [re.compile(r'^try-linux64-ec2-\d+')],
+    'tst-linux64-ec2': [re.compile(r'^tst-linux64-ec2-\d+')],
+    'tst-linux32-ec2': [re.compile(r'^tst-linux32-ec2-\d+')],
 }
 
-BUILDERS_DETAIL_LEVELS = ['branch', 'platform', 'build_type', 'job_type', 
-    'builder']
+BUILDERS_DETAIL_LEVELS = ['branch', 'platform', 'build_type', 'job_type',
+                          'builder']
 
 BUILDSET_REASON = {
-    'forcebuild':
-        re.compile("The web-page 'force build' button was pressed by .+"),
-    'rebuild':
-        re.compile("The web-page 'rebuild' button was pressed by .+"),
+    'forcebuild': re.compile("The web-page 'force build' button was pressed by .+"),
+    'rebuild': re.compile("The web-page 'rebuild' button was pressed by .+"),
 }
 
-"""
-Pushes Report Configs
-"""
+# Pushes Report Configs
 PUSHES_SOURCESTAMPS_BRANCH_SQL_EXCLUDE = [
     '%unittest',
     '%talos',
@@ -185,9 +191,9 @@ PUSHES_SOURCESTAMPS_BRANCH_SQL_EXCLUDE = [
     '%l10n%',
 ]
 
-"""
-Wait Times Report Configs
-"""
+
+# Wait Times Report Configs
+
 WAITTIMES_BUILDREQUESTS_BUILDERNAME_SQL_EXCLUDE = [
     'fuzzer-%',
     'nanojit-%',
@@ -224,10 +230,11 @@ _RESULTS_TO_STR = {
     RETRY: 'retry',
 }
 
+
 def status_to_str(status):
     """Return the status as string.
 
-    Input:  status - status int value, one of: PENDING, RUNNING, COMPLETE, 
+    Input:  status - status int value, one of: PENDING, RUNNING, COMPLETE,
                 CANCELLED, INTERRUPTED, MISC
     Output: status string representation
     """
@@ -235,10 +242,11 @@ def status_to_str(status):
         status = MISC
     return _STATUS_TO_STR[status]
 
+
 def results_to_str(results):
     """Return the results as string.
 
-    Input:  results - results int value, one of: NO_RESULT, SUCCESS, WARNINGS, 
+    Input:  results - results int value, one of: NO_RESULT, SUCCESS, WARNINGS,
                 FAILURE, SKIPPED, EXCEPTION, RETRY
     Output: results string representation
     """
@@ -246,14 +254,15 @@ def results_to_str(results):
         results = NO_RESULT
     return _RESULTS_TO_STR[results]
 
+
 def get_branch_name(text):
     """Returns the branch name.
 
     Input:  text - field value from schedulerdb table
-    Output: branch (one in SOURCESTAMPS_BRANCH keys: mozilla-central, 
+    Output: branch (one in SOURCESTAMPS_BRANCH keys: mozilla-central,
             mozilla-1.9.1, or text if not found
     """
-    if text == None:
+    if not text:
         return None
 
     text = text.lower()
@@ -264,14 +273,15 @@ def get_branch_name(text):
 
     return text
 
+
 def get_platform(buildername):
     """Returns the platform name for a buildername.
 
-    Input:  buildername - buildername field value from buildrequests 
+    Input:  buildername - buildername field value from buildrequests
                 schedulerdb table
     Output: platform (one in PLATFORMS_BUILDERNAME keys: linux, linux64, ...)
     """
-    if buildername == None:
+    if not buildername:
         return None
 
     if buildername.startswith('TB '):
@@ -284,6 +294,7 @@ def get_platform(buildername):
 
     return 'other'
 
+
 def get_build_type(buildername):
     """Returns the build type based on the buildername.
 
@@ -293,11 +304,11 @@ def get_build_type(buildername):
          (last 2 are all nightlies)
     * debug, if buildername contains 'debug' or 'leak test build' (debug build)
 
-    Input:  buildername - buildername field value from buildrequests 
+    Input:  buildername - buildername field value from buildrequests
                 schedulerdb table
     Output: build type (one in BUILD_TYPE_BUILDERNAME keys: opt or debug)
     """
-    if buildername == None:
+    if not buildername:
         return None
 
     for build_type in BUILD_TYPE_BUILDERNAME:
@@ -307,21 +318,22 @@ def get_build_type(buildername):
 
     return None
 
+
 def get_job_type(buildername):
     """Returns the job type based on the buildername.
 
     Build requests are matched to a job type, as following:
     * build, if buildername contains 'build', 'nightly' or 'xulrunner'
         (last 2 are all nightlies)
-    * unittest, if buildername contains 'test', but not preceded by 'leak' 
+    * unittest, if buildername contains 'test', but not preceded by 'leak'
         (it would make it a build)
     * talos, if buildername contains 'talos'
 
-    Input:  buildername - buildername field value from buildrequests 
+    Input:  buildername - buildername field value from buildrequests
                 schedulerdb table
     Output: job type (one in JOB_TYPE_BUILDERNAME keys: build, unittest or talos)
     """
-    if buildername == None:
+    if not buildername:
         return None
 
     for job_type in JOB_TYPE_BUILDERNAME:
@@ -331,15 +343,17 @@ def get_job_type(buildername):
 
     return None
 
+
 def get_revision(revision):
-    """Returns at most the first 12 characters of the revision number, the 
+    """Returns at most the first 12 characters of the revision number, the
     rest are not signifiant, or None, if revision is None.
     """
     return revision[:12] if revision else revision
 
+
 def get_silos(slave_name):
     """Returns the silos name based on the slave name."""
-    if slave_name == None:
+    if not slave_name:
         return None
 
     for silos_name in SLAVE_SILOS:
@@ -349,11 +363,12 @@ def get_silos(slave_name):
 
     return None
 
+
 def get_time_interval(starttime, endtime):
-    """Returns (sarttime2, endtime2) tuple, where the starttime2 is the exact 
+    """Returns (sarttime2, endtime2) tuple, where the starttime2 is the exact
     value of input parameter starttime if specified, or endtime minus 24 hours
-    if not. endtime2 is the exact value of input parameter endtime if 
-    specified, or starttime plus 24 hours or current time (if starttime is not 
+    if not. endtime2 is the exact value of input parameter endtime if
+    specified, or starttime plus 24 hours or current time (if starttime is not
     specified either).
 
     Input: stattime - start time (UNIX timestamp in seconds)
