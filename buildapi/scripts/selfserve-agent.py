@@ -376,20 +376,27 @@ class BuildAPIAgent:
         subprocess.check_call(cmd)
         return {"errors": False, "msg": "Ok"}
 
-    def _create_build_for_revision(self, who, branch, revision, priority, builder_expression, builder_exclusion='%l10n nightly'):
+    def _create_build_for_revision(self, who, branch, revision, priority, builder_expression, builder_exclusions=None):
+        if builder_exclusions is None:
+            builder_exclusions = ['%l10n nightly']
         now = time.time()
         repo_path = self._get_repo_path(branch)
 
         # Find builders that have been active in the past 2 weeks
         q = """SELECT DISTINCT buildername FROM buildrequests WHERE
                 buildername LIKE :buildername AND
-                buildername NOT LIKE :buildername_exclusion AND
-                submitted_at > :submitted_at"""
-        result = self.db.execute(text(q),
-                buildername=builder_expression,
-                buildername_exclusion=builder_exclusion,
-                submitted_at=time.time() - 14*24*3600,
-                )
+            """
+        for i, bx in enumerate(builder_exclusions):
+            q = q + "buildername NOT LIKE :buildername_exclusion_%i AND " % i
+        q = q + """
+          submitted_at > :submitted_at"""
+        qparams = {
+            'buildername': builder_expression,
+            'submitted_at': time.time() - 14*24*3600,
+        }
+        for i, bx in enumerate(builder_exclusions):
+            qparams['buildername_exclusion_%i' % i] = builder_exclusions[i]
+        result = self.db.execute(text(q), qparams)
 
         buildernames = [r[0] for r in result]
         log.debug("buildernames are %s", buildernames)
@@ -467,7 +474,8 @@ class BuildAPIAgent:
                     branch,
                     revision,
                     priority,
-                    '%'+branch+'%nightly')
+                    '%'+branch+'%nightly',
+                    ['%'+branch+'_v%nightly', '%l10n nightly'])
 
     def do_cancel_revision(self, message_data, message):
         who = message_data['who']
