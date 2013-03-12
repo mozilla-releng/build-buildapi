@@ -85,6 +85,9 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Rev3 WINNT 6\.1 x64 .+'),
         re.compile('jetpack-.*-w764'),
     ],
+    'win8': [
+        re.compile('^WINNT 6\.2 '),
+    ],
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
         re.compile('^Android Armv6 Tegra 250 .+'),
@@ -100,7 +103,7 @@ BUILD_TYPE_BUILDERNAME = {
         re.compile('.+ opt .+'),
         re.compile('.+(?<!leak test) build'),
         re.compile('.+ talos .+'),          # all talos are made only for opt
-        re.compile('.+ nightly$'),          # all nigtly builds are opt
+        re.compile('.+ nightly$'),          # all nightly builds are opt
         re.compile('.+ xulrunner$'),        # nightly
         re.compile('.+ code coverage$'),    # nightly
     ],
