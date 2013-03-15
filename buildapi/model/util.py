@@ -37,9 +37,11 @@ PLATFORMS_BUILDERNAME = {
     ],
     'ubuntu32': [
         re.compile('Ubuntu 12.04 (?!x64).+'),
+        re.compile('jetpack-.*-ubuntu32'),
     ],
     'ubuntu64': [
         re.compile('Ubuntu 12.04 x64 .+'),
+        re.compile('jetpack-.*-ubuntu64'),
     ],
     'leopard': [
         re.compile('^OS X 10\.5.+'),
