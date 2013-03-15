@@ -86,7 +86,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-w764'),
     ],
     'win8': [
-        re.compile('^WINNT 6\.2 '),
+        re.compile('.*WINNT 6\.2 '),
     ],
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
@@ -155,6 +155,7 @@ SLAVE_SILOS = {
     'mv-moz2-linux-ix': [re.compile('^mv-moz2-linux-ix-slave.+')],
     'mw32-ix': [re.compile('^mw32-ix-slave.+')],
     't-r3-w764': [re.compile('^t-r3-w764-.+')],
+    't-w864-ix': [re.compile('^t-w864-ix-.+')],
     'talos-r3-fed': [re.compile('^talos-r3-fed-.+')],
     'talos-r3-fed64': [re.compile('^talos-r3-fed64-.+')],
     'talos-r3-leopard': [re.compile('^talos-r3-leopard-.+')],

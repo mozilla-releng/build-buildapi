@@ -33,6 +33,8 @@ PLATFORMS_BUILDERNAME = {
              re.compile('.+\win7.*')],
     'win764': [re.compile('.+_w764_test.*'),
                re.compile('.+w764.*')],
+    'win8': [re.compile('.+_win8_test.*'),
+             re.compile('.+\win8.*')],
 }
 
 ALL_BRANCHES = (
