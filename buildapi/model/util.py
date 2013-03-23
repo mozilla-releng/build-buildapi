@@ -23,7 +23,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
         re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
         re.compile('^b2g_((?!(test|talos)).)+$',  re.IGNORECASE),
-        re.compile('^Android (?!(Tegra|Armv6 Tegra)).+'),
+        re.compile('^Android (?!(?:Tegra|Armv6 Tegra|no-ionmonkey Tegra 250|4.0 Panda)).+'),
         re.compile('.*linux.*',  re.IGNORECASE),
     ],
     'fedora': [
@@ -36,12 +36,12 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-fedora64'),
     ],
     'ubuntu32': [
-        re.compile('Ubuntu 12.04 (?!x64).+'),
-        re.compile('jetpack-.*-ubuntu32'),
+        re.compile('Ubuntu (?:VM )?12.04 (?!x64).+'),
+        re.compile('jetpack-.*-ubuntu32(?:_vm)?'),
     ],
     'ubuntu64': [
-        re.compile('Ubuntu 12.04 x64 .+'),
-        re.compile('jetpack-.*-ubuntu64'),
+        re.compile('Ubuntu (?:VM )?12.04 x64 .+'),
+        re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
     ],
     'leopard': [
         re.compile('^OS X 10\.5.+'),
