@@ -35,13 +35,19 @@ PLATFORMS_BUILDERNAME = {
         re.compile('Rev3 Fedora 12x64 .+'),
         re.compile('jetpack-.*-fedora64'),
     ],
-    'ubuntu32': [
-        re.compile('Ubuntu (?:VM )?12.04 (?!x64).+'),
+    'ubuntu32_vm': [
+        re.compile('Ubuntu VM 12.04 (?!x64).+'),
         re.compile('jetpack-.*-ubuntu32(?:_vm)?'),
     ],
-    'ubuntu64': [
-        re.compile('Ubuntu (?:VM )?12.04 x64 .+'),
+    'ubuntu64_vm': [
+        re.compile('Ubuntu VM 12.04 x64 .+'),
         re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
+    ],
+    'ubuntu32_hw': [
+        re.compile('Ubuntu HW 12.04 (?!x64).+'),
+    ],
+    'ubuntu64_hw': [
+        re.compile('Ubuntu HW 12.04 x64 .+'),
     ],
     'leopard': [
         re.compile('^OS X 10\.5.+'),
