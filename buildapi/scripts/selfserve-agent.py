@@ -141,7 +141,7 @@ class BuildAPIAgent:
         # This doesn't have to be perfect. If we return True incorrectly, we
         # need to load the buildbot page to figure out which slave is doing a
         # job, but the subsequent clobber is a noop.
-        dont_clobber = ['nightly', ' try ', 'talos', 'pgo test', 'opt test', 'debug test']
+        dont_clobber = ['nightly', ' try ', '_try_', 'talos', 'pgo test', 'opt test', 'debug test']
         for c in dont_clobber:
             if c in builder_name:
                 return False
