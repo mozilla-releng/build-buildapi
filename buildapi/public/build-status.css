@@ -18,6 +18,11 @@
     background-color: #c000c0 !important;
 }
 
+/* cancelled */
+.result6 {
+    background-color: #f433ff !important;
+}
+
 /* running */
 .running {
     background-color: yellow !important;

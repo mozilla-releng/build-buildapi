@@ -8,10 +8,12 @@ import urllib
 from urlparse import urlparse
 import subprocess
 import uuid
+import re
 
 from sqlalchemy import text
 
 from buildapi.lib import json
+
 
 def genBuildID(now=None):
     """Return a buildid based on the current time"""
@@ -19,9 +21,11 @@ def genBuildID(now=None):
         now = time.time()
     return time.strftime("%Y%m%d%H%M%S", time.localtime(now))
 
+
 def genBuildUID():
     """Return a unique build uid"""
     return uuid.uuid4().hex
+
 
 def create_buildset(db, idstring, reason, ssid, submitted_at):
     q = text("""INSERT INTO buildsets
@@ -31,20 +35,22 @@ def create_buildset(db, idstring, reason, ssid, submitted_at):
     log.debug(q)
 
     r = db.execute(q,
-            idstring=idstring,
-            reason=reason,
-            sourcestampid=ssid,
-            submitted_at=submitted_at,
-            )
+                   idstring=idstring,
+                   reason=reason,
+                   sourcestampid=ssid,
+                   submitted_at=submitted_at,
+                   )
     buildsetid = r.lastrowid
     log.debug("Created buildset %s", buildsetid)
     return buildsetid
 
+
 class BuildAPIAgent:
-    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branches_url):
+    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branches_url, clobberer_url):
         self.db = db
         self.masters_url = masters_url
         self.branches_url = branches_url
+        self.clobberer_url = clobberer_url
         self.buildbot = buildbot
         self.sendchange_master = sendchange_master
         self.publisher = publisher
@@ -91,9 +97,32 @@ class BuildAPIAgent:
         master_url = self._get_master_url(claimed_by_name)
         return "%s/builders/%s/builds/%s" % (master_url, urllib.quote(builder_name, ""), build_number)
 
+    def _get_slave_name(self, claimed_by_name, builder_name, build_number):
+        build_url = self._get_build_url(claimed_by_name, builder_name, build_number)
+        # Fetch the build url
+        log.info("getting slavename from  %s", build_url)
+        data = urllib.urlopen(build_url).read()
+        # scraping alert!
+        # the build page has strings like
+        # <a href="../../../buildslaves/$slavename">$slavename</a>
+        # we want to extract the slave name from this
+        m = re.search(r'''href=['"].*/buildslaves/(\S+)['"]''', data)
+        if m:
+            slavename = m.group(1)
+            return slavename
+
     def _get_cancel_url(self, claimed_by_name, builder_name, build_number):
         build_url = self._get_build_url(claimed_by_name, builder_name, build_number)
         return "%s/stop" % build_url
+
+    def _clobber_slave(self, slavename, builder_name):
+        data = urllib.urlencode({
+            "slave-%s" % slavename: builder_name,
+            "form_submitted": "1",
+        })
+        log.info("Clobbering %s %s at %s %s", slavename, builder_name, self.clobberer_url, data)
+
+        urllib.urlopen(self.clobberer_url, data)
 
     def _can_cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
         unstoppable = []
@@ -102,15 +131,40 @@ class BuildAPIAgent:
                 return False
         return True
 
+    def _should_clobber_build(self, builder_name):
+        """Return True if this builder needs to be clobbered via clobberer when a
+        build is cancelled via self-serve"""
+        # Generally the following don't need clobbering:
+        # * try builds
+        # * nightly builds
+        # * tests
+        # This doesn't have to be perfect. If we return True incorrectly, we
+        # need to load the buildbot page to figure out which slave is doing a
+        # job, but the subsequent clobber is a noop.
+        dont_clobber = ['nightly', ' try ', 'talos', 'pgo test', 'opt test', 'debug test']
+        for c in dont_clobber:
+            if c in builder_name:
+                return False
+        return True
+
     def _cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
         cancel_url = self._get_cancel_url(claimed_by_name, builder_name, build_number)
         if not self._can_cancel_build(claimed_by_name, builder_name, build_number, who, comments):
             log.info("Not stopping unstoppable build at %s", cancel_url)
             return "Not stopping unstoppable build"
+
+        if self._should_clobber_build(builder_name):
+            slavename = self._get_slave_name(claimed_by_name, builder_name, build_number)
+            if slavename:
+                # Clobber
+                self._clobber_slave(slavename, builder_name)
+
+        # Stop the build on buildbot
         data = urllib.urlencode({
             "comments": comments,
             "username": who,
-            })
+        })
+        log.info("Cancelling at %s", cancel_url)
         urllib.urlopen(cancel_url, data)
         return "Ok"
 
@@ -128,8 +182,6 @@ class BuildAPIAgent:
         if request.claimed_at:
             log.info("request is running, going to cancel it!")
             build = self.db.execute(text("SELECT * from builds where brid=:brid and finish_time is null"), brid=brid).fetchone()
-            cancel_url = self._get_cancel_url(request.claimed_by_name, request.buildername, build.number)
-            log.debug("Cancelling at %s", cancel_url)
             try:
                 msg = self._cancel_build(request.claimed_by_name, request.buildername, build.number, who, "Cancelled via self-serve")
                 return {"errors": False, "msg": "%i: %s" % (brid, msg)}
@@ -140,9 +192,9 @@ class BuildAPIAgent:
         log.info("request is pending, going to cancel it")
         now = time.time()
         result = self.db.execute(text("UPDATE buildrequests SET complete=1, results=2, complete_at=:now WHERE id=:brid"),
-                brid=brid,
-                now=now,
-                )
+                                 brid=brid,
+                                 now=now,
+                                 )
         log.debug("updated DB: %i", result.rowcount)
         if result.rowcount != 1:
             return {"errors": True, "msg": "Error cancelling request %i: %i rows affected" % (brid, result.rowcount)}
@@ -178,7 +230,7 @@ class BuildAPIAgent:
         brid = message_data['body']['brid']
         priority = message_data['body']['priority']
         log.info("reprioritizing request by %s of request %s to priority %s",
-                who, brid, priority)
+                 who, brid, priority)
 
         # Check that the request is still active
         request = self.db.execute(text("SELECT * FROM buildrequests WHERE id=:brid"), brid=brid).fetchone()
@@ -191,9 +243,9 @@ class BuildAPIAgent:
             return {"errors": False, "msg": "Request is complete, nothing to do"}
 
         result = self.db.execute(text("UPDATE buildrequests SET priority=:priority WHERE id=:brid"),
-                priority=priority,
-                brid=brid,
-                )
+                                 priority=priority,
+                                 brid=brid,
+                                 )
         log.debug("updated DB: %i", result.rowcount)
         if result.rowcount != 1:
             return {"errors": True, "msg": "%i rows affected" % result.rowcount}
@@ -218,13 +270,13 @@ class BuildAPIAgent:
         log.info("rebuilding build by %s of %s", who, bid)
 
         # Get the build request and build set
-        build = self.db.execute(text("""\
-                SELECT * FROM
+        build = self.db.execute(text(
+            """SELECT * FROM
                     buildrequests, buildsets, builds WHERE
                     builds.id=:bid AND
                     builds.brid = buildrequests.id AND
-                    buildrequests.buildsetid = buildsets.id"""),
-            bid=bid).fetchone()
+                    buildrequests.buildsetid = buildsets.id"""
+        ), bid=bid).fetchone()
 
         if not build:
             log.info("No build with id %s, giving up" % bid)
@@ -232,12 +284,13 @@ class BuildAPIAgent:
 
         # Create a new buildset
         now = time.time()
-        buildsetid = create_buildset(self.db,
-                idstring=build.external_idstring,
-                reason='Self-serve: Rebuilt by %s' % who,
-                ssid=build.sourcestampid,
-                submitted_at=now,
-                )
+        buildsetid = create_buildset(
+            self.db,
+            idstring=build.external_idstring,
+            reason='Self-serve: Rebuilt by %s' % who,
+            ssid=build.sourcestampid,
+            submitted_at=now,
+        )
 
         # Copy buildset properties
         q = text("""INSERT INTO buildset_properties
@@ -246,9 +299,10 @@ class BuildAPIAgent:
                     buildset_properties WHERE
                     buildsetid = :oldbsid""")
         log.debug(q)
-        r = self.db.execute(q,
-                buildsetid=buildsetid,
-                oldbsid=build.buildsetid)
+        r = self.db.execute(
+            q,
+            buildsetid=buildsetid,
+            oldbsid=build.buildsetid)
         log.debug("Created %i properties" % r.rowcount)
 
         # Create a new build request
@@ -258,11 +312,12 @@ class BuildAPIAgent:
                 (:buildsetid, :buildername, :submitted_at, 0, 0, NULL, NULL, 0, NULL, NULL)""")
         log.debug(q)
 
-        r = self.db.execute(q,
-                buildsetid=buildsetid,
-                buildername=build.buildername,
-                submitted_at=now,
-                )
+        r = self.db.execute(
+            q,
+            buildsetid=buildsetid,
+            buildername=build.buildername,
+            submitted_at=now,
+        )
 
         new_brid = r.lastrowid
         log.debug("Created buildrequest %s", new_brid)
@@ -274,8 +329,8 @@ class BuildAPIAgent:
         log.info("rebuilding request by %s of %s", who, brid)
 
         # Get the build request and build set
-        request = self.db.execute(text("""\
-                SELECT * FROM
+        request = self.db.execute(text(
+            """SELECT * FROM
                     buildrequests, buildsets WHERE
                     buildrequests.id=:brid AND
                     buildrequests.buildsetid = buildsets.id"""),
@@ -287,12 +342,13 @@ class BuildAPIAgent:
 
         # Create a new buildset
         now = time.time()
-        buildsetid = create_buildset(self.db,
-                idstring=request.external_idstring,
-                reason='Self-serve: Rebuilt by %s' % who,
-                ssid=request.sourcestampid,
-                submitted_at=now,
-                )
+        buildsetid = create_buildset(
+            self.db,
+            idstring=request.external_idstring,
+            reason='Self-serve: Rebuilt by %s' % who,
+            ssid=request.sourcestampid,
+            submitted_at=now,
+        )
 
         # Copy buildset properties
         q = text("""INSERT INTO buildset_properties
@@ -301,9 +357,10 @@ class BuildAPIAgent:
                     buildset_properties WHERE
                     buildsetid = :oldbsid""")
         log.debug(q)
-        r = self.db.execute(q,
-                buildsetid=buildsetid,
-                oldbsid=request.buildsetid)
+        r = self.db.execute(
+            q,
+            buildsetid=buildsetid,
+            oldbsid=request.buildsetid)
         log.debug("Created %i properties" % r.rowcount)
 
         # Create a new build request
@@ -313,11 +370,12 @@ class BuildAPIAgent:
                 (:buildsetid, :buildername, :submitted_at, 0, 0, NULL, NULL, 0, NULL, NULL)""")
         log.debug(q)
 
-        r = self.db.execute(q,
-                buildsetid=buildsetid,
-                buildername=request.buildername,
-                submitted_at=now,
-                )
+        r = self.db.execute(
+            q,
+            buildsetid=buildsetid,
+            buildername=request.buildername,
+            submitted_at=now,
+        )
 
         new_brid = r.lastrowid
         log.debug("Created buildrequest %s", new_brid)
@@ -344,8 +402,6 @@ class BuildAPIAgent:
 
         if build.claimed_at:
             log.info("build is running, going to cancel it!")
-            cancel_url = self._get_cancel_url(build.claimed_by_name, build.buildername, build.number)
-            log.debug("Cancelling at %s", cancel_url)
             try:
                 msg = self._cancel_build(build.claimed_by_name, build.buildername, build.number, who, "Cancelled via self-serve")
                 return {"errors": False, "msg": msg}
@@ -369,9 +425,9 @@ class BuildAPIAgent:
         revlink = self._get_revlink(branch, revision)
 
         cmd = [self.buildbot, 'sendchange', '--master', pb_url, '--branch',
-                repo_path, '--revision', revision, '--revlink', revlink,
-                '--user', who, '--comments', 'Submitted via self-serve',
-                'dummy']
+               repo_path, '--revision', revision, '--revlink', revlink,
+               '--user', who, '--comments', 'Submitted via self-serve',
+               'dummy']
         log.info("Running %s", cmd)
         subprocess.check_call(cmd)
         return {"errors": False, "msg": "Ok"}
@@ -392,7 +448,7 @@ class BuildAPIAgent:
           submitted_at > :submitted_at"""
         qparams = {
             'buildername': builder_expression,
-            'submitted_at': time.time() - 14*24*3600,
+            'submitted_at': time.time() - 14 * 24 * 3600,
         }
         for i, bx in enumerate(builder_exclusions):
             qparams['buildername_exclusion_%i' % i] = builder_exclusions[i]
@@ -413,12 +469,13 @@ class BuildAPIAgent:
         log.debug("Created sourcestamp %s", ssid)
 
         # Create a new buildset
-        buildsetid = create_buildset(self.db,
-                idstring=None,
-                reason='Self-serve: Requested by %s' % who,
-                ssid=ssid,
-                submitted_at=now,
-                )
+        buildsetid = create_buildset(
+            self.db,
+            idstring=None,
+            reason='Self-serve: Requested by %s' % who,
+            ssid=ssid,
+            submitted_at=now,
+        )
 
         # Create buildset properties (buildid, builduid)
         q = text("""INSERT INTO buildset_properties
@@ -427,8 +484,8 @@ class BuildAPIAgent:
                 (:buildsetid, :key, :value)
                 """)
         props = {
-                'buildid': json.dumps((genBuildID(now), "self-serve")),
-                'builduid': json.dumps((genBuildUID(), "self-serve")),
+            'buildid': json.dumps((genBuildID(now), "self-serve")),
+            'builduid': json.dumps((genBuildUID(), "self-serve")),
         }
         log.debug(q)
         for key, value in props.items():
@@ -442,11 +499,12 @@ class BuildAPIAgent:
                 (:buildsetid, :buildername, :submitted_at, :priority, 0, NULL, NULL, 0, NULL, NULL)""")
         log.debug(q)
         for buildername in buildernames:
-            r = self.db.execute(q,
-                    buildsetid=buildsetid,
-                    buildername=buildername,
-                    submitted_at=now,
-                    priority=priority)
+            r = self.db.execute(
+                q,
+                buildsetid=buildsetid,
+                buildername=buildername,
+                submitted_at=now,
+                priority=priority)
             log.debug("Created buildrequest %s: %i", buildername, r.lastrowid)
         return {"errors": False, "msg": "Ok"}
 
@@ -457,11 +515,11 @@ class BuildAPIAgent:
         priority = message_data['body']['priority']
         log.info("New PGO build by %s of %s %s", who, branch, revision)
         return self._create_build_for_revision(
-                    who,
-                    branch,
-                    revision,
-                    priority,
-                    "%% %s pgo-build" % branch)
+            who,
+            branch,
+            revision,
+            priority,
+            "%% %s pgo-build" % branch)
 
     def do_new_nightly_at_revision(self, message_data, message):
         who = message_data['who']
@@ -470,12 +528,12 @@ class BuildAPIAgent:
         priority = message_data['body']['priority']
         log.info("New nightly by %s of %s %s", who, branch, revision)
         return self._create_build_for_revision(
-                    who,
-                    branch,
-                    revision,
-                    priority,
-                    '%'+branch+'%nightly',
-                    ['%'+branch+'_v%nightly', '%l10n nightly'])
+            who,
+            branch,
+            revision,
+            priority,
+            '%' + branch + '%nightly',
+            ['%' + branch + '_v%nightly', '%l10n nightly'])
 
     def do_cancel_revision(self, message_data, message):
         who = message_data['who']
@@ -517,10 +575,10 @@ if __name__ == '__main__':
 
     parser = OptionParser()
     parser.set_defaults(
-            configfile='selfserve-agent.ini',
-            wait=False,
-            verbosity=log.INFO
-            )
+        configfile='selfserve-agent.ini',
+        wait=False,
+        verbosity=log.INFO
+    )
     parser.add_option("-w", "--wait", dest="wait", action="store_true")
     parser.add_option("-v", dest="verbosity", action="store_const", const=log.DEBUG, help="be verbose")
     parser.add_option("-q", dest="verbosity", action="store_const", const=log.WARN, help="be quiet")
@@ -534,10 +592,10 @@ if __name__ == '__main__':
     log.basicConfig(format='%(asctime)s %(message)s', level=options.verbosity)
 
     config = RawConfigParser(
-            {'port': 5672,
-             'ssl': 'false',
-             'vhost': '/',
-             })
+        {'port': 5672,
+            'ssl': 'false',
+            'vhost': '/',
+         })
     config.read([options.configfile])
 
     amqp_config = {}
@@ -548,18 +606,18 @@ if __name__ == '__main__':
         else:
             amqp_config['carrot.%s' % option] = config.get('carrot', option)
 
-
     amqp_exchange = config.get('carrot', 'exchange')
     amqp_conn = amqp_connection_from_config(amqp_config, 'carrot')
 
     agent = BuildAPIAgent(
-            db=create_engine(config.get('db', 'url'), pool_recycle=60),
-            masters_url=config.get('masters', 'masters-url'),
-            buildbot=config.get('masters', 'buildbot'),
-            sendchange_master=config.get('masters', 'sendchange-master'),
-            publisher=JobRequestDonePublisher(amqp_config, 'carrot'),
-            branches_url=config.get('branches', 'url'),
-            )
+        db=create_engine(config.get('db', 'url'), pool_recycle=60),
+        masters_url=config.get('masters', 'masters-url'),
+        buildbot=config.get('masters', 'buildbot'),
+        sendchange_master=config.get('masters', 'sendchange-master'),
+        publisher=JobRequestDonePublisher(amqp_config, 'carrot'),
+        branches_url=config.get('branches', 'url'),
+        clobberer_url=config.get('clobberer', 'url'),
+    )
 
     consumer = JobRequestConsumer(amqp_conn, exchange=amqp_exchange, queue=config.get('carrot', 'queue'))
     consumer.register_callback(agent.receive_message)
