@@ -15,7 +15,7 @@ statusText = {
     3: 'Skipped',
     4: 'Exception',
     5: 'Retry',
-    5: 'Cancelled',
+    6: 'Cancelled',
     }
 
 def formatStatus(status):
