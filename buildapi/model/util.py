@@ -89,6 +89,9 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Rev3 WINNT 6\.1 '),
         re.compile('jetpack-.*-win7'),
     ],
+    'win7-ix': [
+        re.compile('^Windows 7 32-bit '),
+    ],
     'win764': [
         re.compile('^Rev3 WINNT 6\.1 x64 .+'),
         re.compile('jetpack-.*-w764'),
@@ -163,6 +166,7 @@ SLAVE_SILOS = {
     'mv-moz2-linux-ix': [re.compile('^mv-moz2-linux-ix-slave.+')],
     'mw32-ix': [re.compile('^mw32-ix-slave.+')],
     't-r3-w764': [re.compile('^t-r3-w764-.+')],
+    't-w732-ix': [re.compile('^t-w732-ix-.+')],
     't-w864-ix': [re.compile('^t-w864-ix-.+')],
     'talos-r3-fed': [re.compile('^talos-r3-fed-.+')],
     'talos-r3-fed64': [re.compile('^talos-r3-fed64-.+')],

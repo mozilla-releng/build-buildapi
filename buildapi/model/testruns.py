@@ -31,6 +31,8 @@ PLATFORMS_BUILDERNAME = {
            re.compile('.+xp.*')],
     'win7': [re.compile('.+_win7_test.*'),
              re.compile('.+\win7.*')],
+    'win7-ix': [re.compile('.+_win7-ix_test.*'),
+             re.compile('.+\win7-ix.*')],
     'win764': [re.compile('.+_w764_test.*'),
                re.compile('.+w764.*')],
     'win8': [re.compile('.+_win8_test.*'),
