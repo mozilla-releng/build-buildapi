@@ -29,6 +29,8 @@ PLATFORMS_BUILDERNAME = {
             ],
     'xp': [re.compile('.+_xp_test.*'),
            re.compile('.+xp.*')],
+    'xp-ix': [re.compile('.+_xp-ix_test.*'),
+              re.compile('.+xp-ix.*')],
     'win7': [re.compile('.+_win7_test.*'),
              re.compile('.+\win7.*')],
     'win7-ix': [re.compile('.+_win7-ix_test.*'),
