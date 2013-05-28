@@ -186,6 +186,8 @@ def GetHistoricBuilds(slave, count=20):
     bs = meta.status_db_meta.tables['builders']
     s  = meta.status_db_meta.tables['slaves']
     m  = meta.status_db_meta.tables['masters']
+    p  = meta.status_db_meta.tables['properties']
+    bp = meta.status_db_meta.tables['build_properties']
     if slave is not None:
         q = select([b.c.id,
                     bs.c.name.label('buildname'),
@@ -221,11 +223,23 @@ def GetHistoricBuilds(slave, count=20):
 
     query_results = q.execute()
 
+    q2 = select([p.c.value])
+    q2 = q2.where(and_(bp.c.property_id==p.c.id,
+                       "properties.name='buildername'",
+                       "build_properties.build_id = :x"))
+
     builds = []
     for r in query_results:
         this_result = {}
         for key,value in r.items():
             this_result[str(key)] = value
+        this_result['buildername'] = ""
+        if 'id' in this_result:
+            q2_results = q2.execute(x=this_result['id'])
+            one_row = q2_results.fetchone()
+            if one_row and 'value' in one_row:
+                # Properties come wrapped in double-quotes. Strip them.
+                this_result['buildername'] = one_row['value'].strip('"')
         builds.append(this_result)
 
     return builds
