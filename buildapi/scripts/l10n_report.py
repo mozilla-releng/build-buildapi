@@ -23,6 +23,10 @@ def parse_builds_report(data, output, skip=(0, 5)):
         # Ignore non-l10n builders
         # We look at the buildername property to tell
         props = build['properties']
+
+        if 'buildername' not in props:
+            # something went wrong adding the job to the db
+            continue
         if 'l10n' not in props['buildername']:
             continue
 
