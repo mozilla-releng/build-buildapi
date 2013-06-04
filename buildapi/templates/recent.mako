@@ -51,7 +51,7 @@ $(document).ready(function() {
         build['running_for'] = ""
   %>
   <tr>
-  % for key in ('slavename','buildname','buildnumber','master','result','starttime','endtime','running_for'):
+  % for key in ('slavename','buildername','buildnumber','master','result','starttime','endtime','running_for'):
     % if 'time' in key and build[key] is not None:
       <td>${build[key].replace(tzinfo=utc).astimezone(pacific).replace(tzinfo=None)}</td>
     % elif key =='result':
