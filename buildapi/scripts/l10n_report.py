@@ -30,6 +30,9 @@ def parse_builds_report(data, output, skip=(0, 5)):
         if 'l10n' not in props['buildername']:
             continue
 
+	if 'platform' not in props:
+            # something went wrong adding the job to the db
+            continue
         if props['platform'] == 'android':
             # it's weird
             # TODO: handle later
