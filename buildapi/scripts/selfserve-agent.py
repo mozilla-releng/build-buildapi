@@ -5,6 +5,7 @@ Gets any messages and executes them."""
 import logging as log
 import time
 import urllib
+import urllib2
 from urlparse import urlparse
 import subprocess
 import uuid
@@ -13,6 +14,16 @@ import re
 from sqlalchemy import text
 
 from buildapi.lib import json
+
+
+class NoRedirects(urllib2.HTTPErrorProcessor):
+    "Helper class that eats HTTP 302 redirects so we don't follow redirects"
+    def http_response(self, request, response):
+        if response.code == 302:
+            return response
+        return urllib2.HTTPErrorProcessor.http_response(self, request, response)
+
+noredirect_opener = urllib2.build_opener(NoRedirects)
 
 
 def genBuildID(now=None):
@@ -165,7 +176,9 @@ class BuildAPIAgent:
             "username": who,
         })
         log.info("Cancelling at %s", cancel_url)
-        urllib.urlopen(cancel_url, data)
+        # Use the noredirect_opener so we don't follow the 302 to the builder
+        # page
+        noredirect_opener.open(cancel_url, data)
         return "Ok"
 
     def _cancel_request(self, who, request):
