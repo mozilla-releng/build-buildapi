@@ -45,7 +45,7 @@
 
         var data = response.getDataTable();
         drawPieChart(document.getElementById('pie_chart_div'), data, 
-            'Number of Pushes by Branch', 600, 600);
+            'Number of Pushes by Branch', 1100, 600);
     }
 
     function handleQueryResponseHourly(response) {
