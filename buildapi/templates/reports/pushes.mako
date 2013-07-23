@@ -33,8 +33,10 @@
         var data_no_totals = jQuery.extend(true, {}, data);
         data_no_totals.removeColumn(1);
 
-        drawLineChart(document.getElementById('line_chart_div'), data, false);
-        drawColumnChart(document.getElementById('column_chart_div'), data_no_totals, true);
+        drawLineChart(document.getElementById('line_chart_div'), data, false,
+            'Pushes', 1400, 300, 8);
+        drawColumnChart(document.getElementById('column_chart_div'), data_no_totals, true,
+            'Pushes', 1400, 300, 8);
     }
 
     function handleQueryResponseAll(response) {
@@ -56,7 +58,7 @@
 
         var data = response.getDataTable();
         drawColumnChart(document.getElementById('hourly_column_chart_div'), data, 
-            'Average Number of Pushes by Hour');
+            'Average Number of Pushes by Hour', 1400, 300, 8);
     }
 
     $(document).ready(function() {

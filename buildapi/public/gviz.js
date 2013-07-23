@@ -9,33 +9,36 @@ function drawAreaChart(elem, data, isStacked, title, width, height) {
     });
 }
 
-function drawLineChart(elem, data, isStacked, title, width, height) {
+function drawLineChart(elem, data, isStacked, title, width, height, legendFontSize) {
     var cc = new google.visualization.LineChart(elem);
     cc.draw(data, {
         title : title || 'Pushes',
         isStacked: isStacked,
         width: width || 800,
-        height: height || 300
+        height: height || 300,
+        legend: {textStyle: {fontSize: legendFontSize || 15}}
     });
 }
 
-function drawColumnChart(elem, data, isStacked, title, width, height) {
+function drawColumnChart(elem, data, isStacked, title, width, height, legendFontSize) {
     var cc = new google.visualization.ColumnChart(elem);
     cc.draw(data, {
         title : title || 'Pushes',
         isStacked: isStacked,
         width: width || 800,
-        height: height || 300
+        height: height || 300,
+        legend: {textStyle: {fontSize: legendFontSize || 15}}
     });
 }
 
-function drawBarChart(elem, data, isStacked, title, width, height) {
+function drawBarChart(elem, data, isStacked, title, width, height, legendFontSize) {
     var cc = new google.visualization.BarChart(elem);
     cc.draw(data, {
         title : title || 'Pushes',
         isStacked: isStacked,
         width: width || 300,
-        height: height || 800
+        height: height || 800,
+        legend: {textStyle: {fontSize: legendFontSize || 15}}
     });
 }
 
