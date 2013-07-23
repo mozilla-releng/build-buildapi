@@ -57,7 +57,7 @@
         }
 
         var data = response.getDataTable();
-        drawColumnChart(document.getElementById('hourly_column_chart_div'), data, 
+        drawColumnChart(document.getElementById('hourly_column_chart_div'), data, false,
             'Average Number of Pushes by Hour', 1400, 300, 11);
     }
 
