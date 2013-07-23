@@ -34,9 +34,9 @@
         data_no_totals.removeColumn(1);
 
         drawLineChart(document.getElementById('line_chart_div'), data, false,
-            'Pushes', 1400, 300, 8);
+            'Pushes', 1400, 300, 11);
         drawColumnChart(document.getElementById('column_chart_div'), data_no_totals, true,
-            'Pushes', 1400, 300, 8);
+            'Pushes', 1400, 300, 11);
     }
 
     function handleQueryResponseAll(response) {
@@ -58,7 +58,7 @@
 
         var data = response.getDataTable();
         drawColumnChart(document.getElementById('hourly_column_chart_div'), data, 
-            'Average Number of Pushes by Hour', 1400, 300, 8);
+            'Average Number of Pushes by Hour', 1400, 300, 11);
     }
 
     $(document).ready(function() {
