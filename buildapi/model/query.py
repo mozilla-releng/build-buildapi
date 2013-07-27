@@ -99,6 +99,8 @@ def GetBuilds(branch=None, type='pending', rev=None):
                     b.c.number,
                     br.c.results])
 
+    # ignore nightlies, bug 570814
+    q = q.where(ss.c.revision != None)
     if branch is not None:
       q = q.where(ss.c.branch.like('%' + branch[0] + '%'))
 
@@ -117,8 +119,6 @@ def GetBuilds(branch=None, type='pending', rev=None):
 
         for build_key, requests in real_builds.items():
             real_branch = GetBranchName(requests[0]['branch'])
-            if not real_branch:
-                real_branch = 'Unknown'
             if real_branch not in builds:
                 builds[real_branch] = {}
 
@@ -155,10 +155,7 @@ def GetBuilds(branch=None, type='pending', rev=None):
 
                     this_result['request_ids'].append(r.brid)
 
-            revision = this_result.get('revision')
-            if not revision:
-                revision = 'Unknown'
-            revision = revision[:12]
+            revision = this_result['revision'][:12]
             if revision not in builds[real_branch]:
                 builds[real_branch][revision] = []
             builds[real_branch][revision].append(this_result)
@@ -166,12 +163,7 @@ def GetBuilds(branch=None, type='pending', rev=None):
     else:
         for r in query_results:
             real_branch = GetBranchName(r['branch'])
-            if not real_branch:
-                real_branch = 'Unknown'
-            revision = r['revision']
-            if not revision:
-                revision = 'Unknown'
-            revision = revision[:12]
+            revision = r['revision'][:12]
             if real_branch not in builds:
                 builds[real_branch] = {}
             if revision not in builds[real_branch]:
@@ -182,6 +174,10 @@ def GetBuilds(branch=None, type='pending', rev=None):
                 if key not in ('branch','revision'):
                     this_result[key] = value
             builds[real_branch][revision].append(this_result)
+
+    # Hide secret stuff
+    if 'shadow-central' in builds:
+        del builds['shadow-central']
 
     return builds
 
