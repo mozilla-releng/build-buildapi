@@ -171,8 +171,11 @@ def build_report(cache, session, scheduler_db, starttime, endtime, include_steps
             misses[0] += 1
             s0 = time.time()
             props = {}
-            for prop in build.properties:
-                props[prop.name] = prop.value
+            try:
+                for prop in build.properties:
+                    props[prop.name] = prop.value
+            except:
+                pass # Properties values are unparsable
 
             # Figure out this build's request ids from the scheduler db
             request_ids, requesttime = get_request_info(scheduler_db, build, props)
