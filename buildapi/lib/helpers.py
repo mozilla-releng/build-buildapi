@@ -14,7 +14,7 @@ from pylons.decorators.cache import beaker_cache
 
 import buildapi.model.builds
 from buildapi.lib import json
-from buildapi.model.util import BUILDPOOL, TRYBUILDPOOL, TESTPOOL
+from buildapi.model.util import BUILDPOOL, TRYBUILDPOOL, TESTPOOL, SUCCESS, RETRY
 
 log = logging.getLogger(__name__)
 
@@ -172,6 +172,23 @@ def get_branches():
         log.exception("Error loading branches json; using old list")
 
     return _branches
+
+def get_completeness(job_items, stableDelay):
+    now = int(time.time())
+    job_info = {'stableDelay': stableDelay,
+                'job_complete': False,
+                'job_passed': False}
+
+    unfinished_jobs = [job for job in job_items if (job.get('endtime') is None)
+                        or (now - job.get('endtime') < stableDelay)]
+
+    if not unfinished_jobs:    # If list is empty
+        job_info['job_complete'] = True
+        # RETRY isn't a failure because we're rerunning the job
+        failed_jobs = [job for job in job_items if job.get('status') not in (SUCCESS, RETRY)]
+        job_info['job_passed'] = len(failed_jobs) == 0
+
+    return json.dumps(job_info)
 
 def get_masters_for_pool(pool):
     """Returns the masters for a pool."""

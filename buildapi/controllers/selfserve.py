@@ -16,7 +16,7 @@ from formencode import validators
 from buildapi.lib.base import BaseController, render
 from buildapi.model.builds import getBuild, getRequest, getBuildsForUser
 from buildapi.model.buildapidb import JobRequest
-from buildapi.lib.helpers import get_builders, url, get_branches
+from buildapi.lib.helpers import get_builders, url, get_branches, get_completeness
 from buildapi.lib import json, times
 
 log = logging.getLogger(__name__)
@@ -211,6 +211,24 @@ class SelfserveController(BaseController):
                     (revision, branch), 404)
 
         return self._ok(retval)
+
+    def revision_is_done(self, branch, revision):
+        """Return a json dictionary with information about whether the job is
+            done and has passed all tests for this revision"""
+        try:
+            stableDelay = IntValidator.to_python(request.GET.get('stableDelay', '180'))
+        except formencode.Invalid:
+            stableDelay = 180
+
+        if branch not in self._branches_cache:
+            return self._failed("Branch %s not found" % branch, 404)
+
+        job_items = g.buildapi_cache.get_builds_for_revision(branch, revision)
+        if not job_items:
+            return self._failed("Revision %s not found on branch %s" %
+                    (revision, branch), 404)
+
+        return get_completeness(job_items, stableDelay)
 
     @beaker_cache(query_args=True, expire=60)
     def builders(self, branch):

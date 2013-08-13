@@ -91,6 +91,7 @@ def make_map(config):
     map.connect('build', '/self-serve/{branch}/build/{build_id}', controller='selfserve', action='build')
     map.connect('request', '/self-serve/{branch}/request/{request_id}', controller='selfserve', action='request')
     map.connect('revision', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='revision')
+    map.connect('revision_is_done', '/self-serve/{branch}/rev/{revision}/is_done', controller='selfserve', action='revision_is_done')
     map.connect('builders', '/self-serve/{branch}/builders', controller='selfserve', action='builders')
     map.connect('builder', '/self-serve/{branch}/builders/{builder_name}', controller='selfserve', action='builder')
     map.connect('user', '/self-serve/{branch}/user/{user}', controller='selfserve', action='user')
