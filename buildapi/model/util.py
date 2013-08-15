@@ -92,6 +92,7 @@ PLATFORMS_BUILDERNAME = {
     ],
     'win8': [
         re.compile('.*WINNT 6\.2 '),
+        re.compile('jetpack-.*-win8'),
     ],
     'tegra': [
         re.compile('^Android Tegra 250 .+'),
