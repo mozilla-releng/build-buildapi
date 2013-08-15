@@ -49,19 +49,10 @@ PLATFORMS_BUILDERNAME = {
     'ubuntu64_hw': [
         re.compile('Ubuntu HW 12.04 x64 .+'),
     ],
-    'leopard': [
-        re.compile('^OS X 10\.5.+'),
-        re.compile('^Rev3 MacOSX Leopard 10\.5.+'),
-        re.compile('.*macosx(?!64).*'),
-        re.compile('jetpack-.*-leopard'),
-    ],
     'snowleopard': [
         re.compile('^OS X 10\.6.+'),
-        re.compile('^Rev3 MacOSX Snow Leopard 10\.6.+'),
         re.compile('.*macosx64.*'),
         re.compile('jetpack-.*-snowleopard'),
-    ],
-    'snowleopard-r4': [
         re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
     ],
     'lion': [
