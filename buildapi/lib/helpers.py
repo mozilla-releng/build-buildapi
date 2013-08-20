@@ -188,7 +188,7 @@ def get_completeness(job_items, stableDelay):
         failed_jobs = [job for job in job_items if job.get('status') not in (SUCCESS, RETRY)]
         job_info['job_passed'] = len(failed_jobs) == 0
 
-    return json.dumps(job_info)
+    return job_info
 
 def get_masters_for_pool(pool):
     """Returns the masters for a pool."""

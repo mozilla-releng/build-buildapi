@@ -88,6 +88,7 @@ function toggle_display(id)
 <input type="submit" value="${label}" />
 </form>
 </%def>
+
 <%def name="buildrow(build, tabletype)">
 <tr class="result${build.get('status')}">
     <td>
@@ -130,6 +131,18 @@ function toggle_display(id)
 </tr>
 </%def>
 
+<%def name="buildstatusmeter(stat_value, not_complete_toggle=False)">
+    <div class="status-wrap-${stat_value}">
+        <div class="status-text">
+            % if not_complete_toggle:
+                Job Not Complete
+            % else:
+                ${stat_value}
+            % endif
+        </div>
+    </div>
+</%def>
+
 <%def name="breadcrumbs()">
 <a href="${h.url('selfserve_home')}">BuildAPI Home</a><br/>
 </%def>
@@ -149,6 +162,20 @@ Builds for ${c.branch} on ${c.date.strftime('%Y-%m-%d')}
 <a href="${h.url.current(date=before)}">Earlier</a>
 <a href="${h.url.current(date=today)}">Today</a>
 <a href="${h.url.current(date=after)}">Later</a>
+% endif
+
+% if hasattr(c, 'job_status'):
+    <table class="display">
+        <thead>
+            <tr>
+                <th><h1>Job Status</h1></th>
+                <th style="text-align: right">Job Complete?</th>
+                <td>${buildstatusmeter(c.job_status['job_complete'])}</td>
+                <th style="text-align: right">Job Passed?</th>
+                <td>${buildstatusmeter(c.job_status['job_passed'], not c.job_status['job_complete'])}</td>
+            </tr>
+        </thead>
+    </table>
 % endif
 
 <%

@@ -76,6 +76,34 @@ body#dt_example ul {
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Simple CSS shiny progress bar classes - now job status bar classes
+ */
+.status-wrap-True{
+    position: relative;
+    background-color: #0A0;
+}
+
+.status-wrap-False{
+    position: relative;
+    background-color: #A80000;
+}
+
+.status-wrap-True, .status-wrap-False, .status-value, .status-text {
+    width: 155px; height: 30px;
+}
+
+.status-text {
+    position: absolute;
+    top:0; left:0;
+
+    padding-top: 5px;
+
+    color: #fff;
+    text-align: center;
+    width: 100%;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DataTables row classes
  */
 body#dt_example table.results tr.odd.success {
