@@ -179,15 +179,17 @@ def get_completeness(job_items, stableDelay):
                 'job_complete': False,
                 'job_passed': False}
 
-    unfinished_jobs = [job for job in job_items if (job.get('endtime') is None)
-                        or (now - job.get('endtime') < stableDelay)]
+    try:
+        unfinished_jobs = [job for job in job_items if (job.get('endtime') is None)
+                            or (now - job.get('endtime') < stableDelay)]
 
-    if not unfinished_jobs:    # If list is empty
-        job_info['job_complete'] = True
-        # RETRY isn't a failure because we're rerunning the job
-        failed_jobs = [job for job in job_items if job.get('status') not in (SUCCESS, RETRY)]
-        job_info['job_passed'] = len(failed_jobs) == 0
-
+        if not unfinished_jobs and job_items != []:    # If list is empty
+            job_info['job_complete'] = True
+            # RETRY isn't a failure because we're rerunning the job
+            failed_jobs = [job for job in job_items if job.get('status') not in (SUCCESS, RETRY)]
+            job_info['job_passed'] = len(failed_jobs) == 0
+    except TypeError:
+        pass
     return job_info
 
 def get_masters_for_pool(pool):
