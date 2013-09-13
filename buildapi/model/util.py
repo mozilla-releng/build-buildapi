@@ -23,7 +23,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
         re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
         re.compile('^b2g_((?!(test|talos)).)+$',  re.IGNORECASE),
-        re.compile('^Android (?!(?:(?:2.2 )?Tegra|(?:2.2 )?Armv6 Tegra|(?:2.2 )?no-ionmonkey Tegra 250|4.0 Panda|(?:4.2 )?x86 Emulator)).+'),
+        re.compile('^Android (?!(?:2\.2 Tegra|2\.2 Armv6 Tegra|2\.2 no-ionmonkey Tegra|4\.0 Panda|4\.2 x86 Emulator)).+'),
         re.compile('.*linux.*',  re.IGNORECASE),
     ],
     'fedora': [
@@ -48,7 +48,7 @@ PLATFORMS_BUILDERNAME = {
     ],
     'ubuntu64_hw': [
         re.compile('Ubuntu HW 12.04 x64 .+'),
-        re.compile('^Android (?:4.2 )?x86 Emulator .+'),
+        re.compile('^Android 4\.2 x86 Emulator .+'),
     ],
     'snowleopard': [
         re.compile('^OS X 10\.6.+'),
@@ -62,7 +62,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-lion'),
     ],
     'mountainlion': [
-        re.compile('^Rev5 MacOSX Mountain Lion 10\.8+'),
+        re.compile('^Rev5 MacOSX Mountain Lion 10\.8.+'),
         re.compile('jetpack-.*-mountainlion'),
     ],
     'xp': [
@@ -96,12 +96,12 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-win8'),
     ],
     'tegra': [
-        re.compile('^Android (?:2.2 )?Tegra 250 .+'),
-        re.compile('^Android (?:2.2 )?Armv6 Tegra 250 .+'),
-        re.compile('^Android (?:2.2 )?no-ionmonkey Tegra 250 .+'),
+        re.compile('^Android 2\.2 Tegra .+'),
+        re.compile('^Android 2\.2 Armv6 Tegra .+'),
+        re.compile('^Android 2\.2 no-ionmonkey Tegra .+'),
     ],
     'panda-android': [
-        re.compile('^Android 4.0 Panda .+'),
+        re.compile('^Android 4\.0 Panda .+'),
     ],
 }
 
