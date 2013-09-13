@@ -36,18 +36,18 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-fedora64'),
     ],
     'ubuntu32_vm': [
-        re.compile('Ubuntu VM 12.04 (?!x64).+'),
+        re.compile('Ubuntu (ASAN )?VM 12.04 (?!x64).+'),
         re.compile('jetpack-.*-ubuntu32(?:_vm)?'),
     ],
     'ubuntu64_vm': [
-        re.compile('Ubuntu VM 12.04 x64 .+'),
+        re.compile('Ubuntu (ASAN )?VM 12.04 x64 .+'),
         re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
     ],
     'ubuntu32_hw': [
-        re.compile('Ubuntu HW 12.04 (?!x64).+'),
+        re.compile('Ubuntu (ASAN )?HW 12.04 (?!x64).+'),
     ],
     'ubuntu64_hw': [
-        re.compile('Ubuntu HW 12.04 x64 .+'),
+        re.compile('Ubuntu (ASAN )?HW 12.04 x64 .+'),
         re.compile('^Android 4\.2 x86 Emulator .+'),
     ],
     'snowleopard': [
