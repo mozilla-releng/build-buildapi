@@ -52,11 +52,14 @@ carrot.password = buildapi
 carrot.exchange = buildapi.control
 carrot.consumer.queue = buildapi-web
 
-# Where the various masters are
+# Link to a JSON file defining the buildmasters
 masters_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json
 
-# Which cache to use
-buildapi.cache = redis:
+# Similarly a JSON file defining the branches
+branches_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-branches.json
+
+# Path to the redis backend cache
+buildapi.cache = redis:HOSTNAME:PORT
 
 # What timezone we're in
 timezone = US/Pacific

@@ -30,9 +30,7 @@ class Globals(object):
         self.branches_url = config['branches_url']
 
         # TODO: handle other hosts/ports
-        if cache_spec.startswith('memcached:'):
-            self.buildapi_cache = cache.BuildapiCache(cacher.MemcacheCache(), tz)
-        elif cache_spec.startswith('redis:'):
+        if cache_spec.startswith('redis:'):
             bits = cache_spec.split(':')
             kwargs = {}
             if len(bits) >= 2:

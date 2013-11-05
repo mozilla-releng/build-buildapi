@@ -41,7 +41,7 @@ the /builds/job_status/{job_id} method.
 2) send message to message broker on the 'requests' routing key with
 details of job request.
 
-3) an external agent (such as buildapi/scripts/buildapi-agent.py) receives
+3) an external agent (such as buildapi/scripts/selfserve-agent.py) receives
 the message, acts on it, and then sends a message on the 'finished' routing
 key to indicate the job was completed.
 
