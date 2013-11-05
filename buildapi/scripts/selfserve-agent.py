@@ -577,7 +577,8 @@ class BuildAPIAgent:
             msgs.append(result['msg'])
         return {"errors": errors, "msg": "\n".join(msgs)}
 
-if __name__ == '__main__':
+
+def main():
     import os
     from optparse import OptionParser
     from ConfigParser import RawConfigParser
@@ -646,3 +647,6 @@ if __name__ == '__main__':
             message = consumer.fetch(enable_callbacks=True)
             if not message:
                 break
+
+if __name__ == '__main__':
+    main()

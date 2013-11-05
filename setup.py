@@ -37,5 +37,8 @@ setup(
 
     [paste.app_install]
     main = pylons.util:PylonsInstaller
+
+    [console_scripts]
+    selfserve-agent = buildapi.scripts.selfserve_agent:main
     """,
 )
