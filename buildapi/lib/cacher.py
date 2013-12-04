@@ -1,3 +1,4 @@
+import threading
 import time
 try:
     import simplejson as json
@@ -57,20 +58,18 @@ try:
     class RedisCache(BaseCache):
         def __init__(self, host='localhost', port=6379):
             self.r = redis.client.Redis(host, port)
-            self.locks = {}
+            # use a thread-local object for holding locks, so that different
+            # threads can use locks without stepping on feet
+            self.local = threading.local()
 
         def _get(self, key):
             if not self.has_key(key):
                 raise KeyError
 
-            t = self.r.type(key)
-            if t == 'list':
-                return [json.loads(x) for x in self.r.lrange(key, 0, -1)]
-            else:
-                retval = self.r.get(key)
-                if retval is not None:
-                    return json.loads(retval)
-                return None
+            retval = self.r.get(key)
+            if retval is not None:
+                return json.loads(retval)
+            return None
 
         def _put(self, key, val, expire=0):
             val = json.dumps(val)
@@ -83,17 +82,55 @@ try:
         def has_key(self, key):
             return self.r.exists(key)
 
-        #def push(self, key, value):
-            #return self.r.rpush(key, json.dumps(value))
-
         def _getlock(self, key, expire):
+            if not hasattr(self.local, 'locks'):
+                self.local.locks = {}
+            assert key not in self.local.locks
             l = redis.client.Lock(self.r, key, timeout=int(expire-time.time()))
             l.acquire()
-            self.locks[key] = l
+            self.local.locks[key] = l
 
         def _releaselock(self, key):
-            self.locks[key].release()
-            del self.locks[key]
+            self.local.locks[key].release()
+            del self.local.locks[key]
+
+except ImportError:
+    pass
+
+try:
+    import memcache
+    class MemcacheCache(BaseCache):
+        def __init__(self, hosts=['localhost:11211']):
+            self.m = memcache.Client(hosts)
+
+        def _get(self, key):
+            retval = self.m.get(key)
+            if retval is None:
+                raise KeyError
+            else:
+                return json.loads(retval)
+
+        def _put(self, key, val, expire=0):
+            val = json.dumps(val)
+            if expire == 0:
+                self.m.set(key, val)
+            else:
+                expire = int(expire - time.time())
+                self.m.set(key, val, expire)
+
+        def has_key(self, key):
+            return self.m.get(key) is not None
+
+        def _getlock(self, key, expire):
+            # try repeatedly to add the key, which will fail if the key
+            # already exists, until we are the one to add it
+            delay = 0.001
+            while not self.m.add(key, '', expire):
+                time.sleep(delay)
+                delay = min(delay * 1.1, 1)
+
+        def _releaselock(self, key):
+            self.m.delete(key)
 
 except ImportError:
     pass

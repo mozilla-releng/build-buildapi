@@ -1,10 +1,14 @@
 Installation and Setup
 ======================
 
-Install ``buildapi`` and ``redis`` using easy_install::
+Install ``buildapi`` using easy_install::
 
     easy_install buildapi
+
+Then install either redis or memcached:
+
     easy_install redis
+    easy_install python-memcached
 
 Make a config file as follows::
 
@@ -19,6 +23,14 @@ Tweak the config file as appropriate::
     [filter:proxy-prefix]
     use = egg:PasteDeploy#prefix
     prefix = /~(username)/wsgi
+
+Also set up your cache configuration:
+
+    buildapi.cache = redis:HOSTNAME:PORT
+
+or
+
+    buildapi.cache = memcached:HOSTNAME:PORT,HOSTNAME:PORT,..
 
 Now setup the application::
 

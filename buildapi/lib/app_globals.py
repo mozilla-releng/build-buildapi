@@ -29,8 +29,8 @@ class Globals(object):
         self.masters_url = config['masters_url']
         self.branches_url = config['branches_url']
 
-        # TODO: handle other hosts/ports
-        if cache_spec.startswith('redis:'):
+        if hasattr(cacher, 'RedisCache') and cache_spec.startswith('redis:'):
+            # TODO: handle other hosts/ports
             bits = cache_spec.split(':')
             kwargs = {}
             if len(bits) >= 2:
@@ -38,7 +38,11 @@ class Globals(object):
 
             if len(bits) == 3:
                 kwargs['port'] = int(bits[2])
-
-            self.buildapi_cache = cache.BuildapiCache(cacher.RedisCache(**kwargs), tz)
+            buildapi_cacher = cacher.RedisCache(**kwargs)
+        elif hasattr(cacher, 'MemcacheCache') and cache_spec.startswith('memcached:'):
+            hosts = cache_spec[10:].split(',')
+            buildapi_cacher = cacher.MemcacheCache(hosts)
         else:
-            self.buildapi_cache = None
+            raise RuntimeError("invalid cache spec %r" % (cache_spec,))
+
+        self.buildapi_cache = cache.BuildapiCache(buildapi_cacher, tz)

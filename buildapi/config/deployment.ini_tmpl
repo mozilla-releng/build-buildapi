@@ -58,7 +58,10 @@ masters_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maint
 # Similarly a JSON file defining the branches
 branches_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-branches.json
 
-# Path to the redis backend cache
+# Path to the backend cache:
+#   redis:HOSTNAME:PORT
+# or
+#   memcached:HOSTNAME:PORT,HOSTNAME:PORT,..
 buildapi.cache = redis:HOSTNAME:PORT
 
 # What timezone we're in
