@@ -12,6 +12,7 @@ import uuid
 import re
 
 from sqlalchemy import text
+from sqlalchemy.exc import TimeoutError
 
 from buildapi.lib import json
 
@@ -235,6 +236,9 @@ class BuildAPIAgent:
             msg['request_id'] = message_data['body']['request_id']
             self.publisher.ack_msg(msg)
             message.ack()
+        except TimeoutError:
+            log.exception("TimeoutError accessing the DB pool, exiting...")
+            raise SystemExit(1)
         except:
             log.exception("Error processing message")
 
