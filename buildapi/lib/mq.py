@@ -85,7 +85,10 @@ class ReconnectingConsumer(object):
 
     def disconnect(self):
         if self.connection:
-            self.connection.close()
+            try:
+                self.connection.close()
+            except:
+                log.info("error while disconnecting; ignored", exc_info=True)
             self.connection = None
 
     def wait(self, limit=None):
