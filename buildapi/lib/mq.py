@@ -103,13 +103,13 @@ class ReconnectingConsumer(object):
                 sleep_time = 1
                 consumer.register_callback(self.receive)
                 consumer.wait(limit)
-            except self.connection.ConnectionException:
-                log.info("Lost connection, trying again in %is", sleep_time)
+            except (self.connection.ConnectionException, IOError):
+                log.info("Lost connection, trying again in %is", sleep_time, exc_info=True)
                 self.disconnect()
                 time.sleep(sleep_time)
                 sleep_time = min(sleep_time*2, 60)
             except socket.error:
-                log.info("Connection refused, trying again in %is", sleep_time)
+                log.info("Connection refused, trying again in %is", sleep_time, exc_info=True)
                 self.disconnect()
                 time.sleep(sleep_time)
                 sleep_time = min(sleep_time*2, 60)
