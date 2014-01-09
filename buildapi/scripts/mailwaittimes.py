@@ -131,7 +131,7 @@ def wtservice_get_full_url(wt_service=WT_SERVICE_DEFAULT,
            maxb - maximum block size, default: None (server's default will be used)
     Output: string - full request URL
     """
-    wt_params = dict(format='json', startime=starttime, endtime=endtime, 
+    wt_params = dict(format='json', starttime=starttime, endtime=endtime,
         mpb=mpb, maxb=maxb)
     wt_params_str = urllib.urlencode([(k, v) for k, v in wt_params.items() if v])
 
