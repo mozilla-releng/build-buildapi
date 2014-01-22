@@ -68,12 +68,17 @@ except ImportError:
 
 try:
     import memcache
+    def utf8(s):
+        if isinstance(s, unicode):
+            return s.encode('utf-8')
+        return s
+
     class MemcacheCache(BaseCache):
         def __init__(self, hosts=['localhost:11211']):
             self.m = memcache.Client(hosts)
 
         def _get(self, key):
-            retval = self.m.get(key)
+            retval = self.m.get(utf8(key))
             if retval is None:
                 raise KeyError
             else:
@@ -82,13 +87,13 @@ try:
         def _put(self, key, val, expire=0):
             val = json.dumps(val)
             if expire == 0:
-                self.m.set(key, val)
+                self.m.set(utf8(key), val)
             else:
                 expire = int(expire - time.time())
-                self.m.set(key, val, expire)
+                self.m.set(utf8(key), val, expire)
 
         def has_key(self, key):
-            return self.m.get(key) is not None
+            return self.m.get(utf8(key)) is not None
 
 except ImportError:
     pass
