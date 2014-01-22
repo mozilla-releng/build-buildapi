@@ -45,12 +45,18 @@ sqlalchemy.status_db.url = sqlite:///production.db
 # buildapi specific database
 sqlalchemy.buildapi_db.url = sqlite:///production.db
 
-# How to connect to message broker with carrot
-carrot.hostname = localhost
-carrot.userid = buildapi
-carrot.password = buildapi
-carrot.exchange = buildapi.control
-carrot.consumer.queue = buildapi-web
+# URL - see http://kombu.readthedocs.org/en/latest/userguide/connections.html
+mq.kombu_url =
+# the frequency at which to send "heartbeat" packets.  RabbitMQ does *not* negotiate
+# this value, so it should be set the same here and in the RabbitMQ configuration.  The
+# RabbitMQ default is 580.
+mq.heartbeat_interval = 580
+# The exchange through which all messages flow
+mq.exchange = buildapi.control
+# queue the web UI reads from (for 'finished' messages)
+mq.queue.web = buildapi-web
+# queue the agent reads from (for requests)
+mq.queue.agent = buildapi-agent
 
 # Link to a JSON file defining the buildmasters
 masters_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json

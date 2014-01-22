@@ -14,7 +14,7 @@ setup(
     url='',
     install_requires=[
         "SQLAlchemy<0.9.0",
-        "carrot>=0.10.7",
+        "kombu",
         "pytz",
         "MySQL-python",
         "Pylons==1.0",

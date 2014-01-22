@@ -592,7 +592,7 @@ def main():
 
     from sqlalchemy import create_engine
 
-    from buildapi.lib.mq import JobRequestConsumer, JobRequestDonePublisher, amqp_connection_from_config
+    from buildapi.lib.mq import JobRequestConsumer, JobRequestDonePublisher
 
     parser = OptionParser()
     parser.set_defaults(
@@ -620,40 +620,30 @@ def main():
     config.read([options.configfile])
 
     amqp_config = {}
-
-    for option in config.options('carrot'):
-        if option == 'ssl':
-            amqp_config['carrot.%s' % option] = config.getboolean('carrot', option)
-        else:
-            amqp_config['carrot.%s' % option] = config.get('carrot', option)
-
-    amqp_exchange = config.get('carrot', 'exchange')
-    amqp_conn = amqp_connection_from_config(amqp_config, 'carrot')
+    for option in config.options('mq'):
+        amqp_config['mq.%s' % option] = config.get('mq', option)
 
     agent = BuildAPIAgent(
         db=create_engine(config.get('db', 'url'), pool_recycle=60),
         masters_url=config.get('masters', 'masters-url'),
         buildbot=config.get('masters', 'buildbot'),
         sendchange_master=config.get('masters', 'sendchange-master'),
-        publisher=JobRequestDonePublisher(amqp_config, 'carrot'),
+        publisher=JobRequestDonePublisher(amqp_config),
         branches_url=config.get('branches', 'url'),
         clobberer_url=config.get('clobberer', 'url'),
     )
 
-    consumer = JobRequestConsumer(amqp_conn, exchange=amqp_exchange, queue=config.get('carrot', 'queue'))
+    consumer = JobRequestConsumer(amqp_config)
     consumer.register_callback(agent.receive_message)
 
     if options.wait:
         try:
-            consumer.wait()
+            consumer.run()
         except KeyboardInterrupt:
             # Let this go without a fuss
             pass
     else:
-        while True:
-            message = consumer.fetch(enable_callbacks=True)
-            if not message:
-                break
+        consumer.run_until_idle()
 
 if __name__ == '__main__':
     main()

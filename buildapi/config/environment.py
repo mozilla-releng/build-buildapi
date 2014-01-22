@@ -61,15 +61,15 @@ def load_environment(global_conf, app_conf):
     # any Pylons config options)
 
     # Create our AMQP message publisher
-    if 'carrot.hostname' in config:
+    if 'mq.kombu_url' in config and 'testing' not in config:
         config['pylons.app_globals'].mq = LoggingJobRequestPublisher(buildapi_engine,
-                config, 'carrot')
+                config)
 
         # And our consumer
         config['pylons.app_globals'].mq_consumer = LoggingJobRequestDoneConsumer(
                 buildapi_engine,
-                config, 'carrot')
-        thread.start_new_thread(config['pylons.app_globals'].mq_consumer.wait, ())
+                config)
+        thread.start_new_thread(config['pylons.app_globals'].mq_consumer.run, ())
     else:
         config['pylons.app_globals'].mq = None
 

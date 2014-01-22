@@ -22,9 +22,13 @@ class TestBuildsController(TestController):
 
         # create a job request publisher that doesn't actually send anything
         config = {
-            'carrot.exchange': 'exch',
+            'mq.heartbeat_interval': '5',
+            'mq.kombu_url': 'memory://',
+            'mq.exchange': 'buildapi-test',
+            'mq.queue.web': 'buildapi-test-q1',
+            'mq.queue.agent': 'buildapi-test-q2',
         }
-        self.g.mq = mq.LoggingJobRequestPublisher(self.engine, config, 'carrot')
+        self.g.mq = mq.LoggingJobRequestPublisher(self.engine, config)
         self.g.mq.send = mock.Mock()
 
     def get_jobrequests(self):

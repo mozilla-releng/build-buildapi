@@ -1,0 +1,28 @@
+[db]
+# sqlalchemy-style DB URL, for the scheduler DB
+url =
+
+[mq]
+# see the equivalent settings in buildapi's config.ini
+kombu_url = 
+heartbeat_interval =
+exchange =
+queue.web =
+queue.agent =
+
+[masters]
+# URL of the masters json
+masters-url =
+# path to the buildbot binary
+buildbot = 
+# the sendchange master hostname:port
+sendchange-master =
+
+[branches]
+# URL of the branches JSON
+url =
+
+[clobberer]
+# URL of the clobberer interface
+url =
+
