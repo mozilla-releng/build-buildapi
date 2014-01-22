@@ -15,15 +15,15 @@ class JobRequest(Base):
     id = Column(Integer, primary_key=True)
 
     action = Column(String(20), nullable=False)
-    who = Column(String, nullable=False)
+    who = Column(String(512), nullable=False)
     when = Column(Integer, nullable=False) # epoch timestamp
     completed_at = Column(Integer) # epoch timestamp
 
     # Extra data
-    what = Column(String, nullable=False) # json blob
+    what = Column(Text, nullable=False) # json blob
 
     # Extra data on completion
-    complete_data = Column(String) # json blob
+    complete_data = Column(Text) # json blob
 
     def asDict(self):
         return dict(action=self.action,

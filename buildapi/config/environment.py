@@ -5,6 +5,7 @@ from mako.lookup import TemplateLookup
 from pylons.configuration import PylonsConfig
 from pylons.error import handle_mako_error
 from sqlalchemy import engine_from_config
+import sqlalchemy
 
 import buildapi.lib.app_globals as app_globals
 import buildapi.lib.helpers
@@ -13,6 +14,21 @@ from buildapi.model import init_scheduler_model, init_status_model,\
     init_buildapi_model
 from buildapi.lib.mq import LoggingJobRequestPublisher, \
     LoggingJobRequestDoneConsumer
+
+def setup_engine(engine):
+    # handle connections that go away without raising errors to the caller
+    # see http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html#disconnect-handling-pessimistic
+    def checkout_listener(dbapi_con, con_record, con_proxy):
+        try:
+            cursor = dbapi_con.cursor()
+            cursor.execute("SELECT 1")
+        except dbapi_con.OperationalError, ex:
+            if ex.args[0] in (2006, 2013, 2014, 2045, 2055):
+                # sqlalchemy will re-create the connection
+                raise sqlalchemy.exc.DisconnectionError()
+            raise
+    if engine.dialect.name == 'mysql':
+        sqlalchemy.event.listen(engine.pool, 'checkout', checkout_listener)
 
 def load_environment(global_conf, app_conf):
     """Configure the Pylons environment via the ``pylons.config``
@@ -49,12 +65,15 @@ def load_environment(global_conf, app_conf):
 
     # Setup the SQLAlchemy database engine
     scheduler_engine = engine_from_config(config, 'sqlalchemy.scheduler_db.')
+    setup_engine(scheduler_engine)
     init_scheduler_model(scheduler_engine)
 
     status_engine = engine_from_config(config, 'sqlalchemy.status_db.')
+    setup_engine(status_engine)
     init_status_model(status_engine)
 
     buildapi_engine = engine_from_config(config, 'sqlalchemy.buildapi_db.')
+    setup_engine(buildapi_engine)
     init_buildapi_model(buildapi_engine)
 
     # CONFIGURATION OPTIONS HERE (note: all config options will override
