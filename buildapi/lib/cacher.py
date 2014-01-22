@@ -18,35 +18,16 @@ class BaseCache:
         if kwargs is None:
             kwargs = {}
 
+        # note that in a "thundering herd" situation, this may generate the
+        # same cached value several times.  That's OK.
         try:
-            readlock = "readlocks:%s" % key
-            log.debug("Getting read lock %s", readlock)
-            self._getlock(readlock, expire=time.time()+lock_time)
-            log.debug("Got read lock %s", readlock)
-
             try:
-                retval = self._get(key)
-                self._releaselock(readlock)
-                return retval
+                return self._get(key)
             except KeyError:
-                pass
-            except:
-                self._releaselock(readlock)
-                raise
-
-            writelock = "writelocks:%s" % key
-            log.debug("Getting write lock %s", writelock)
-            self._getlock(writelock, expire=time.time()+lock_time)
-            log.debug("Got write lock %s", writelock)
-
-            try:
                 retval = func(*args, **kwargs)
                 self._put(key, retval, expire)
                 return retval
-            finally:
-                self._releaselock(readlock)
-                self._releaselock(writelock)
-        except:
+        except Exception:
             log.exception("Problem with cache!")
             return func(*args, **kwargs)
 
@@ -82,18 +63,6 @@ try:
         def has_key(self, key):
             return self.r.exists(key)
 
-        def _getlock(self, key, expire):
-            if not hasattr(self.local, 'locks'):
-                self.local.locks = {}
-            assert key not in self.local.locks
-            l = redis.client.Lock(self.r, key, timeout=int(expire-time.time()))
-            l.acquire()
-            self.local.locks[key] = l
-
-        def _releaselock(self, key):
-            self.local.locks[key].release()
-            del self.local.locks[key]
-
 except ImportError:
     pass
 
@@ -120,17 +89,6 @@ try:
 
         def has_key(self, key):
             return self.m.get(key) is not None
-
-        def _getlock(self, key, expire):
-            # try repeatedly to add the key, which will fail if the key
-            # already exists, until we are the one to add it
-            delay = 0.001
-            while not self.m.add(key, '', expire):
-                time.sleep(delay)
-                delay = min(delay * 1.1, 1)
-
-        def _releaselock(self, key):
-            self.m.delete(key)
 
 except ImportError:
     pass
