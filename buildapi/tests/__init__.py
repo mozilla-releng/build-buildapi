@@ -20,7 +20,7 @@ import pylons.test
 __all__ = ['environ', 'url', 'TestController']
 
 # Invoke websetup with the current config file
-SetupCommand('setup-app').run([pylons.test.pylonsapp.config['__file__']])
+SetupCommand('setup-app').run(['test.ini'])
 
 environ = {}
 
@@ -28,7 +28,7 @@ class TestController(TestCase):
 
     def __init__(self, *args, **kwargs):
         wsgiapp = pylons.test.pylonsapp
-        config = wsgiapp.config
+        config = wsgiapp.application.config
         self.config = config
         self.app = TestApp(wsgiapp)
         self.g = self.config['pylons.app_globals']

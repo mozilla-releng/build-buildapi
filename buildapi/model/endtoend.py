@@ -8,10 +8,6 @@ from buildapi.model.util import NO_RESULT, SUCCESS, WARNINGS, FAILURE, \
 SKIPPED, EXCEPTION, RETRY
 from buildapi.model.util import get_time_interval, get_revision, results_to_str
 
-br = meta.scheduler_db_meta.tables['buildrequests']
-s = meta.scheduler_db_meta.tables['sourcestamps']
-c = meta.scheduler_db_meta.tables['changes']
-
 def GetEndtoEndTimes(starttime=None, endtime=None,
     branch_name='mozilla-central'):
     """Get end to end times report for the speficied time interval and branch.

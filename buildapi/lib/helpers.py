@@ -165,7 +165,10 @@ def get_branches():
     branches_url = app_globals.branches_url
     log.info("Fetching branches list from %s", branches_url)
     try:
-        branches = json.load(urllib.urlopen(branches_url))
+        if branches_url.startswith('TEST:'):
+            branches = json.load(open(branches_url.split(':')[1]))
+        else:
+            branches = json.load(urllib.urlopen(branches_url))
         _branches = branches
         _last_branches_check = now
     except:

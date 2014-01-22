@@ -3,8 +3,6 @@ from sqlalchemy import or_, select, not_
 import buildapi.model.meta as meta
 from buildapi.model.util import get_revision
 
-c = meta.scheduler_db_meta.tables['changes']
-
 def ChangesQuery(revision=None, branch_name=None, starttime=None, endtime=None):
     """Constructs the sqlalchemy query for fetching changes.
 
@@ -16,6 +14,8 @@ def ChangesQuery(revision=None, branch_name=None, starttime=None, endtime=None):
            endtime - end time (UNIX timestamp in seconds)
     Output: query
     """
+    c = meta.scheduler_db_meta.tables['changes']
+
     q = select([c.c.changeid, c.c.revision, c.c.branch, c.c.when_timestamp])
 
     if revision:

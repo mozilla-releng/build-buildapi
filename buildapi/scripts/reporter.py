@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import redis
 import simplejson as json
 
 import sqlalchemy as sa
@@ -315,9 +314,12 @@ if __name__ == "__main__":
     session = session_maker()
 
     if config.has_option('general', 'redis'):
+        import redis
         R = redis.Redis(host=config.get('general', 'redis'))
     else:
+        import redis
         R = redis.Redis()
+        # TODO: support memcached
 
     scheduler_db_engine = sa.create_engine(config.get('general', 'scheduler_dburl'), pool_recycle=60)
 

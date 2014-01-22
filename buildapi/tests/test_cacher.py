@@ -1,7 +1,7 @@
 import threading
 import mock
 from buildapi.lib import cacher
-from unittest import TestCase
+from unittest import TestCase, SkipTest
 
 class Cases(object):
 
@@ -19,7 +19,7 @@ class Cases(object):
         m.assert_not_called()
 
     def test_put(self):
-        m = mock.Mock()
+        m = mock.Mock(return_value=9999)
         self.c.put('not-there', 7)
         self.assertEqual(self.c.get('not-there', m), 7)
         m.assert_not_called()
@@ -56,11 +56,18 @@ class Cases(object):
 class TestRedisCacher(TestCase, Cases):
 
     def newCache(self):
-        return cacher.RedisCache()
+        return cacher.RedisCache(host='localhost')
 
     def setUp(self):
+        try:
+            import redis
+        except ImportError:
+            raise SkipTest("redis not installed")
         self.c = self.newCache()
-        self.c.r.delete('not-there')
+        try:
+            self.c.r.delete('not-there')
+        except redis.ConnectionError:
+            raise SkipTest("no redis server on localhost")
 
     def tearDown(self):
         self.c.r.delete('there')
@@ -70,10 +77,19 @@ class TestRedisCacher(TestCase, Cases):
 class TestMemcacheCacher(TestCase, Cases):
 
     def newCache(self):
-        return cacher.MemcacheCache()
+        return cacher.MemcacheCache(hosts=['localhost'])
 
     def setUp(self):
+        try:
+            import memcache
+            assert memcache
+        except ImportError:
+            raise SkipTest("memcache not installed")
         self.c = self.newCache()
+        # memcached will just happily cache nothing if it can't connect, which is
+        # great in production but not in testing.
+        if not self.c.m.servers[0].connect():
+            raise SkipTest("no memcached server on localhost")
         self.c.m.delete('not-there')
 
     def tearDown(self):

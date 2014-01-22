@@ -1,6 +1,7 @@
 from buildapi.tests import *
 from buildapi.model import init_scheduler_model, init_buildapi_model
 from buildapi.lib import json
+from buildapi.lib import mq
 import sqlalchemy
 import os, time
 
@@ -17,19 +18,23 @@ class TestBuildsController(TestController):
         init_scheduler_model(self.engine)
         init_buildapi_model(self.engine)
 
-        self.g.mq.engine.execute('delete from jobrequests')
+        self.engine.execute('delete from jobrequests')
 
-        # disable actually sending messages!
+        # create a job request publisher that doesn't actually send anything
+        config = {
+            'carrot.exchange': 'exch',
+        }
+        self.g.mq = mq.LoggingJobRequestPublisher(self.engine, config, 'carrot')
         self.g.mq.send = mock.Mock()
 
     def get_jobrequests(self):
-        p = self.g.mq.engine.execute('select * from jobrequests')
+        p = self.engine.execute('select * from jobrequests')
         requests = p.fetchall()
         return requests
 
     def test_branches(self):
         response = self.app.get(url('branches', format='json')).json
-        self.assertEquals(response, self.config['branches'])
+        self.assertEquals(response, json.load(open('branches-test.json')))
 
     def test_builders(self):
         # We have to fake out time.time here so it returns a time closely after
@@ -49,15 +54,16 @@ class TestBuildsController(TestController):
         self.assert_("Branch branch3 not found" in response.body)
 
     def test_branch(self):
-        response = self.app.get(url('branch', branch='branch1', format='json')).json
-        self.assertEquals(len(response['builds']), 1)
-        self.assertEquals(len(response['pending']), 2)
+        # fake the time to be when state.sql was created
+        with mock.patch.object(time, 'time', return_value=1285855044):
+            response = self.app.get(url('branch', branch='branch1', format='json')).json
+            self.assertEquals(len(response), 3)
 
     def test_branch2(self):
-        response = self.app.get(url('branch', branch='branch2', format='json')).json
-        self.assertEquals(len(response['builds']), 0)
-        self.assertEquals(len(response['running']), 1)
-        self.assertEquals(len(response['pending']), 0)
+        # fake the time to be when state.sql was created
+        with mock.patch.object(time, 'time', return_value=1285855044):
+            response = self.app.get(url('branch', branch='branch2', format='json')).json
+            self.assertEquals(len(response), 1)
 
     def test_build(self):
         response = self.app.get(url('build', branch='branch1', build_id=1, format='json')).json
@@ -75,8 +81,7 @@ class TestBuildsController(TestController):
 
     def test_revision(self):
         response = self.app.get(url('revision', branch='branch1', revision='123456789', format='json')).json
-        self.assertEquals(len(response['builds']), 1)
-        self.assertEquals(len(response['pending']), 0)
+        self.assertEquals(len(response), 1)
 
     def test_reprioritize(self):
         self.g.mq._clock = mock.Mock(return_value=543221)

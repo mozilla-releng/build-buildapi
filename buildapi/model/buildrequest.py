@@ -7,13 +7,6 @@ from buildapi.model.util import NO_RESULT
 from buildapi.model.util import get_branch_name, get_platform, get_build_type, \
 get_job_type, get_revision, results_to_str, status_to_str
 
-b = meta.scheduler_db_meta.tables['builds']
-br = meta.scheduler_db_meta.tables['buildrequests']
-bs = meta.scheduler_db_meta.tables['buildsets']
-s = meta.scheduler_db_meta.tables['sourcestamps']
-sch = meta.scheduler_db_meta.tables['sourcestamp_changes']
-c = meta.scheduler_db_meta.tables['changes']
-
 def BuildRequestsQuery(revision=None, branch_name=None, starttime=None, 
     endtime=None, changeid_all=False):
     """Constructs the sqlalchemy query for fetching build requests.
@@ -39,6 +32,13 @@ def BuildRequestsQuery(revision=None, branch_name=None, starttime=None,
                 per build request, with only one of the changeids at random
     Output: query
     """
+    b = meta.scheduler_db_meta.tables['builds']
+    br = meta.scheduler_db_meta.tables['buildrequests']
+    bs = meta.scheduler_db_meta.tables['buildsets']
+    s = meta.scheduler_db_meta.tables['sourcestamps']
+    sch = meta.scheduler_db_meta.tables['sourcestamp_changes']
+    c = meta.scheduler_db_meta.tables['changes']
+
     q = outerjoin(br, b, b.c.brid == br.c.id).join(
             bs, bs.c.id == br.c.buildsetid).join(
             s, s.c.id == bs.c.sourcestampid).outerjoin(
@@ -117,6 +117,7 @@ def GetBuildRequests(revision=None, branch_name=None, starttime=None,
                 per build request, with only one of the changeids at random
     Output: dictionary of BuildRequest objects, keyed by (br.brid, br.bid)
     """
+
     q = BuildRequestsQuery(revision=revision, branch_name=branch_name, 
             starttime=starttime, endtime=endtime, changeid_all=changeid_all)
     q_results = q.execute()

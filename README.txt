@@ -32,6 +32,16 @@ or
 
     buildapi.cache = memcached:HOSTNAME:PORT,HOSTNAME:PORT,..
 
+You'll need to set up some scheduler and status DB's.  The schema for these
+DBs are in the root directory, although you may want to fill them with test
+data which is not included.
+
+    sqlite3 statusdb.sqlite3 < statusdb_schema.sql
+    sqlite3 schedulerdb.sqlite3 < schedulerdb_schema.sql
+    sqlite3 buildapi.sqlite3 < buildapi_schema.sql
+
+And point the proper DB strings
+
 Now setup the application::
 
     paster setup-app config.ini

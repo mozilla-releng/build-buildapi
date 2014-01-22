@@ -9,9 +9,6 @@ from buildapi.model.util import BUILDERS_DETAIL_LEVELS
 from buildapi.model.util import get_time_interval, get_platform, \
 get_build_type, get_job_type
 
-br = meta.scheduler_db_meta.tables['buildrequests']
-c = meta.scheduler_db_meta.tables['changes']
-
 def BuildersQuery(starttime, endtime, branch_name):
     """Constructs the sqlalchemy query for fetching all build requests in the 
     specified time interval for the specified branch.
@@ -33,6 +30,8 @@ def BuildersTypeQuery(starttime, endtime, buildername):
            buildername - builder's name
     Output: query
     """
+    br = meta.scheduler_db_meta.tables['buildrequests']
+
     q = BuildRequestsQuery(starttime=starttime, endtime=endtime)
     q = q.where(br.c.buildername.like(buildername))
     return q
