@@ -1,5 +1,10 @@
 #!/usr/bin/python
-import simplejson as json
+
+import sys, os
+print sys.path
+from optparse import OptionParser
+from ConfigParser import SafeConfigParser
+import json
 
 import sqlalchemy as sa
 from datetime import datetime, timedelta
@@ -82,9 +87,49 @@ def get_slave_name(cache, session, slave_id):
     if not slave_name:
         s = session.query(model.Slave).get(slave_id)
         slave_name = s.name
-        cache.set(slave_key, slave_name)
-        cache.expire(slave_key, 24*3600)
+        cache.put(slave_key, slave_name, 24*3600)
     return slave_name
+
+
+class Cache(object):
+
+    @staticmethod
+    def new(config):
+        cache_spec = config.get('general', 'cache', None)
+        if not cache_spec:
+            return Cache()
+        if cache_spec.startswith("memcached:"):
+            hosts = cache_spec[10:].split(',')
+            return MemcacheCache(hosts)
+        raise RuntimeError("invalid cache spec %r" % (cache_spec,))
+
+    def get(self, key):
+        return None
+
+    def put(self, key, val, expire=0):
+        pass
+
+
+class MemcacheCache(Cache):
+
+    def __init__(self, hosts):
+        import memcache
+        self.m = memcache.Client(hosts)
+
+    def _utf8(self, s):
+        if isinstance(s, unicode):
+            return s.encode('utf-8')
+        return s
+
+    def get(self, key):
+        return self.m.get(self._utf8(key))
+
+    def put(self, key, val, expire=0):
+        if expire == 0:
+            self.m.set(self._utf8(key), val)
+        else:
+            expire = int(expire - time.time())
+            self.m.set(self._utf8(key), val, expire)
 
 
 def build_report(cache, session, scheduler_db, starttime, endtime, include_steps=False):
@@ -145,13 +190,13 @@ def build_report(cache, session, scheduler_db, starttime, endtime, include_steps
                 try:
                     builder = json.loads(builder.decode("zlib"))
                 except:
-                    cache.set(builder_key, builder.encode("zlib"))
-                    cache.expire(builder_key, 24*3600) # Keep it for a day
+                    cache.put(builder_key, builder.encode("zlib"),
+                              24*3600) # Keep it for a day
                     builder = json.loads(builder)
             else:
                 builder = get_builder()
-                cache.set(builder_key, json.dumps(builder).encode("zlib"))
-                cache.expire(builder_key, 24*3600) # Keep it for a day
+                cache.put(builder_key, json.dumps(builder).encode("zlib"),
+                          24*3600) # Keep it for a day
 
             builders[build.builder_id] = builder
             times['builders'] += time.time() - s0
@@ -213,13 +258,11 @@ def build_report(cache, session, scheduler_db, starttime, endtime, include_steps
             try:
                 build_dict = json.loads(build_dict.decode("zlib"))
             except:
-                cache.set(build_key, build_dict.encode("zlib"))
-                cache.expire(build_key, 24*3600)
+                cache.put(build_key, build_dict.encode("zlib"), 24*3600)
                 build_dict = json.loads(build_dict)
         else:
             build_dict = get_build_dict()
-            cache.set(build_key, json.dumps(build_dict).encode("zlib"))
-            cache.expire(build_key, 24*3600)
+            cache.put(build_key, json.dumps(build_dict).encode("zlib"), 24*3600)
         builds.append(build_dict)
 
     e = time.time()
@@ -229,13 +272,6 @@ def build_report(cache, session, scheduler_db, starttime, endtime, include_steps
     return report
 
 if __name__ == "__main__":
-    import sys, os
-    try:
-        import simplejson as json
-    except:
-        import json
-    from optparse import OptionParser
-    from ConfigParser import SafeConfigParser
 
     def timedelta_option(option, opt, value, parser, units):
         setattr(parser.values, option.dest, timedelta(seconds=value * units))
@@ -313,14 +349,6 @@ if __name__ == "__main__":
     session_maker = model.connect(options.dburl, pool_recycle=60)
     session = session_maker()
 
-    if config.has_option('general', 'redis'):
-        import redis
-        R = redis.Redis(host=config.get('general', 'redis'))
-    else:
-        import redis
-        R = redis.Redis()
-        # TODO: support memcached
-
     scheduler_db_engine = sa.create_engine(config.get('general', 'scheduler_dburl'), pool_recycle=60)
 
     starttime = options.start_time
@@ -355,7 +383,8 @@ if __name__ == "__main__":
 
     else:
         print time.asctime()
-        report = build_report(R, session, scheduler_db_engine, starttime, endtime)
+        cache = Cache.new(config)
+        report = build_report(cache, session, scheduler_db_engine, starttime, endtime)
 
         fp.write(encoder.encode(report))
 
