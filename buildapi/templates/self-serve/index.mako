@@ -30,13 +30,6 @@ $(document).ready(function()
 </%def>
 <%def name="body()">\
 <h1>Welcome to the RelEng Self-Serve API</h1>
-<h2>disclaimers...</h2>
-<p>Please note that this is very much alpha software. It's running on an
-underpowered VM, is periodically slow, and is probably full of bugs. Speaking
-of which, if you find
-any, or have comments or other feedback, please file them <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=mozilla.org&component=Release Engineering">here</a>,
-or mail catlee directly.
-</p>
 
 Available branches:<br/>
 <table id="branches"></table>
