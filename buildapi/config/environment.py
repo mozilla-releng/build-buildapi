@@ -19,14 +19,11 @@ def setup_engine(engine):
     # handle connections that go away without raising errors to the caller
     # see http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html#disconnect-handling-pessimistic
     def checkout_listener(dbapi_con, con_record, con_proxy):
+        cursor = dbapi_con.cursor()
         try:
-            cursor = dbapi_con.cursor()
             cursor.execute("SELECT 1")
-        except dbapi_con.OperationalError, ex:
-            if ex.args[0] in (2006, 2013, 2014, 2045, 2055):
-                # sqlalchemy will re-create the connection
-                raise sqlalchemy.exc.DisconnectionError()
-            raise
+        except Exception:
+            raise sqlalchemy.exc.DisconnectionError()
     if engine.dialect.name == 'mysql':
         sqlalchemy.event.listen(engine.pool, 'checkout', checkout_listener)
 
