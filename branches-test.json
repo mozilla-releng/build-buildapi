@@ -1,13 +1,13 @@
 {
   "branch1": {
-    "repo": "http://hg.mozilla.org/projects/branch1",
+    "repo": "https://hg.mozilla.org/projects/branch1",
     "graph_branches": [
       "branch1"
     ],
     "repo_type": "hg"
   },
   "branch2": {
-    "repo": "http://hg.mozilla.org/projects/branch2",
+    "repo": "https://hg.mozilla.org/projects/branch2",
     "graph_branches": [
       "branch2"
     ],
