@@ -59,10 +59,10 @@ mq.queue.web = buildapi-web
 mq.queue.agent = buildapi-agent
 
 # Link to a JSON file defining the buildmasters
-masters_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json
+masters_url = https://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-masters.json
 
 # Similarly a JSON file defining the branches
-branches_url = http://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-branches.json
+branches_url = https://hg.mozilla.org/build/tools/raw-file/default/buildfarm/maintenance/production-branches.json
 
 # Path to the backend cache:
 #   redis:HOSTNAME:PORT

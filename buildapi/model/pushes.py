@@ -11,15 +11,15 @@ import logging
 log = logging.getLogger(__name__)
 
 def PushesQuery(starttime, endtime, branches=None):
-    """Constructs the sqlalchemy query for fetching all pushes in the specified 
+    """Constructs the sqlalchemy query for fetching all pushes in the specified
     time interval.
 
-    One push is identified by changes.when_timestamp and branch name. 
+    One push is identified by changes.when_timestamp and branch name.
     Unittests and talos build requests are excluded.
 
     Input: starttime - start time, UNIX timestamp (in seconds)
            endtime - end time, UNIX timestamp (in seconds)
-           branches - filter by list of branches, if not spefified fetches 
+           branches - filter by list of branches, if not spefified fetches
                 all branches
     Output: query
     """
@@ -28,15 +28,17 @@ def PushesQuery(starttime, endtime, branches=None):
     c = meta.scheduler_db_meta.tables['changes']
 
     q = select([s.c.revision, s.c.branch, c.c.author, c.c.when_timestamp],
-               and_(sch.c.changeid == c.c.changeid, 
+               and_(sch.c.changeid == c.c.changeid,
                     s.c.id == sch.c.sourcestampid))
     q = q.where(or_(
         c.c.revlink.startswith('http://hg.mozilla.org'),
-        c.c.comments.startswith('http://hg.mozilla.org')))
+        c.c.revlink.startswith('https://hg.mozilla.org'),
+        c.c.comments.startswith('http://hg.mozilla.org'),
+        c.c.comments.startswith('https://hg.mozilla.org')))
     q = q.group_by(c.c.when_timestamp, s.c.branch)
 
     # exclude branches that are not of interest
-    bexcl = [not_(s.c.branch.like(p)) for p in 
+    bexcl = [not_(s.c.branch.like(p)) for p in
         PUSHES_SOURCESTAMPS_BRANCH_SQL_EXCLUDE]
     if bexcl:
         q = q.where(and_(*bexcl))
@@ -56,13 +58,13 @@ def PushesQuery(starttime, endtime, branches=None):
 def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
     """Get pushes and statistics.
 
-    Input: starttime - start time (UNIX timestamp in seconds), if not 
+    Input: starttime - start time (UNIX timestamp in seconds), if not
                 specified, endtime minus 24 hours
-           endtime - end time (UNIX timestamp in seconds), if not specified, 
-                starttime plus 24 hours or current time (if starttime is not 
+           endtime - end time (UNIX timestamp in seconds), if not specified,
+                starttime plus 24 hours or current time (if starttime is not
                 specified either)
            int_size - break down results per interval (in seconds), if specified
-           branches - filter by list of branches, if not spefified fetches all 
+           branches - filter by list of branches, if not spefified fetches all
                 branches
     Output: pushes report
     """
@@ -71,7 +73,7 @@ def GetPushes(starttime=None, endtime=None, int_size=0, branches=None):
     q = PushesQuery(starttime, endtime, branches)
     q_results = q.execute()
 
-    report = PushesReport(starttime, endtime, int_size=int_size, 
+    report = PushesReport(starttime, endtime, int_size=int_size,
         branches=branches)
     for r in q_results:
         branch_name = get_branch_name(r['branch'])
@@ -151,7 +153,7 @@ class PushesReport(IntervalsReport):
         }
         for branch in self.branch_intervals:
             json_obj['branch'][branch] = {
-                'total': self.branch_totals[branch], 
+                'total': self.branch_totals[branch],
                 'intervals': self.branch_intervals[branch]
             }
 

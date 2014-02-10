@@ -84,7 +84,7 @@ class BuildAPIAgent:
                 log.exception("Couldn't load data; using old ones")
 
     def _get_repo_path(self, branch):
-        # branches[branch]['repo'] is a string like "http://hg.mozilla.org/projects/foo"
+        # branches[branch]['repo'] is a string like "https://hg.mozilla.org/projects/foo"
         # use urlparse to get the path out of that ("/projects/foo"), and remove
         # the leading / to be left with "projects/foo"
         return urlparse(self.branches[branch]['repo']).path.lstrip("/")

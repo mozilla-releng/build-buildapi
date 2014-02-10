@@ -41,6 +41,6 @@ class RecentController(BaseController):
             for b in builds:
                 for k,v in b.items():
                     if isinstance(v, datetime.datetime):
-                        v = g.tz.localize(v)
+                        v = times.UTC.localize(v)
                         b[k] = times.dt2ts(v)
             return self.jsonify(builds)
