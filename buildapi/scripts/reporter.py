@@ -128,7 +128,6 @@ class MemcacheCache(Cache):
         if expire == 0:
             self.m.set(self._utf8(key), val)
         else:
-            expire = int(expire - time.time())
             self.m.set(self._utf8(key), val, expire)
 
 
