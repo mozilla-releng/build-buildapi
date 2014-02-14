@@ -24,7 +24,9 @@ class ConfigMixin(object):
 
     def setup_config(self, config):
         self.heartbeat = int(config.get('mq.heartbeat_interval', '0'))
-        conn = Connection(config['mq.kombu_url'], heartbeat=self.heartbeat)
+        conn = Connection(config['mq.kombu_url'],
+                          heartbeat=self.heartbeat,
+                          transport_options={'confirm_publish': True})
         self.connection = connections[conn].acquire(block=True)
         self.exchange = Exchange(config['mq.exchange'], type='topic', durable=True)
 
