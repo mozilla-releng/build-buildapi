@@ -47,8 +47,12 @@ $(document).ready(function() {
         build['start_time_human'] = datetime.fromtimestamp(build['start_time']).strftime('%Y-%m-%d %H:%M:%S')
         build['running_for'] = now - datetime.fromtimestamp(build['start_time'])
         m = h.convert_master(build['claimed_by_name'])
-        build['master'] = m['pretty_name']
-        build['url'] = h.url_for_build(m['master_addr'], build['buildername'], build['number'])
+        if m:
+            build['master'] = m['pretty_name']
+            build['url'] = h.url_for_build(m['master_addr'], build['buildername'], build['number'])
+        else:
+            build['master'] = ''
+            build['url'] = '#'
       %>
       <tr>
       <td>${branch}</td><td>${revision}</td>

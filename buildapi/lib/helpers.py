@@ -99,8 +99,8 @@ pacific_tz = Pacific()
 time_format = '%a, %d %b %Y %H:%M:%S %z (%Z)'
 
 def pacific_time(timestamp, format=time_format):
-    """Convert a time expressed in seconds since the epoch to a string 
-    representing Pacific time. If secs is not provided or None, the current 
+    """Convert a time expressed in seconds since the epoch to a string
+    representing Pacific time. If secs is not provided or None, the current
     time as returned by time() is used.
     """
     if not timestamp:
@@ -110,7 +110,7 @@ def pacific_time(timestamp, format=time_format):
     return dt.strftime(format)
 
 
-# Matches a master from production-masters.json, to the corresponding 
+# Matches a master from production-masters.json, to the corresponding
 # build pool, by looking at the 'role' field
 ROLE_MASTERS_POOLS = {
     'build': BUILDPOOL,
@@ -204,6 +204,8 @@ def addr_for_master(claimed_by_name):
     """Returns the fully qualified domain name and port for the master
     indicated by claimed_by_name"""
     get_masters()
+    if claimed_by_name not in _masters_by_dbname:
+        return None, None
     fqdn = _masters_by_dbname[claimed_by_name]['hostname']
     port = _masters_by_dbname[claimed_by_name]['http_port']
 
@@ -221,6 +223,8 @@ def convert_master(m):
          * master_url, eg 'http://buildbot-master1.build.mozilla.org:8011'
     """
     fqdn, port = addr_for_master(m)
+    if fqdn is None:
+        return None
     pretty_name = '%s:%i' % (fqdn.split(".")[0], port)
     master_url = 'http://%(fqdn)s:%(port)i' % locals()
 
