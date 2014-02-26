@@ -77,8 +77,7 @@ def make_map(config):
     map.connect('new_build_at_rev', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='new_build_at_rev', conditions=dict(method=['POST']))
     map.connect('new_pgobuild_at_rev', '/self-serve/{branch}/rev/{revision}/pgo', controller='selfserve', action='new_pgobuild_at_rev', conditions=dict(method=['POST']))
     map.connect('new_nightly_at_rev', '/self-serve/{branch}/rev/{revision}/nightly', controller='selfserve', action='new_nightly_at_rev', conditions=dict(method=['POST']))
-    #map.connect('new_build_for_builder', '/self-serve/{branch}/builders/{builder_name}', controller='selfserve', action='new_build_for_builder', conditions=dict(method=['POST']))
-
+    map.connect('new_build_for_builder', '/self-serve/{branch}/builders/{builder_name}/{revision}', controller='selfserve', action='new_build_for_builder', conditions=dict(method=['POST']))
     # Status of jobs
     map.connect('job_status', '/self-serve/jobs/{job_id}', controller='selfserve', action='job_status')
     # History of requsts
@@ -93,7 +92,6 @@ def make_map(config):
     map.connect('revision', '/self-serve/{branch}/rev/{revision}', controller='selfserve', action='revision')
     map.connect('revision_is_done', '/self-serve/{branch}/rev/{revision}/is_done', controller='selfserve', action='revision_is_done')
     map.connect('builders', '/self-serve/{branch}/builders', controller='selfserve', action='builders')
-    map.connect('builder', '/self-serve/{branch}/builders/{builder_name}', controller='selfserve', action='builder')
     map.connect('user', '/self-serve/{branch}/user/{user}', controller='selfserve', action='user')
 
     # Redirect /foo/ to /foo

@@ -250,11 +250,6 @@ class SelfserveController(BaseController):
         return self._format(retval)
 
     @beaker_cache(query_args=True, expire=60)
-    def builder(self, branch, builder_name):
-        """Return a list of builds running for this builder"""
-        abort(501, "Unimplemented")
-
-    @beaker_cache(query_args=True, expire=60)
     def user(self, branch, user):
         """Return a list of builds for this user"""
         if branch not in self._branches_cache:
@@ -499,12 +494,39 @@ class SelfserveController(BaseController):
         # TODO: invalidate cache for branch
         return self._format(retval)
 
-    def new_build_for_builder(self, branch, builder_name):
+    def new_build_for_builder(self, branch, builder_name, revision):
         who = self._require_auth()
 
         if branch not in self._branches_cache:
             return self._failed("Branch %s not found" % branch, 404)
 
-        # TODO: Make sure that the 'fake' branches for sourcestamps are obeyed?
-        abort(501, "Unimplemented")
+        # Get priority
+        try:
+            priority = validators.Int(if_empty=0).\
+                to_python(request.POST.get('priority'))
+        except formencode.Invalid:
+            return self._failed('Bad priority', 400)
 
+        # Get properties
+        try:
+            properties = json.loads(request.POST.get('properties'))
+            assert isinstance(properties, dict)
+        except Exception:
+            properties = {}
+
+        # Get the list of files
+        try:
+            files = json.loads(request.POST.get('files'))
+            assert isinstance(files, list)
+        except Exception:
+            files = []
+
+        # Set branch to ${branch}-selfserve to keep schedulers from triggering
+        branch += "-selfserve"
+        access_log.info("%s new_build_for_builder of %s %s %s",
+                        who, branch, builder_name, revision)
+        retval = g.mq.newBuildForBuilder(
+                        who, branch, revision, priority, builder_name, properties, files)
+        response.status = 202
+
+        return self._format(retval)

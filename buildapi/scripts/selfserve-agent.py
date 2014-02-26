@@ -584,6 +584,103 @@ class BuildAPIAgent:
             msgs.append(result['msg'])
         return {"errors": errors, "msg": "\n".join(msgs)}
 
+    def do_new_build_for_builder(self, message_data, message):
+        who = message_data['who']
+        branch = message_data['body']['branch']
+        revision = message_data['body']['revision']
+        priority = message_data['body']['priority']
+        builder_name = message_data['body']['builder_name']
+        files = message_data['body']['files']
+        log.info("New build for %s by %s of %s %s", builder_name, who, branch, revision)
+
+        # Create a sourcestamp
+        q = text("""INSERT INTO sourcestamps
+                (`branch`, `revision`, `patchid`, `repository`, `project`)
+                VALUES
+                (:branch, :revision, NULL, '', '')
+                """)
+        log.debug(q)
+        r = self.db.execute(q, branch=branch, revision=revision)
+        ssid = r.lastrowid # SourcestampID
+        log.debug("Created sourcestamp %s", ssid)
+
+        # Create change object
+        when = time.time()
+        q = text("""INSERT INTO changes
+                (`author`, `comments`, `is_dir`, `branch`,
+                `revision`, `revlink`, `when_timestamp`, `category`,
+                `repository`, `project`)
+                VALUES
+                (:who, '', 0, :branch, :revision, NULL, :when, NULL, '', '')
+                """)
+        log.debug(q)
+        r = self.db.execute(q, who=who, branch=branch, revision=revision, when=when)
+        cid = r.lastrowid
+        log.debug("Created change %s", cid)
+
+        # Create change-files
+        for f in files:
+            q = text("""INSERT INTO change_files
+                    (`changeid`, `filename`)
+                    VALUES
+                    (:cid, :f)
+                    """)
+            log.debug(q)
+            r = self.db.execute(q, cid=cid, f=f) 
+        log.debug("Created change_file for change object %s", cid)
+
+        # Create sourcestamp_changes
+        q = text("""INSERT INTO sourcestamp_changes
+                (`sourcestampid`, `changeid`)
+                VALUES
+                (:ssid, :cid)
+                """)
+        log.debug(q)
+        r = self.db.execute(q, ssid=ssid, cid=cid) 
+        log.debug("Created sourcestamp_changes for sourcestamp %s, change object %s", ssid, cid)
+
+        # Create a new buildset
+        now = time.time()
+        buildsetid = create_buildset(
+            self.db,
+            idstring=None,
+            reason='Self-serve: Requested by %s' % who,
+            ssid=ssid,
+            submitted_at=now,
+        )
+
+        # Create buildset properties (buildid, builduid)
+        q = text("""INSERT INTO buildset_properties
+                (`buildsetid`, `property_name`, `property_value`)
+                VALUES
+                (:buildsetid, :key, :value)
+                """)
+        props = {
+            'buildid': json.dumps((genBuildID(now), "self-serve")),
+            'builduid': json.dumps((genBuildUID(), "self-serve")),
+        }
+        # Making a tuple of each key and a tuple of it's associated property and the source "self-serve"
+        props.update(((k, json.dumps((v, "self-serve"))) for (k,v) in message_data['body']['properties'].iteritems()))
+        log.debug(q)
+        for key, value in props.items():
+            r = self.db.execute(q, buildsetid=buildsetid, key=key, value=value)
+            log.debug("Created buildset_property %s=%s", key, value)
+
+        # Create buildrequests
+        q = text("""INSERT INTO buildrequests
+                (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
+                VALUES
+                (:buildsetid, :builder_name, :submitted_at, :priority, 0, NULL, NULL, 0, NULL, NULL)""")
+        log.debug(q)
+        r = self.db.execute(
+            q,
+            buildsetid=buildsetid,
+            builder_name=builder_name,
+            submitted_at=now,
+            priority=priority)
+        log.debug("Created buildrequest %s: %i", builder_name, r.lastrowid)
+        return {"errors": False, "msg": "Ok"}
+
 
 def main():
     import os

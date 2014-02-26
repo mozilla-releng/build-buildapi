@@ -169,6 +169,13 @@ class JobRequestPublisher(ReliablePublisher):
     def newNightlyAtRevision(self, who, branch, revision, priority):
         return self.send_msg('new_nightly_at_revision', who=who, branch=branch, revision=revision, priority=priority)
 
+    def newBuildForBuilder(self, who, branch, revision, priority, builder_name,
+                           properties, files):
+        return self.send_msg('new_build_for_builder', who=who, branch=branch,
+                             revision=revision, priority=priority,
+                             builder_name=builder_name, properties=properties,
+                             files=files)
+
 
 class JobRequestConsumer(ReliableConsumer):
     """For agents consuming job requests."""
