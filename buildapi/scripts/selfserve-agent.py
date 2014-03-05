@@ -449,7 +449,7 @@ class BuildAPIAgent:
         subprocess.check_call(cmd)
         return {"errors": False, "msg": "Ok"}
 
-    def _create_build_for_revision(self, who, branch, revision, priority, builder_expressions, builder_exclusions=None):
+    def _create_build_for_revision(self, who, branch, revision, priority, builder_expression, builder_exclusions=None):
         if builder_exclusions is None:
             builder_exclusions = ['%l10n nightly']
         now = time.time()
@@ -457,19 +457,16 @@ class BuildAPIAgent:
 
         # Find builders that have been active in the past 2 weeks
         q = """SELECT DISTINCT buildername FROM buildrequests WHERE
+                buildername LIKE :buildername AND
             """
-        for i, bx in enumerate(builder_expressions):
-            q = q + "buildername LIKE :buildername_expression_%i AND " % i
-
         for i, bx in enumerate(builder_exclusions):
             q = q + "buildername NOT LIKE :buildername_exclusion_%i AND " % i
         q = q + """
           submitted_at > :submitted_at"""
         qparams = {
+            'buildername': builder_expression,
             'submitted_at': time.time() - 14 * 24 * 3600,
         }
-        for i, bx in enumerate(builder_expressions):
-            qparams['buildername_expression_%i' % i] = builder_expressions[i]
         for i, bx in enumerate(builder_exclusions):
             qparams['buildername_exclusion_%i' % i] = builder_exclusions[i]
         result = self.db.execute(text(q), qparams)
@@ -539,7 +536,7 @@ class BuildAPIAgent:
             branch,
             revision,
             priority,
-            ["%% %s pgo-build" % branch])
+            "%% %s pgo-build" % branch)
 
     def do_new_nightly_at_revision(self, message_data, message):
         who = message_data['who']
@@ -552,7 +549,7 @@ class BuildAPIAgent:
             branch,
             revision,
             priority,
-            ['%\_' + branch + '\_%nightly', '% ' + branch + ' %nightly%'],
+            '%' + branch + '%nightly',
             ['%' + branch + '_v%nightly', '%l10n nightly'])
 
     def do_cancel_revision(self, message_data, message):
