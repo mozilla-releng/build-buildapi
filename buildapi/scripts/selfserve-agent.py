@@ -237,10 +237,11 @@ class BuildAPIAgent:
             self.publisher.ack_msg(msg)
             message.ack()
         except TimeoutError:
-            log.exception("TimeoutError accessing the DB pool, exiting...")
-            raise SystemExit(1)
+            log.exception("TimeoutError accessing the DB pool")
+            raise
         except:
             log.exception("Error processing message")
+            raise
 
     def do_reprioritize(self, message_data, message):
         who = message_data['who']
