@@ -495,6 +495,8 @@ class SelfserveController(BaseController):
         return self._format(retval)
 
     def new_build_for_builder(self, branch, builder_name, revision):
+        """Creates a new arbitrary build/test for this buildername, for this revision. 
+        Optional POST parameters are 'properties' and 'files', which should be a dictionary and a list, respectively."""
         who = self._require_auth()
 
         if branch not in self._branches_cache:
