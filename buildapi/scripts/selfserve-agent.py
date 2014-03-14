@@ -231,6 +231,10 @@ class BuildAPIAgent:
         self._refresh()
 
         try:
+            if 'body' not in message_data or 'request_id' not in message_data['body']:
+                log.warning("discarding malformed message - no request_id")
+                message.ack()
+                return
             retval = action_func(message_data, message)
             msg = {'body': retval}
             msg['request_id'] = message_data['body']['request_id']
