@@ -596,10 +596,11 @@ class BuildAPIAgent:
         log.info("New build for %s by %s of %s %s", builder_name, who, branch, revision)
 
         # Create a sourcestamp
+        real_branch = branch.split("-selfserve")[0]
         q = text("""INSERT INTO sourcestamps
                 (`branch`, `revision`, `patchid`, `repository`, `project`)
                 VALUES
-                (:branch, :revision, NULL, '', '')
+                (:real_branch, :revision, NULL, '', '')
                 """)
         log.debug(q)
         r = self.db.execute(q, branch=branch, revision=revision)
