@@ -1,0 +1,14 @@
+*pyc
+*mako.py
+docs/_build
+docs/_static
+development.db
+buildapi/public/dataTables-1.6/Readme.txt
+buildapi/public/dataTables-1.6/examples/
+buildapi/public/dataTables-1.6/extras/
+buildapi/public/dataTables-1.6/media/unit_testing/
+buildapi/public/jquery/development-bundle/
+buildapi/public/jquery/index.html
+build/
+dist/
+buildapi.egg-info
