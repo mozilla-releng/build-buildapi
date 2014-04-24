@@ -372,7 +372,9 @@ class SelfserveController(BaseController):
     def rebuild_build(self, branch):
         """Rebuild `build_id`, which must be passed in as a POST parameter.
 
-        `priority` is also accepted as an optional parameter."""
+        `priority` and `count` are also accepted as optional parameters.
+        `count` defaults to 1, and represents the number of times this build
+        will be rebuilt."""
         who = self._require_auth()
 
         if branch not in self._branches_cache:
@@ -388,12 +390,17 @@ class SelfserveController(BaseController):
         except formencode.Invalid:
             return self._failed('Bad priority', 400)
 
+        try:
+            count = validators.Int(if_empty=1).to_python(request.POST.get('count'))
+        except formencode.Invalid:
+            return self._failed('Bad count', 400)
+
         retval = getBuild(branch, build_id)
         if not retval:
             return self._failed("Build %s not found on branch %s" % (build_id, branch), 404)
 
-        access_log.info("%s rebuild_build %s %s %s", who, branch, build_id, priority)
-        retval = g.mq.rebuildBuild(who, build_id, priority)
+        access_log.info("%s rebuild_build %s %s %s %s", who, branch, build_id, priority, count)
+        retval = g.mq.rebuildBuild(who, build_id, priority, count)
         # TODO: invalidate cache for branch
         return self._format_mq_response(retval)
 
@@ -401,7 +408,9 @@ class SelfserveController(BaseController):
         """
         Rebuild  `request_id`, which must be passed in as a POST parameter.
 
-        `priority` is also accepted as an optional parameter."""
+        `priority` and `count` are also accepted as optional parameters.
+        `count` defaults to 1, and represents the number of times this build
+        will be rebuilt."""
         who = self._require_auth()
 
         if branch not in self._branches_cache:
@@ -417,12 +426,17 @@ class SelfserveController(BaseController):
         except formencode.Invalid:
             return self._failed('Bad priority', 400)
 
+        try:
+            count = validators.Int(if_empty=1).to_python(request.POST.get('count'))
+        except formencode.Invalid:
+            return self._failed('Bad count', 400)
+
         retval = getRequest(branch, request_id)
         if not retval:
             return self._failed("Request %s not found on branch %s" % (request_id, branch), 404)
 
-        access_log.info("%s rebuild_request %s %s %s", who, branch, request_id, priority)
-        retval = g.mq.rebuildRequest(who, request_id, priority)
+        access_log.info("%s rebuild_request %s %s %s %s", who, branch, request_id, priority, count)
+        retval = g.mq.rebuildRequest(who, request_id, priority, count)
         # TODO: invalidate cache for branch
         return self._format_mq_response(retval)
 
@@ -495,7 +509,7 @@ class SelfserveController(BaseController):
         return self._format(retval)
 
     def new_build_for_builder(self, branch, builder_name, revision):
-        """Creates a new arbitrary build/test for this buildername, for this revision. 
+        """Creates a new arbitrary build/test for this buildername, for this revision.
         Optional POST parameters are 'properties' and 'files', which should be a dictionary and a list, respectively."""
         who = self._require_auth()
 

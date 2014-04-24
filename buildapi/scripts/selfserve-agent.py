@@ -289,7 +289,9 @@ class BuildAPIAgent:
     def do_rebuild_build(self, message_data, message):
         who = message_data['who']
         bid = message_data['body']['bid']
-        log.info("rebuilding build by %s of %s", who, bid)
+        count = message_data['body'].get('count', 1)
+        priority = message_data['body'].get('priority', 0)
+        log.info("rebuilding build by %s of %s count %s pri %s", who, bid, count, priority)
 
         # Get the build request and build set
         build = self.db.execute(text(
@@ -304,51 +306,59 @@ class BuildAPIAgent:
             log.info("No build with id %s, giving up" % bid)
             return {"errors": True, "msg": "No build with that id"}
 
-        # Create a new buildset
         now = time.time()
-        buildsetid = create_buildset(
-            self.db,
-            idstring=build.external_idstring,
-            reason='Self-serve: Rebuilt by %s' % who,
-            ssid=build.sourcestampid,
-            submitted_at=now,
-        )
+        for i in range(count):
+            # Create a new buildset
+            buildsetid = create_buildset(
+                self.db,
+                idstring=build.external_idstring,
+                reason='Self-serve: Rebuilt by %s' % who,
+                ssid=build.sourcestampid,
+                submitted_at=now,
+            )
 
-        # Copy buildset properties
-        q = text("""INSERT INTO buildset_properties
-                (`buildsetid`, `property_name`, `property_value`)
-                SELECT :buildsetid, `property_name`, `property_value` FROM
-                    buildset_properties WHERE
-                    buildsetid = :oldbsid""")
-        log.debug(q)
-        r = self.db.execute(
-            q,
-            buildsetid=buildsetid,
-            oldbsid=build.buildsetid)
-        log.debug("Created %i properties" % r.rowcount)
+            # Copy buildset properties
+            q = text("""INSERT INTO buildset_properties
+                    (`buildsetid`, `property_name`, `property_value`)
+                    SELECT :buildsetid, `property_name`, `property_value` FROM
+                        buildset_properties WHERE
+                        buildsetid = :oldbsid""")
+            log.debug(q)
+            r = self.db.execute(
+                q,
+                buildsetid=buildsetid,
+                oldbsid=build.buildsetid)
+            log.debug("Created %i properties" % r.rowcount)
 
-        # Create a new build request
-        q = text("""INSERT INTO buildrequests
-                (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
-                VALUES
-                (:buildsetid, :buildername, :submitted_at, 0, 0, NULL, NULL, 0, NULL, NULL)""")
-        log.debug(q)
+            # Create a new build request
+            q = text("""INSERT INTO buildrequests
+                    (`buildsetid`, `buildername`, `submitted_at`, `priority`,
+                     `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`,
+                     `complete`, `results`, `complete_at`)
+                    VALUES
+                     (:buildsetid, :buildername, :submitted_at, :priority,
+                      0, NULL, NULL,
+                      0, NULL, NULL)""")
+            log.debug(q)
 
-        r = self.db.execute(
-            q,
-            buildsetid=buildsetid,
-            buildername=build.buildername,
-            submitted_at=now,
-        )
+            r = self.db.execute(
+                q,
+                buildsetid=buildsetid,
+                buildername=build.buildername,
+                submitted_at=now,
+                priority=priority,
+            )
 
-        new_brid = r.lastrowid
-        log.debug("Created buildrequest %s", new_brid)
+            new_brid = r.lastrowid
+            log.debug("Created buildrequest %s", new_brid)
         return {"errors": False, "msg": "Ok"}
 
     def do_rebuild_request(self, message_data, message):
         who = message_data['who']
         brid = message_data['body']['brid']
-        log.info("rebuilding request by %s of %s", who, brid)
+        count = message_data['body'].get('count', 1)
+        priority = message_data['body'].get('priority', 0)
+        log.info("rebuilding request by %s of %s count %s pri %s", who, brid, count, priority)
 
         # Get the build request and build set
         request = self.db.execute(text(
@@ -362,45 +372,51 @@ class BuildAPIAgent:
             log.info("No request with id %s, giving up" % brid)
             return {"errors": True, "msg": "No request with that id"}
 
-        # Create a new buildset
         now = time.time()
-        buildsetid = create_buildset(
-            self.db,
-            idstring=request.external_idstring,
-            reason='Self-serve: Rebuilt by %s' % who,
-            ssid=request.sourcestampid,
-            submitted_at=now,
-        )
+        for i in range(count):
+            # Create a new buildset
+            buildsetid = create_buildset(
+                self.db,
+                idstring=request.external_idstring,
+                reason='Self-serve: Rebuilt by %s' % who,
+                ssid=request.sourcestampid,
+                submitted_at=now,
+            )
 
-        # Copy buildset properties
-        q = text("""INSERT INTO buildset_properties
-                (`buildsetid`, `property_name`, `property_value`)
-                SELECT :buildsetid, `property_name`, `property_value` FROM
-                    buildset_properties WHERE
-                    buildsetid = :oldbsid""")
-        log.debug(q)
-        r = self.db.execute(
-            q,
-            buildsetid=buildsetid,
-            oldbsid=request.buildsetid)
-        log.debug("Created %i properties" % r.rowcount)
+            # Copy buildset properties
+            q = text("""INSERT INTO buildset_properties
+                    (`buildsetid`, `property_name`, `property_value`)
+                    SELECT :buildsetid, `property_name`, `property_value` FROM
+                        buildset_properties WHERE
+                        buildsetid = :oldbsid""")
+            log.debug(q)
+            r = self.db.execute(
+                q,
+                buildsetid=buildsetid,
+                oldbsid=request.buildsetid)
+            log.debug("Created %i properties" % r.rowcount)
 
-        # Create a new build request
-        q = text("""INSERT INTO buildrequests
-                (`buildsetid`, `buildername`, `submitted_at`, `priority`, `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`, `complete`, `results`, `complete_at`)
-                VALUES
-                (:buildsetid, :buildername, :submitted_at, 0, 0, NULL, NULL, 0, NULL, NULL)""")
-        log.debug(q)
+            # Create a new build request
+            q = text("""INSERT INTO buildrequests
+                    (`buildsetid`, `buildername`, `submitted_at`, `priority`,
+                     `claimed_at`, `claimed_by_name`, `claimed_by_incarnation`,
+                     `complete`, `results`, `complete_at`)
+                    VALUES
+                     (:buildsetid, :buildername, :submitted_at, :priority,
+                      0, NULL, NULL,
+                      0, NULL, NULL)""")
+            log.debug(q)
 
-        r = self.db.execute(
-            q,
-            buildsetid=buildsetid,
-            buildername=request.buildername,
-            submitted_at=now,
-        )
+            r = self.db.execute(
+                q,
+                buildsetid=buildsetid,
+                buildername=request.buildername,
+                submitted_at=now,
+                priority=priority,
+            )
 
-        new_brid = r.lastrowid
-        log.debug("Created buildrequest %s", new_brid)
+            new_brid = r.lastrowid
+            log.debug("Created buildrequest %s", new_brid)
         return {"errors": False, "msg": "Ok"}
 
     def do_cancel_build(self, message_data, message):
@@ -629,7 +645,7 @@ class BuildAPIAgent:
                     (:cid, :f)
                     """)
             log.debug(q)
-            r = self.db.execute(q, cid=cid, f=f) 
+            r = self.db.execute(q, cid=cid, f=f)
         log.debug("Created change_file for change object %s", cid)
 
         # Create sourcestamp_changes
@@ -639,7 +655,7 @@ class BuildAPIAgent:
                 (:ssid, :cid)
                 """)
         log.debug(q)
-        r = self.db.execute(q, ssid=ssid, cid=cid) 
+        r = self.db.execute(q, ssid=ssid, cid=cid)
         log.debug("Created sourcestamp_changes for sourcestamp %s, change object %s", ssid, cid)
 
         # Create a new buildset

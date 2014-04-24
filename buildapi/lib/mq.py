@@ -151,11 +151,11 @@ class JobRequestPublisher(ReliablePublisher):
     def cancelBuild(self, who, bid):
         return self.send_msg('cancel_build', who=who, bid=bid)
 
-    def rebuildBuild(self, who, bid, priority):
-        return self.send_msg('rebuild_build', who=who, bid=bid, priority=priority)
+    def rebuildBuild(self, who, bid, priority, count):
+        return self.send_msg('rebuild_build', who=who, bid=bid, priority=priority, count=count)
 
-    def rebuildRequest(self, who, brid, priority):
-        return self.send_msg('rebuild_request', who=who, brid=brid, priority=priority)
+    def rebuildRequest(self, who, brid, priority, count):
+        return self.send_msg('rebuild_request', who=who, brid=brid, priority=priority, count=count)
 
     def cancelRevision(self, who, branch, revision):
         return self.send_msg('cancel_revision', who=who, branch=branch, revision=revision)

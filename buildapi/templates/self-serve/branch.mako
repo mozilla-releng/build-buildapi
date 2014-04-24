@@ -73,11 +73,21 @@ function toggle_display(id)
 </form>
 </%def>
 
-<%def name="rebuild_form(build_id)">
+<%def name="rebuild_build_form(build_id)">
 <form method="POST" action="${h.url('rebuild_build', branch=c.branch)}">
 <input type="hidden" name="_method" value="POST" />
 <input type="hidden" name="build_id" value="${build_id}" />
 <input type="submit" value="rebuild" />
+<input type="text" name="count" value="1" size="2" /> time(s)
+</form>
+</%def>
+
+<%def name="rebuild_request_form(request_id)">
+<form method="POST" action="${h.url('rebuild_request', branch=c.branch)}">
+<input type="hidden" name="_method" value="POST" />
+<input type="hidden" name="request_id" value="${request_id}" />
+<input type="submit" value="rebuild" />
+<input type="text" name="count" value="1" size="2" /> time(s)
 </form>
 </%def>
 
@@ -97,10 +107,11 @@ function toggle_display(id)
             ${cancel_build_form(build['build_id'])}
         % elif build.get('request_id'):
             ${cancel_request_form(build['request_id'])}
+            ${rebuild_request_form(build['request_id'])}
         % endif
     % endif
     % if build.get('build_id'):
-        ${rebuild_form(build['build_id'])}
+        ${rebuild_build_form(build['build_id'])}
     % endif
     </td>
     % if build.get('build_id'):
@@ -121,8 +132,8 @@ function toggle_display(id)
     % if tabletype == 'pending':
         <td>${self.attr.formattime(build.get('submittime'))}</td>
         <td>${build.get('priority')}
-            ${priority_form(build['request_id'], build.get('priority', 0)+1, '+1')}
-            ${priority_form(build['request_id'], build.get('priority', 0)-1, '-1')}
+            ${priority_form(build['request_id'], build.get('priority', 0)+1, 'run me sooner')}
+            ${priority_form(build['request_id'], build.get('priority', 0)-1, 'run me later')}
         </td>
     % else:
         <td>${self.attr.formattime(build.get('starttime'))}</td>
