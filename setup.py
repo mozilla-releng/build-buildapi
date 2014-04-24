@@ -7,7 +7,7 @@ except ImportError:
 
 setup(
     name='buildapi',
-    version='0.2.4',
+    version='0.3.0',
     description='',
     author='',
     author_email='',
