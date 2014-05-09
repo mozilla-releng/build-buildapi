@@ -40,7 +40,16 @@ data which is not included.
     sqlite3 schedulerdb.sqlite3 < schedulerdb_schema.sql
     sqlite3 buildapi.sqlite3 < buildapi_schema.sql
 
+To use mysql, make sure that mysql is first installed and then load the schemas.
+
+    mysql < statusdb_schema.mysql
+    mysql < scheduler_schema.mysql
+
 And point the proper DB strings
+
+Note: These mysql schemas were obtained from existing local copies of statusdb and schedulerdb, and were obtained with the commands:
+    mysqldump -d --databases statusdb -uroot -p > statusdb_schema.sql
+    mysqldump -d --databases statusdb -uroot -p > statusdb_schema.sql
 
 Now setup the application::
 
