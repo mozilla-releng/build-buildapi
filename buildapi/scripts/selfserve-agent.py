@@ -619,7 +619,7 @@ class BuildAPIAgent:
                 (:real_branch, :revision, NULL, '', '')
                 """)
         log.debug(q)
-        r = self.db.execute(q, branch=branch, revision=revision)
+        r = self.db.execute(q, real_branch=real_branch, revision=revision)
         ssid = r.lastrowid # SourcestampID
         log.debug("Created sourcestamp %s", ssid)
 
