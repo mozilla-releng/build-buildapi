@@ -23,13 +23,12 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
         re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
         re.compile('^b2g_((?!(test|talos)).)+$',  re.IGNORECASE),
-        re.compile('^Android (?!(?:2\.2 Tegra|2\.2 Armv6 Tegra|2\.2 no-ionmonkey Tegra|4\.0 Panda|4\.2 x86 Emulator)).+'),
+        re.compile('^Android ((?!(test|talos)).)+$',  re.IGNORECASE),
         re.compile('.*linux.*',  re.IGNORECASE),
     ],
     'fedora': [
         re.compile('^Rev3 Fedora 12 .+'),
         re.compile('jetpack-.*-fedora(?!64)'),
-        re.compile('^b2g_.+(opt|debug) test.+',  re.IGNORECASE)
     ],
     'fedora64': [
         re.compile('Rev3 Fedora 12x64 .+'),
@@ -42,6 +41,8 @@ PLATFORMS_BUILDERNAME = {
     'ubuntu64_vm': [
         re.compile('Ubuntu (ASAN )?VM 12.04 x64 .+'),
         re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
+        re.compile('^Android 2\.3 Armv6 Emulator .+'),
+        re.compile('^Android 2\.3 Emulator .+'),
     ],
     'ubuntu32_hw': [
         re.compile('Ubuntu (ASAN )?HW 12.04 (?!x64).+'),
