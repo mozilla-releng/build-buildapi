@@ -76,9 +76,9 @@ class BuildAPIAgent:
         if time.time() - self._last_refresh > 300:
             try:
                 log.info("Loading masters from %s", self.masters_url)
-                self.masters = json.load(urllib.urlopen(self.masters_url))
+                self.masters = json.load(urllib2.urlopen(self.masters_url, timeout=30))
                 log.info("Loading branches from %s", self.branches_url)
-                self.branches = json.load(urllib.urlopen(self.branches_url))
+                self.branches = json.load(urllib2.urlopen(self.branches_url, timeout=30))
                 self._last_refresh = time.time()
             except:
                 log.exception("Couldn't load data; using old ones")
@@ -113,7 +113,7 @@ class BuildAPIAgent:
         build_url = self._get_build_url(claimed_by_name, builder_name, build_number)
         # Fetch the build url
         log.info("getting slavename from  %s", build_url)
-        data = urllib.urlopen(build_url).read()
+        data = urllib2.urlopen(build_url, timeout=30).read()
         # scraping alert!
         # the build page has strings like
         # <a href="../../../buildslaves/$slavename">$slavename</a>
@@ -134,7 +134,7 @@ class BuildAPIAgent:
         })
         log.info("Clobbering %s %s at %s %s", slavename, builder_name, self.clobberer_url, data)
 
-        urllib.urlopen(self.clobberer_url, data)
+        urllib2.urlopen(self.clobberer_url, data, timeout=30)
 
     def _can_cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
         unstoppable = []

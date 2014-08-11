@@ -145,7 +145,7 @@ def wtservice_fetch(url):
     Throws: urllib2.URLError - opening connection fails
             ValueError - decoding JSON object response fails
     """
-    resp = urllib2.urlopen(url)
+    resp = urllib2.urlopen(url, timeout=30)
     text = resp.read()
     wait_times = simplejson.loads(text)
 

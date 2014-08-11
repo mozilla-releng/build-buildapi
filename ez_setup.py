@@ -147,7 +147,7 @@ and place it in this directory before rerunning this script.)
                     version, download_base, delay, url
                 ); from time import sleep; sleep(delay)
             log.warn("Downloading %s", url)
-            src = urllib2.urlopen(url)
+            src = urllib2.urlopen(url, timeout=30)
             # Read/write all in one block, so we don't create a corrupt file
             # if the download is interrupted.
             data = _validate_md5(egg_name, src.read())

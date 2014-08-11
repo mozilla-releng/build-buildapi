@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """buildapi-rest.py action [options]"""
 import urllib
+import urllib2
 from collections import namedtuple
 
 try:
@@ -29,7 +30,7 @@ class Agent:
 
     def get_job_status(self, request_id):
         url = "%s/builds/jobs/%s?format=json" % (self.base_url, request_id)
-        return urllib.urlopen(url).read()
+        return urllib2.urlopen(url, timeout=30).read()
 
     def do_action(self, action, options):
         if action not in self.methods:
@@ -56,7 +57,7 @@ class Agent:
             data['_method'] = spec.method
 
         data = urllib.urlencode(data)
-        return urllib.urlopen(url, data).read()
+        return urllib2.urlopen(url, data, timeout=30).read()
 
 if __name__ == '__main__':
     from optparse import OptionParser

@@ -6,6 +6,7 @@ available to Controllers. This module is available to templates as 'h'.
 import time, datetime
 import logging
 import urllib
+import urllib2
 
 from pylons import url, app_globals
 from webhelpers.html import tags
@@ -135,7 +136,7 @@ def get_masters():
     masters_url = app_globals.masters_url
     log.info("Fetching master list from %s", masters_url)
     try:
-        masters = json.load(urllib.urlopen(masters_url))
+        masters = json.load(urllib2.urlopen(masters_url, timeout=30))
         _masters = masters
     except:
         log.exception("Error loading masters json; using old list")
@@ -168,7 +169,7 @@ def get_branches():
         if branches_url.startswith('TEST:'):
             branches = json.load(open(branches_url.split(':')[1]))
         else:
-            branches = json.load(urllib.urlopen(branches_url))
+            branches = json.load(urllib2.urlopen(branches_url, timeout=30))
         _branches = branches
         _last_branches_check = now
     except:
