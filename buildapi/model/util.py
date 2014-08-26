@@ -36,11 +36,16 @@ PLATFORMS_BUILDERNAME = {
     ],
     'ubuntu32_vm': [
         re.compile('Ubuntu (ASAN )?VM 12.04 (?!x64).+'),
+        re.compile('^b2g_ubuntu32_vm'),
         re.compile('jetpack-.*-ubuntu32(?:_vm)?'),
     ],
     'ubuntu64_vm': [
         re.compile('Ubuntu (ASAN )?VM 12.04 x64 .+'),
+        re.compile('^b2g_ubuntu64_vm'),
+        re.compile('^b2g_emulator_vm'),
         re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
+    ],
+    'ubuntu64_emulator_vm': [
         re.compile('^Android 2\.3 Armv6 Emulator .+'),
         re.compile('^Android 2\.3 Emulator .+'),
     ],
@@ -57,14 +62,12 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-snowleopard'),
         re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
     ],
-    'lion': [
-        re.compile('^OS X 10\.7.+'),
-        re.compile('^Rev4 MacOSX Lion 10\.7.+'),
-        re.compile('jetpack-.*-lion'),
-    ],
     'mountainlion': [
         re.compile('^Rev5 MacOSX Mountain Lion 10\.8.+'),
         re.compile('jetpack-.*-mountainlion'),
+    ],
+    'mavericks': [
+        re.compile('^Rev5 MacOSX Mavericks 10.9'),
     ],
     'xp': [
         re.compile('^Rev3 WINNT 5\.1 .+'),
@@ -73,7 +76,7 @@ PLATFORMS_BUILDERNAME = {
     'xp-ix': [
         re.compile('^Windows XP 32-bit'),
     ],
-    'win2k3': [
+    'win2k8': [
         re.compile('^WINNT 5\.2 .+'),
         re.compile('.*win32.*'),
     ],
@@ -81,18 +84,10 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^WINNT 6\.1 .+'),
         re.compile('.*win64.*'),
     ],
-    'win7': [
-        re.compile('^Rev3 WINNT 6\.1 '),
-        re.compile('jetpack-.*-win7'),
-    ],
     'win7-ix': [
         re.compile('^Windows 7 32-bit '),
     ],
-    'win764': [
-        re.compile('^Rev3 WINNT 6\.1 x64 .+'),
-        re.compile('jetpack-.*-w764'),
-    ],
-    'win8': [
+    'win8-ix': [
         re.compile('.*WINNT 6\.2 '),
         re.compile('jetpack-.*-win8'),
     ],
