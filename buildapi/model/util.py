@@ -62,6 +62,9 @@ PLATFORMS_BUILDERNAME = {
         re.compile('jetpack-.*-snowleopard'),
         re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
     ],
+    'lion': [
+        re.compile('^OS X 10\.7.+'),
+    ],
     'mountainlion': [
         re.compile('^Rev5 MacOSX Mountain Lion 10\.8.+'),
         re.compile('jetpack-.*-mountainlion'),
