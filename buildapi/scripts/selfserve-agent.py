@@ -128,13 +128,14 @@ class BuildAPIAgent:
         return "%s/stop" % build_url
 
     def _clobber_slave(self, slavename, builder_name):
-        data = urllib.urlencode({
-            "slave-%s" % slavename: builder_name,
-            "form_submitted": "1",
-        })
+        data = [{
+            "slave": slavename,
+            "buildername": builder_name
+        }]
         log.info("Clobbering %s %s at %s %s", slavename, builder_name, self.clobberer_url, data)
-
-        urllib2.urlopen(self.clobberer_url, data, timeout=30)
+        req = urllib2.Request(self.clobberer_url)
+        req.add_header('Content-Type', 'application/json')
+        urllib2.urlopen(req, json.dumps(data))
 
     def _can_cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
         unstoppable = []
@@ -620,7 +621,7 @@ class BuildAPIAgent:
                 """)
         log.debug(q)
         r = self.db.execute(q, real_branch=real_branch, revision=revision)
-        ssid = r.lastrowid # SourcestampID
+        ssid = r.lastrowid  # SourcestampID
         log.debug("Created sourcestamp %s", ssid)
 
         # Create change object
@@ -679,7 +680,7 @@ class BuildAPIAgent:
             'builduid': json.dumps((genBuildUID(), "self-serve")),
         }
         # Making a tuple of each key and a tuple of it's associated property and the source "self-serve"
-        props.update(((k, json.dumps((v, "self-serve"))) for (k,v) in message_data['body']['properties'].iteritems()))
+        props.update(((k, json.dumps((v, "self-serve"))) for (k, v) in message_data['body']['properties'].iteritems()))
         log.debug(q)
         for key, value in props.items():
             r = self.db.execute(q, buildsetid=buildsetid, key=key, value=value)

@@ -1,5 +1,8 @@
 \.pyc$
 \.mako.py$
+\.swp$
+\.swo$
+.ropeproject
 development.db
 buildapi/public/dataTables-1.6/Readme.txt
 buildapi/public/dataTables-1.6/examples/
