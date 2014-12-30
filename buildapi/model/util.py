@@ -26,35 +26,29 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Android ((?!(test|talos)).)+$',  re.IGNORECASE),
         re.compile('.*linux.*',  re.IGNORECASE),
     ],
-    'fedora': [
-        re.compile('^Rev3 Fedora 12 .+'),
-        re.compile('jetpack-.*-fedora(?!64)'),
-    ],
-    'fedora64': [
-        re.compile('Rev3 Fedora 12x64 .+'),
-        re.compile('jetpack-.*-fedora64'),
-    ],
     'ubuntu32_vm': [
         re.compile('Ubuntu (ASAN )?VM 12.04 (?!x64).+'),
         re.compile('^b2g_ubuntu32_vm'),
         re.compile('jetpack-.*-ubuntu32(?:_vm)?'),
     ],
     'ubuntu64_vm': [
+        re.compile('^Android armv7 API 9'),
+        re.compile('^Android 2\.3( Armv6)? Emulator'),
         re.compile('Ubuntu (ASAN )?VM 12.04 x64 .+'),
         re.compile('^b2g_ubuntu64_vm'),
         re.compile('^b2g_emulator_vm'),
         re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
     ],
     'ubuntu64_emulator_vm': [
-        re.compile('^Android 2\.3 Armv6 Emulator .+'),
-        re.compile('^Android 2\.3 Emulator .+'),
+        re.compile('^Android armv7 API 9[\w\-\ \.]*(plain-reftest|crashtest|jsreftest)'),
+        re.compile('^Android 2\.3( Armv6)? Emulator[\w\-\ \.]*(plain-reftest|crashtest|jsreftest)'),
     ],
     'ubuntu32_hw': [
         re.compile('Ubuntu (ASAN )?HW 12.04 (?!x64).+'),
     ],
     'ubuntu64_hw': [
+        re.compile('^Android (?:4\.2 )?x86'),
         re.compile('Ubuntu (ASAN )?HW 12.04 x64 .+'),
-        re.compile('^Android 4\.2 x86 Emulator .+'),
     ],
     'snowleopard': [
         re.compile('^OS X 10\.6.+'),
@@ -72,12 +66,9 @@ PLATFORMS_BUILDERNAME = {
     'mavericks': [
         re.compile('^Rev5 MacOSX Mavericks 10.9'),
     ],
-    'xp': [
-        re.compile('^Rev3 WINNT 5\.1 .+'),
-        re.compile('jetpack-.*-xp'),
-    ],
     'xp-ix': [
         re.compile('^Windows XP 32-bit'),
+        re.compile('jetpack-.*-xp'),
     ],
     'win2k8': [
         re.compile('^WINNT 5\.2 .+'),
@@ -94,13 +85,8 @@ PLATFORMS_BUILDERNAME = {
         re.compile('.*WINNT 6\.2 '),
         re.compile('jetpack-.*-win8'),
     ],
-    'tegra': [
-        re.compile('^Android 2\.2 Tegra .+'),
-        re.compile('^Android 2\.2 Armv6 Tegra .+'),
-        re.compile('^Android 2\.2 no-ionmonkey Tegra .+'),
-    ],
     'panda-android': [
-        re.compile('^Android 4\.0 Panda .+'),
+        re.compile('(Panda|panda|Android 4.0 armv7 API (10|11)\+)'),
     ],
 }
 
@@ -151,40 +137,21 @@ SOURCESTAMPS_BRANCH = {
 }
 
 SLAVE_SILOS = {
-    'bm-xserve': [re.compile('^bm-xserve.+')],
-    'linux-ix': [re.compile('^linux-ix-slave.+')],
-    'moz2-darwin10': [re.compile('^moz2-darwin10-slave.+')],
-    'moz2-darwin9': [re.compile('^moz2-darwin9-slave.+')],
-    'moz2-linux': [re.compile('^moz2-linux-slave.+')],
-    'moz2-linux64': [re.compile('^moz2-linux64-slave.+')],
-    'moz2-win32': [re.compile('^moz2-win32-slave.+')],
-    'mv-moz2-linux-ix': [re.compile('^mv-moz2-linux-ix-slave.+')],
-    'mw32-ix': [re.compile('^mw32-ix-slave.+')],
-    't-r3-w764': [re.compile('^t-r3-w764-.+')],
-    't-xp32-ix': [re.compile('^t-xp32-ix-.+')],
-    't-w732-ix': [re.compile('^t-w732-ix-.+')],
-    't-w864-ix': [re.compile('^t-w864-ix-.+')],
-    'talos-r3-fed': [re.compile('^talos-r3-fed-.+')],
-    'talos-r3-fed64': [re.compile('^talos-r3-fed64-.+')],
-    'talos-r3-leopard': [re.compile('^talos-r3-leopard-.+')],
-    'talos-r3-snow': [re.compile('^talos-r3-snow-.+')],
-    'talos-r4-snow': [re.compile('^talos-r4-snow-.+')],
-    'talos-r4-lion': [re.compile('^talos-r4-lion-.+')],
-    'talos-mtnlion-r5': [re.compile('^talos-mtnlion-r5-.+')],
-    'talos-r3-w7': [re.compile('^talos-r3-w7-.+')],
-    'talos-r3-xp': [re.compile('^talos-r3-xp-.+')],
-    'tegra': [re.compile('^tegra-.+')],
-    'try-linux': [re.compile('^try-linux-slave.+')],
-    'try-linux64': [re.compile('^try-linux64-slave.+')],
-    'try-mac': [re.compile('^try-mac-slave.+')],
-    'try-mac64': [re.compile('^try-mac64-slave.+')],
-    'try-w32': [re.compile('^try-w32-slave.+')],
-    'w32-ix': [re.compile('^w32-ix-slave.+')],
-    'win32': [re.compile('^win32-slave.+')],
+    'b-2008-ix': [re.compile('^b-2008-ix-\d+')],
+    'bld-lion-r5': [re.compile('^bld-lion-r5-\d+')],
+    't-xp32-ix': [re.compile('^t-xp32-ix-\d+')],
+    't-w732-ix': [re.compile('^t-w732-ix-\d+')],
+    't-w864-ix': [re.compile('^t-w864-ix-\d+')],
+    't-snow-r4': [re.compile('^t-snow-r4-\d+')],
+    'talos-mtnlion-r5': [re.compile('^talos-mtnlion-r5-\d+')],
+    't-yosemite-r5': [re.compile('^t-yosemite-r5-\d+')],
     'bld-linux64-ec2': [re.compile(r'^bld-linux64-ec2-\d+')],
-    'try-linux64-ec2': [re.compile(r'^try-linux64-ec2-\d+')],
-    'tst-linux64-ec2': [re.compile(r'^tst-linux64-ec2-\d+')],
-    'tst-linux32-ec2': [re.compile(r'^tst-linux32-ec2-\d+')],
+    'bld-linux64-spot': [re.compile(r'^bld-linux64-spot-\d+')],
+    'try-linux64-spot': [re.compile(r'^try-linux64-spot-\d+')],
+    'tst-linux64-spot': [re.compile(r'^tst-linux64-spot-\d+')],
+    'tst-linux32-spot': [re.compile(r'^tst-linux32-spot-\d+')],
+    'panda': [re.compile(r'^panda-\d+')],
+    'tst-emulator64-spot': [re.compile(r'^tst-emulator64-spot-\d+')],
 }
 
 BUILDERS_DETAIL_LEVELS = ['branch', 'platform', 'build_type', 'job_type',
