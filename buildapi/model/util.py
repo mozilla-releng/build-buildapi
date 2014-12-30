@@ -51,10 +51,10 @@ PLATFORMS_BUILDERNAME = {
         re.compile('Ubuntu (ASAN )?HW 12.04 x64 .+'),
     ],
     'snowleopard': [
+        re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
         re.compile('^OS X 10\.6.+'),
         re.compile('.*macosx64.*'),
         re.compile('jetpack-.*-snowleopard'),
-        re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
     ],
     'lion': [
         re.compile('^OS X 10\.7.+'),
@@ -80,10 +80,11 @@ PLATFORMS_BUILDERNAME = {
     ],
     'win7-ix': [
         re.compile('^Windows 7 32-bit '),
+        re.compile('jetpack-.*-win7'),
     ],
     'win8-ix': [
-        re.compile('jetpack-.*-win8'),
         re.compile('^Windows 8'),
+        re.compile('jetpack-.*-win8'),
     ],
     'panda-android': [
         re.compile('^Android 4.0 armv7 API (10|11)'),
