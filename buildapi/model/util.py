@@ -58,6 +58,7 @@ PLATFORMS_BUILDERNAME = {
     ],
     'lion': [
         re.compile('^OS X 10\.7.+'),
+        re.compile('^OS X Mulet'),
     ],
     'mountainlion': [
         re.compile('^Rev5 MacOSX Mountain Lion 10\.8.+'),
@@ -72,21 +73,21 @@ PLATFORMS_BUILDERNAME = {
     ],
     'win2k8': [
         re.compile('^WINNT 5\.2 .+'),
-        re.compile('.*win32.*'),
-    ],
-    'win64': [
         re.compile('^WINNT 6\.1 .+'),
-        re.compile('.*win64.*'),
+        re.compile('^WINNT 6\.2 '),
+        re.compile('.*win32.*', re.IGNORECASE),
+        re.compile('.*win64.*', re.IGNORECASE),
     ],
     'win7-ix': [
         re.compile('^Windows 7 32-bit '),
     ],
     'win8-ix': [
-        re.compile('.*WINNT 6\.2 '),
         re.compile('jetpack-.*-win8'),
+        re.compile('^Windows 8'),
     ],
     'panda-android': [
-        re.compile('(Panda|panda|Android 4.0 armv7 API (10|11)\+)'),
+        re.compile('^Android 4.0 armv7 API (10|11)'),
+        re.compile('.*panda.*', re.IGNORECASE),
     ],
 }
 
