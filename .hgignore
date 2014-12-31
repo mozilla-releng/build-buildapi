@@ -13,3 +13,4 @@ buildapi/public/jquery/index.html
 build/
 dist/
 buildapi.egg-info
+\.eggs/

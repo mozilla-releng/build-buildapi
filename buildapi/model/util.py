@@ -24,7 +24,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g_.+_linux32_gecko'),
         re.compile('^Linux .+ (build|non-unified|valgrind)$'),
         re.compile('^Android .+ (build|non-unified)$'),
-        re.compile('^linux64-br-haz'),
+        re.compile('^linux64-.+-haz'),
     ],
     'ubuntu32_vm': [
         re.compile('^Ubuntu VM 12.04 (?!x64).+'),
@@ -37,7 +37,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g_emulator_vm'),
         re.compile('^Android armv7 API 9 .+ test (?!(plain-reftest|crashtest|jsreftest))'),
         re.compile('^Android 2.3 (Armv6 )?Emulator .+ test (?!(plain-reftest|crashtest|jsreftest))'),
-        re.compile('^jetpack-.+-ubuntu64_vm'),
+        re.compile('^jetpack-.+-ubuntu64(-asan)?_vm'),
     ],
     'ubuntu64_emulator_vm': [
         re.compile('^Android armv7 API 9 .+ test (plain-reftest|crashtest|jsreftest)'),
