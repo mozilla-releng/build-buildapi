@@ -20,75 +20,77 @@ UNKNOWN = 2
 
 PLATFORMS_BUILDERNAME = {
     'linux-mock': [
-        re.compile('^b2g .+_armv7a.+',  re.IGNORECASE),
-        re.compile('^b2g linux32_gecko .+',  re.IGNORECASE),
         re.compile('^b2g_((?!(test|talos)).)+$',  re.IGNORECASE),
-        re.compile('^Android ((?!(test|talos)).)+$',  re.IGNORECASE),
-        re.compile('.*linux.*',  re.IGNORECASE),
+        re.compile('^b2g_.+_linux32_gecko',  re.IGNORECASE),
+        re.compile('^Linux .+ (build|non-unified)$'),
+        re.compile('^Android .+ (build|non-unified)$'),
     ],
     'ubuntu32_vm': [
-        re.compile('Ubuntu (ASAN )?VM 12.04 (?!x64).+'),
+        re.compile('^Ubuntu VM 12.04 (?!x64).+'),
         re.compile('^b2g_ubuntu32_vm'),
-        re.compile('jetpack-.*-ubuntu32(?:_vm)?'),
+        re.compile('^jetpack-.+-ubuntu32_vm'),
     ],
     'ubuntu64_vm': [
-        re.compile('^Android armv7 API 9'),
-        re.compile('^Android 2\.3( Armv6)? Emulator'),
-        re.compile('Ubuntu (ASAN )?VM 12.04 x64 .+'),
+        re.compile('^Ubuntu (ASAN )?VM 12.04 x64 .+'),
         re.compile('^b2g_ubuntu64_vm'),
         re.compile('^b2g_emulator_vm'),
-        re.compile('jetpack-.*-ubuntu64(?:_vm)?'),
+        re.compile('^Android armv7 API 9 .+ test (?!(plain-reftest|crashtest|jsreftest))'),
+        re.compile('^Android 2.3 Emulator'),
+        re.compile('^jetpack-.+-ubuntu64_vm'),
     ],
     'ubuntu64_emulator_vm': [
-        re.compile('^Android armv7 API 9[\w\-\ \.]*(plain-reftest|crashtest|jsreftest)'),
-        re.compile('^Android 2\.3( Armv6)? Emulator[\w\-\ \.]*(plain-reftest|crashtest|jsreftest)'),
+        re.compile('^Android armv7 API 9 .+ test (plain-reftest|crashtest|jsreftest)'),
     ],
     'ubuntu32_hw': [
-        re.compile('Ubuntu (ASAN )?HW 12.04 (?!x64).+'),
+        re.compile('^Ubuntu HW 12.04 (?!x64).+'),
     ],
     'ubuntu64_hw': [
         re.compile('^Android (?:4\.2 )?x86'),
-        re.compile('Ubuntu (ASAN )?HW 12.04 x64 .+'),
+        re.compile('^Ubuntu (ASAN )?HW 12.04 x64'),
     ],
     'snowleopard': [
         re.compile('^Rev4 MacOSX Snow Leopard 10\.6.+'),
-        re.compile('^OS X 10\.6.+'),
-        re.compile('.*macosx64.*'),
-        re.compile('jetpack-.*-snowleopard'),
+        re.compile('^jetpack-.+-snowleopard'),
     ],
     'lion': [
         re.compile('^OS X 10\.7.+'),
         re.compile('^OS X Mulet'),
+        re.compile('^b2g_.+_macosx64_gecko'),
+        re.compile('^fuzzer-macosx64-lion$'),
     ],
     'mountainlion': [
         re.compile('^Rev5 MacOSX Mountain Lion 10\.8.+'),
-        re.compile('jetpack-.*-mountainlion'),
+        re.compile('^b2g_macosx64 .+ test '),
+        re.compile('^jetpack-.+-mountainlion'),
     ],
     'mavericks': [
         re.compile('^Rev5 MacOSX Mavericks 10.9'),
     ],
+    'yosemite': [
+        re.compile('^Rev5 MacOSX Yosemite 10.10'),
+    ],
     'xp-ix': [
         re.compile('^Windows XP 32-bit'),
-        re.compile('jetpack-.*-xp'),
+        re.compile('^jetpack-.+-xp'),
     ],
     'win2k8': [
-        re.compile('^WINNT 5\.2 .+'),
-        re.compile('^WINNT 6\.1 .+'),
-        re.compile('^WINNT 6\.2 '),
-        re.compile('.*win32.*', re.IGNORECASE),
-        re.compile('.*win64.*', re.IGNORECASE),
+        re.compile('^WINNT 5\.2 '),
+        re.compile('^WINNT 6\.1 '),
+        re.compile('^Win32 Mulet'),
+        re.compile('^b2g_.+_win32_gecko'),
+        re.compile('^fuzzer-win64'),
     ],
     'win7-ix': [
         re.compile('^Windows 7 32-bit '),
-        re.compile('jetpack-.*-win7'),
+        re.compile('^jetpack-.+-win7'),
     ],
     'win8-ix': [
         re.compile('^Windows 8'),
-        re.compile('jetpack-.*-win8'),
+        re.compile('^jetpack-.+-win8'),
     ],
     'panda-android': [
         re.compile('^Android 4.0 armv7 API (10|11)'),
-        re.compile('.*panda.*', re.IGNORECASE),
+        re.compile('^Android 4.0 Panda'),
     ],
 }
 
