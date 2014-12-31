@@ -20,10 +20,11 @@ UNKNOWN = 2
 
 PLATFORMS_BUILDERNAME = {
     'linux-mock': [
-        re.compile('^b2g_((?!(test|talos)).)+$',  re.IGNORECASE),
-        re.compile('^b2g_.+_linux32_gecko',  re.IGNORECASE),
-        re.compile('^Linux .+ (build|non-unified)$'),
+        re.compile('^b2g_((?!(test|talos)).)+$'),
+        re.compile('^b2g_.+_linux32_gecko'),
+        re.compile('^Linux .+ (build|non-unified|valgrind)$'),
         re.compile('^Android .+ (build|non-unified)$'),
+        re.compile('^linux64-br-haz'),
     ],
     'ubuntu32_vm': [
         re.compile('^Ubuntu VM 12.04 (?!x64).+'),
@@ -35,11 +36,12 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g_ubuntu64_vm'),
         re.compile('^b2g_emulator_vm'),
         re.compile('^Android armv7 API 9 .+ test (?!(plain-reftest|crashtest|jsreftest))'),
-        re.compile('^Android 2.3 Emulator'),
+        re.compile('^Android 2.3 (Armv6 )?Emulator .+ test (?!(plain-reftest|crashtest|jsreftest))'),
         re.compile('^jetpack-.+-ubuntu64_vm'),
     ],
     'ubuntu64_emulator_vm': [
         re.compile('^Android armv7 API 9 .+ test (plain-reftest|crashtest|jsreftest)'),
+        re.compile('^Android 2.3 (Armv6 )?Emulator .+ test (plain-reftest|crashtest|jsreftest)'),
     ],
     'ubuntu32_hw': [
         re.compile('^Ubuntu HW 12.04 (?!x64).+'),
@@ -87,6 +89,7 @@ PLATFORMS_BUILDERNAME = {
     'win8-ix': [
         re.compile('^Windows 8'),
         re.compile('^jetpack-.+-win8'),
+        re.compile('^WINNT 6\.2 '),
     ],
     'panda-android': [
         re.compile('^Android 4.0 armv7 API (10|11)'),
