@@ -1,7 +1,9 @@
-import time, datetime
+import datetime
+import time
 
 ZERO = datetime.timedelta(0)
 HOUR = datetime.timedelta(hours=1)
+
 
 class USTimeZone(datetime.tzinfo):
     # In the US, DST starts at 2am (standard time) on the first Sunday in April.
@@ -54,18 +56,56 @@ class USTimeZone(datetime.tzinfo):
             dt += datetime.timedelta(days_to_go)
         return dt
 
+
 class Pacific(USTimeZone):
     def __init__(self):
         USTimeZone.__init__(self, -8, "Pacific",  "PST", "PDT")
 
+
 pacific_tz = Pacific()
 time_format = '%a, %d %b %Y %H:%M:%S %z (%Z)'
+day_format = '%Y-%m-%d'
+
 
 def pacific_time(timestamp):
-    """Convert a time expressed in seconds since the epoch to a string representing Pacific time. 
-    If secs is not provided or None, the current time as returned by time() is used.
+    """Convert a time expressed in seconds since the epoch to a string representing Pacific time.
+    If timestamp is not provided or None, the current time as returned by time() is used.
     """
-    if not timestamp: timestamp = time.time()
+    if not timestamp:
+        timestamp = time.time()
     dt = datetime.datetime.fromtimestamp(timestamp, pacific_tz)
 
     return dt.strftime(time_format)
+
+
+def pacific_day(timestamp):
+    """Convert a time expressed in seconds since the epoch to a string representing a Pacific date.
+    If timestamp is not provided or None, the current time as returned by time() is used.
+    """
+    if not timestamp:
+        timestamp = time.time()
+    dt = datetime.datetime.fromtimestamp(timestamp, pacific_tz)
+
+    return dt.strftime(day_format)
+
+
+def utc_time(timestamp):
+    """Convert a time expressed in seconds since the epoch to a string representing UTC time.
+    If timestamp is not provided or None, the current time as returned by time() is used.
+    """
+    if not timestamp:
+        timestamp = time.time()
+    dt = datetime.datetime.utcfromtimestamp(timestamp)
+
+    return dt.strftime(time_format)
+
+
+def utc_day(timestamp):
+    """Convert a time expressed in seconds since the epoch to a string representing UTC day.
+    If timestamp is not provided or None, the current time as returned by time() is used.
+    """
+    if not timestamp:
+        timestamp = time.time()
+    dt = datetime.datetime.utcfromtimestamp(timestamp)
+
+    return dt.strftime(day_format)
