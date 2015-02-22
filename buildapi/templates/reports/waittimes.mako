@@ -99,7 +99,7 @@
     </div>
     
     <br/><br/>
-    The number on the <b>Number</b> column is how many minutes a build waited to start, rounded down.<br/><br/>
+    The <b>Wait Time</b> is the number of minutes a build waited to start, rounded down.<br/><br/>
     <b>Builds with no changes</b> (usually nightly builds): ${wt.no_changes}<br/><br/>
     Rebuilds and forced rebuilds were excluded from the statistics.<br/><br/>
     % if wt.pending:
@@ -107,7 +107,7 @@
         ${more_less_item_list(wt.pending, 'wt-pending-more', 'wt-pending-less')}
     % endif
     % if wt.otherplatforms:
-        <b>Other platforms</b> lister under <b>'other'</b> platforms: 
+        <b>Other platforms</b> listed under <b>'other'</b> platforms: 
         ${more_less_item_list(list(wt.otherplatforms), 'wt-otherplatforms-more', 'wt-otherplatforms-less')}
     % endif
     % if wt.unknownbuilders:
