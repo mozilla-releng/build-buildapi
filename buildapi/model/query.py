@@ -1,36 +1,17 @@
 from sqlalchemy import *
 import buildapi.model.meta as meta
 from buildapi.model.util import get_time_interval
+from buildapi.lib.helpers import get_branches
 from pylons.decorators.cache import beaker_cache
 
 import math, re, time
-
-@beaker_cache(expire=600, cache_response=False)
-def GetAllBranches():
-    ss = meta.scheduler_db_meta.tables['sourcestamps']
-    q = select([ss.c.branch]).distinct()
-    q = q.where(not_(ss.c.branch.like("%unittest")))
-    q = q.where(not_(ss.c.branch.like("%talos")))
-    results = q.execute()
-
-    # exclude defunct branches
-    exclusions = ('releases/mozilla-1.9.3',
-                 )
-
-    branches = []
-    for r in results:
-        if r['branch'] not in exclusions:
-            # return last part of releases/mozilla-1.9.2, users/bob/foo
-            branches.append(r['branch'].split('/')[-1])
-
-    return sorted(branches)
 
 def GetBranchName(longname):
     # nightlies don't have a branch set (bug 570814)
     if not longname:
         return None
 
-    allBranches = GetAllBranches()
+    allBranches = get_branches()
     shortname = longname.split('/')[-1]
     maybeBranch = ''
     for branch in allBranches:

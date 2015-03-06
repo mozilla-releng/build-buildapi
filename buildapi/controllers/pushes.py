@@ -7,7 +7,7 @@ from pylons.decorators import jsonify
 from datetime import date
 
 from buildapi.lib.base import BaseController, render
-from buildapi.model.query import GetPushes, GetAllBranches
+from buildapi.model.query import GetPushes
 
 log = logging.getLogger(__name__)
 
