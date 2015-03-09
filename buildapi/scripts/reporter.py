@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import sys, os
-print sys.path
 from optparse import OptionParser
 from ConfigParser import SafeConfigParser
 import json
@@ -59,8 +58,12 @@ def get_request_info(scheduler_db, build, props):
     if 'buildername' not in props:
         return ([], None)
 
+    # Look for request_ids / request_times props
+    if 'request_ids' in props and 'request_times' in props:
+        return (props['request_ids'], min(props['request_times'].values()))
+
     q = scheduler_db.execute(sa.text("""\
-            select buildrequests.id, submitted_at from buildrequests, builds where 
+            select buildrequests.id, submitted_at from buildrequests, builds where
                 buildrequests.id = builds.brid and
                 buildrequests.buildername = :buildername and
                 builds.number = :buildnumber and
