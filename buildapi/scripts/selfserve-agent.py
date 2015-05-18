@@ -58,11 +58,12 @@ def create_buildset(db, idstring, reason, ssid, submitted_at):
 
 
 class BuildAPIAgent:
-    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branches_url, clobberer_url):
+    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branches_url, clobberer_url, clobberer_auth=None):
         self.db = db
         self.masters_url = masters_url
         self.branches_url = branches_url
         self.clobberer_url = clobberer_url
+        self.clobberer_auth = clobberer_auth
         self.buildbot = buildbot
         self.sendchange_master = sendchange_master
         self.publisher = publisher
@@ -127,6 +128,14 @@ class BuildAPIAgent:
         build_url = self._get_build_url(claimed_by_name, builder_name, build_number)
         return "%s/stop" % build_url
 
+    def _authorize(self, req, token):
+        if token:
+            log.debug('Authorising request')
+            req.add_unredirected_header(
+                'Authorization', 'Bearer %s' % (token))
+        else:
+            log.debug('No token supplied, skipping authorization')
+
     def _clobber_slave(self, slavename, builder_name):
         data = [{
             "slave": slavename,
@@ -135,7 +144,8 @@ class BuildAPIAgent:
         log.info("Clobbering %s %s at %s %s", slavename, builder_name, self.clobberer_url, data)
         req = urllib2.Request(self.clobberer_url)
         req.add_header('Content-Type', 'application/json')
-        urllib2.urlopen(req, json.dumps(data))
+        self._authorize(req, self.clobberer_auth)
+        return urllib2.urlopen(req, json.dumps(data))
 
     def _can_cancel_build(self, claimed_by_name, builder_name, build_number, who, comments):
         unstoppable = []
@@ -748,6 +758,7 @@ def main():
         publisher=JobRequestDonePublisher(amqp_config),
         branches_url=config.get('branches', 'url'),
         clobberer_url=config.get('clobberer', 'url'),
+        clobberer_auth=config.get('clobberer', 'auth'),
     )
 
     consumer = JobRequestConsumer(amqp_config)
