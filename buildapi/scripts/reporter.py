@@ -13,6 +13,7 @@ import time
 
 import buildapi.model.statusdb_orm as model
 
+
 def encode_dates(dt):
     if dt is None:
         return None
@@ -21,18 +22,22 @@ def encode_dates(dt):
     else:
         return dt
 
+
 def td2secs(td):
     """Return the number of seconds in the given timedelta object"""
     return td.seconds + td.days*3600*24
+
 
 def dt2epoch(dt):
     t = dt.utctimetuple()
     return calendar.timegm(t)
 
+
 def avg(l):
     if len(l) == 0:
         return 0
     return sum(l) / len(l)
+
 
 def req2json(r):
     changes = []
@@ -53,6 +58,7 @@ def req2json(r):
             'branch': r.source.branch,
             'when': r.submittime,
            }
+
 
 def get_request_info(scheduler_db, build, props):
     if 'buildername' not in props:
@@ -83,15 +89,6 @@ def get_request_info(scheduler_db, build, props):
             first_request_time = min(first_request_time, request_time)
 
     return (request_ids, first_request_time)
-
-def get_slave_name(cache, session, slave_id):
-    slave_key = 'slavenames:%i' % slave_id
-    slave_name = cache.get(slave_key)
-    if not slave_name:
-        s = session.query(model.Slave).get(slave_id)
-        slave_name = s.name
-        cache.put(slave_key, slave_name, 24*3600)
-    return slave_name
 
 
 class Cache(object):
@@ -135,12 +132,8 @@ class MemcacheCache(Cache):
 
 
 def build_report(cache, session, scheduler_db, starttime, endtime, include_steps=False):
-    masters = {}
-    builders = {}
     builds = []
-    slaves = {}
-    report = {'masters': masters, 'builders': builders, 'builds': builds, 'slaves': slaves,
-            'starttime': starttime, 'endtime': endtime}
+    report = {'builds': builds, 'starttime': starttime, 'endtime': endtime}
 
     s = time.time()
 
@@ -159,58 +152,10 @@ def build_report(cache, session, scheduler_db, starttime, endtime, include_steps
     i = 0
     misses = [0]
 
-    times = {'masters': 0, 'builders': 0, 'builds': 0, 'slaves': 0}
+    times = {'builds': 0}
 
     for build in all_builds:
         i += 1
-        #print "%i/%i" % (i, n)
-
-        if build.master_id not in masters:
-            s0 = time.time()
-            masters[build.master_id] = {'name': build.master.name,
-                                        'url': build.master.url,}
-            times['masters'] += time.time() - s0
-
-        if build.builder_id not in builders:
-            s0 = time.time()
-            def get_builder():
-                slave_ids = [bs.slave_id for bs in session.query(model.BuilderSlave).filter_by(builder_id=build.builder_id)]
-                #slave_ids = [slave.slave_id for slave in build.builder.slaves]
-                builder = {
-                    'name': build.builder.name,
-                    'master_id': build.builder.master_id,
-                    'slaves': slave_ids,
-                    }
-                if build.builder.category is not None:
-                    builder['category'] = build.builder.category
-                return builder
-
-            builder_key = 'builders:%i' % build.builder_id
-            builder = cache.get(builder_key)
-
-            if builder is not None:
-                try:
-                    builder = json.loads(builder.decode("zlib"))
-                except:
-                    cache.put(builder_key, builder.encode("zlib"),
-                              24*3600) # Keep it for a day
-                    builder = json.loads(builder)
-            else:
-                builder = get_builder()
-                cache.put(builder_key, json.dumps(builder).encode("zlib"),
-                          24*3600) # Keep it for a day
-
-            builders[build.builder_id] = builder
-            times['builders'] += time.time() - s0
-
-            s0 = time.time()
-            for slave_id in builder['slaves']:
-                if slave_id not in slaves:
-                    slaves[slave_id] = get_slave_name(cache, session, slave_id)
-            times['slaves'] += time.time() - s0
-
-        if build.slave_id not in slaves:
-            slaves[build.slave_id] = get_slave_name(cache, session, build.slave_id)
 
         def get_build_dict():
             #print "Getting build info"
