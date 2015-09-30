@@ -25,12 +25,18 @@ class RecentController(BaseController):
         if format not in ('html', 'json'):
             abort(400, detail='Unsupported format: %s' % format)
 
+        greedy = True
+        if 'greedy' in request.GET:
+            greedy = request.GET.getone('greedy')
+            if greedy in ('false', 'False'):
+                greedy = False
+
 #        if slave is not None:
 #            slave = slave[0]
         if 'slave' in request.GET:
             slave = request.GET.getall('slave')
 
-        builds = GetHistoricBuilds(slave=slave, count=count)
+        builds = GetHistoricBuilds(slave=slave, count=count, greedy=greedy)
 
         # Return a rendered template
         # or, return a json blob

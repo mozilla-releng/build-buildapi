@@ -166,7 +166,7 @@ def GetBuilds(branch=None, type='pending', rev=None):
 
     return builds
 
-def GetHistoricBuilds(slave, count=20):
+def GetHistoricBuilds(slave, count=20, greedy=True):
     b  = meta.status_db_meta.tables['builds']
     bs = meta.status_db_meta.tables['builders']
     s  = meta.status_db_meta.tables['slaves']
@@ -187,7 +187,10 @@ def GetHistoricBuilds(slave, count=20):
                         b.c.builder_id==bs.c.id,
                         b.c.master_id==m.c.id))
         q = q.where(b.c.result != None)
-        q = q.where(s.c.name.like(slave+'%'))
+        if greedy:
+            q = q.where(s.c.name.like(slave+'%'))
+        else:
+            q = q.where(s.c.name==slave)
         q = q.order_by(b.c.id.desc()).limit(count)
     else:
         subq = select([b.c.id,
