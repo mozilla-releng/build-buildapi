@@ -41,6 +41,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^jetpack-.+-ubuntu64(-asan)?_vm'),
     ],
     'ubuntu64_emulator_vm': [
+        re.compile('^Ubuntu (ASAN )?VM large 12.04 x64 .+'),
         re.compile('^Android armv7 API 9 .+ test (plain-reftest|crashtest|jsreftest)'),
         re.compile('^Android 2.3 (Armv6 )?Emulator .+ test (plain-reftest|crashtest|jsreftest)'),
         re.compile('^Android 4.3 armv7 API 11\+.*debug test .*(?:mochitest)'),
