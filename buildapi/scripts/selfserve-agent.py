@@ -10,11 +10,14 @@ from urlparse import urlparse
 import subprocess
 import uuid
 import re
+import socket
 
 from sqlalchemy import text
 from sqlalchemy.exc import TimeoutError
 
 from buildapi.lib import json
+
+HOSTNAME = socket.gethostname()
 
 
 class NoRedirects(urllib2.HTTPErrorProcessor):
@@ -255,8 +258,14 @@ class BuildAPIAgent:
             log.exception("TimeoutError accessing the DB pool")
             raise
         except:
-            log.exception("Error processing message")
-            raise
+            # Send a failure message
+            log.exception("Error processing message; logging failure and acking")
+            msg = {'body': {"errors": True, "msg":
+                            "there was an error processing your request; please "
+                            "check logs on %s" % HOSTNAME}}
+            msg['request_id'] = message_data['body']['request_id']
+            self.publisher.ack_msg(msg)
+            message.ack()
 
     def do_reprioritize(self, message_data, message):
         who = message_data['who']
