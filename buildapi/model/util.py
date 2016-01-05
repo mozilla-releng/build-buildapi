@@ -73,7 +73,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Rev5 MacOSX Mavericks 10.9'),
     ],
     'yosemite': [
-        re.compile('^Rev5 MacOSX Yosemite 10.10'),
+        re.compile('^Rev(5|7) MacOSX Yosemite 10.10'),
     ],
     'xp-ix': [
         re.compile('^Windows XP 32-bit'),
