@@ -37,15 +37,15 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^b2g_emulator_vm'),
         re.compile('^Android armv7 API 9 .+ test (?!(plain-reftest|crashtest|jsreftest))'),
         re.compile('^Android 2.3 (Armv6 )?Emulator .+ test (?!(plain-reftest|crashtest|jsreftest))'),
-        re.compile('^Android 4.3 armv7 API 11\+.*test (?!plain-reftest|crashtest|jsreftest)'),
+        re.compile('^Android 4.3 armv7 API (11|15)\+.*test (?!plain-reftest|crashtest|jsreftest)'),
         re.compile('^jetpack-.+-ubuntu64(-asan)?_vm'),
     ],
     'ubuntu64_emulator_vm': [
         re.compile('^Ubuntu (ASAN )?VM large 12.04 x64 .+'),
         re.compile('^Android armv7 API 9 .+ test (plain-reftest|crashtest|jsreftest)'),
         re.compile('^Android 2.3 (Armv6 )?Emulator .+ test (plain-reftest|crashtest|jsreftest)'),
-        re.compile('^Android 4.3 armv7 API 11\+.*debug test .*(?:mochitest)'),
-        re.compile('^Android 4.3 armv7 API 11\+.*test (plain-reftest|crashtest|jsreftest)'),
+        re.compile('^Android 4.3 armv7 API (11|15)\+.*debug test .*(?:mochitest)'),
+        re.compile('^Android 4.3 armv7 API (11|15)\+.*test (plain-reftest|crashtest|jsreftest)'),
     ],
     'ubuntu32_hw': [
         re.compile('^Ubuntu HW 12.04 (?!x64).+'),
@@ -94,6 +94,9 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Windows 8'),
         re.compile('^jetpack-.+-win8'),
         re.compile('^WINNT 6\.2 '),
+    ],
+    'win10-ix': [
+        re.compile('^Windows 10'),
     ],
     'panda-android': [
         re.compile('^Android 4.0 armv7 API (10|11)'),
