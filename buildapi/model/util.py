@@ -25,6 +25,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Linux .+ (build|non-unified|valgrind)$'),
         re.compile('^Android .+ (build|non-unified)$'),
         re.compile('^linux64-.+-haz'),
+        re.compile('^.+linux64 build'),
     ],
     'ubuntu32_vm': [
         re.compile('^Ubuntu VM 12.04 (?!x64).+'),
@@ -63,6 +64,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^OS X Mulet'),
         re.compile('^b2g_.+_macosx64_gecko'),
         re.compile('^fuzzer-macosx64-lion$'),
+        re.compile('^.+macosx64 build'),
     ],
     'mountainlion': [
         re.compile('^Rev5 MacOSX Mountain Lion 10\.8.+'),
@@ -85,6 +87,7 @@ PLATFORMS_BUILDERNAME = {
         re.compile('^Win32 Mulet'),
         re.compile('^b2g_.+_win32_gecko'),
         re.compile('^fuzzer-win64'),
+        re.compile('^.+win64 build'),
     ],
     'win7-ix': [
         re.compile('^Windows 7 32-bit '),
