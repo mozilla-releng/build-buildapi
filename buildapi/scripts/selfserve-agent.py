@@ -27,7 +27,21 @@ class NoRedirects(urllib2.HTTPErrorProcessor):
             return response
         return urllib2.HTTPErrorProcessor.http_response(self, request, response)
 
+
 noredirect_opener = urllib2.build_opener(NoRedirects)
+
+
+def get_buildernames(branch, builders, builder_expression,
+                     builder_exclusions=None):
+    # Filter the builders by this specific branch first
+    names = [buildername for (buildername, builder) in builders.iteritems() if
+             builder['properties'].get('branch') == branch]
+    # Then apply the builder expression and exclusions
+    names = [b for b in names if re.search(builder_expression, b)]
+    if builder_exclusions:
+        names = [b for b in names if not
+                 any(re.search(e, b) for e in builder_exclusions)]
+    return names
 
 
 def genBuildID(now=None):
@@ -61,10 +75,13 @@ def create_buildset(db, idstring, reason, ssid, submitted_at):
 
 
 class BuildAPIAgent:
-    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher, branches_url, clobberer_url, clobberer_auth=None):
+    def __init__(self, db, masters_url, buildbot, sendchange_master, publisher,
+                 branches_url, allthethings_url, clobberer_url,
+                 clobberer_auth=None):
         self.db = db
         self.masters_url = masters_url
         self.branches_url = branches_url
+        self.allthethings_url = allthethings_url
         self.clobberer_url = clobberer_url
         self.clobberer_auth = clobberer_auth
         self.buildbot = buildbot
@@ -83,6 +100,8 @@ class BuildAPIAgent:
                 self.masters = json.load(urllib2.urlopen(self.masters_url, timeout=30))
                 log.info("Loading branches from %s", self.branches_url)
                 self.branches = json.load(urllib2.urlopen(self.branches_url, timeout=30))
+                log.info("Loading builders from %s", self.allthethings_url)
+                self.builders = json.load(urllib2.urlopen(self.allthethings_url, timeout=30))['builders']
                 self._last_refresh = time.time()
             except:
                 log.exception("Couldn't load data; using old ones")
@@ -490,30 +509,19 @@ class BuildAPIAgent:
         subprocess.check_call(cmd)
         return {"errors": False, "msg": "Ok"}
 
-    def _create_build_for_revision(self, who, branch, revision, priority, builder_expression, builder_exclusions=None):
-        if builder_exclusions is None:
-            builder_exclusions = ['%l10n nightly']
+    def _create_build_for_revision(self, who, branch, revision, priority,
+                                   builder_expression,
+                                   builder_exclusions=None):
         now = time.time()
         repo_path = self._get_repo_path(branch)
 
-        # Find builders that have been active in the past 2 weeks
-        q = """SELECT DISTINCT buildername FROM buildrequests WHERE
-                buildername LIKE :buildername AND
-            """
-        for i, bx in enumerate(builder_exclusions):
-            q = q + "buildername NOT LIKE :buildername_exclusion_%i AND " % i
-        q = q + """
-          submitted_at > :submitted_at"""
-        qparams = {
-            'buildername': builder_expression,
-            'submitted_at': time.time() - 14 * 24 * 3600,
-        }
-        for i, bx in enumerate(builder_exclusions):
-            qparams['buildername_exclusion_%i' % i] = builder_exclusions[i]
-        result = self.db.execute(text(q), qparams)
-
-        buildernames = [r[0] for r in result]
+        # Figure out our set of builders
+        buildernames = get_buildernames(branch, self.builders,
+                                        builder_expression, builder_exclusions)
         log.debug("buildernames are %s", buildernames)
+        if not buildernames:
+            log.info("no builders found")
+            return {"errors": False, "msg": "No builds to create"}
 
         # Create a sourcestamp
         q = text("""INSERT INTO sourcestamps
@@ -577,7 +585,8 @@ class BuildAPIAgent:
             branch,
             revision,
             priority,
-            "%% %s pgo-build" % branch)
+            " pgo-build$",
+        )
 
     def do_new_nightly_at_revision(self, message_data, message):
         who = message_data['who']
@@ -590,8 +599,9 @@ class BuildAPIAgent:
             branch,
             revision,
             priority,
-            '%' + branch + '%nightly',
-            ['%' + branch + '_v%nightly', '%l10n nightly'])
+            " nightly$",
+            ['l10n'],
+        )
 
     def do_cancel_revision(self, message_data, message):
         who = message_data['who']
@@ -766,6 +776,7 @@ def main():
         sendchange_master=config.get('masters', 'sendchange-master'),
         publisher=JobRequestDonePublisher(amqp_config),
         branches_url=config.get('branches', 'url'),
+        allthethings_url=config.get('allthethings', 'url'),
         clobberer_url=config.get('clobberer', 'url'),
         clobberer_auth=config.get('clobberer', 'auth'),
     )
@@ -781,6 +792,7 @@ def main():
             pass
     else:
         consumer.run_until_idle()
+
 
 if __name__ == '__main__':
     main()
