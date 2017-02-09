@@ -139,7 +139,6 @@ def GetBuilds(branch=None, type='pending', rev=None):
             revision = this_result.get('revision')
             if not revision:
                 revision = 'Unknown'
-            revision = revision[:12]
             if revision not in builds[real_branch]:
                 builds[real_branch][revision] = []
             builds[real_branch][revision].append(this_result)
